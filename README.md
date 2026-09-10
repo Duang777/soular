@@ -1,6 +1,8 @@
 # zhihu-character-wave
 
-知乎灵魂问答盲盒人格抽卡。线上：https://duang777.github.io/zhihu-character-wave/
+知乎九派静态页：人物卡浪 + 3D 人格书。没有答题、匹配或数据库。
+
+线上：https://duang777.github.io/zhihu-character-wave/
 
 ```bash
 npm install
