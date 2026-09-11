@@ -965,3 +965,900 @@ textarea.field:focus-visible,
     font-size: 12px;
   }
 }
+
+/* ===== 抽卡 · 人格卡抽取层 ===== */
+.shelf-nav__share {
+  display: flex;
+  flex: none;
+  margin-left: auto;
+  pointer-events: auto;
+}
+
+.shelf-tag--share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--cream);
+  border-color: rgba(196, 165, 116, 0.5);
+  background: rgba(12, 12, 16, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.shelf-tag--share span {
+  color: var(--stamp);
+  font-size: 12px;
+}
+
+.shelf-tag--share:hover {
+  color: var(--cream);
+  background: rgba(20, 18, 12, 0.72);
+  border-color: rgba(196, 165, 116, 0.85);
+}
+
+.draw-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 18%, rgba(28, 30, 46, 0.92), rgba(7, 7, 11, 0.98) 70%),
+    #07070b;
+  box-shadow: inset 0 0 220px 40px rgba(0, 0, 0, 0.5);
+  animation: draw-fade 0.4s ease both;
+}
+
+.draw-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72vmin, 640px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--draw-color, #3a3d52) 0%, transparent 62%);
+  opacity: 0.22;
+  filter: blur(10px);
+  transform: translate(-50%, -54%);
+  animation: draw-glow 5.5s ease-in-out infinite;
+}
+
+.warm-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.draw-stars {
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.draw-stage--flip .draw-card {
+  animation: draw-card-in 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes draw-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.draw-overlay--leave {
+  pointer-events: none;
+  animation: draw-overlay-out 0.95s ease forwards;
+}
+
+@keyframes draw-overlay-out {
+  0% { opacity: 1; }
+  55% { opacity: 0.92; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+.draw-overlay--leave .draw-glow {
+  animation: none;
+  opacity: 0.5;
+  transform: translate(-50%, -54%) scale(2.4);
+  transition: opacity 0.95s ease, transform 0.95s ease;
+}
+
+.draw-overlay--leave .draw-stage {
+  animation: draw-into-book 0.95s cubic-bezier(0.5, 0, 0.75, 0.18) forwards;
+}
+
+@keyframes draw-into-book {
+  0% {
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(1.08) translateY(-1%);
+    filter: blur(1px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.55) translateY(-4%);
+    filter: blur(14px);
+    opacity: 0;
+  }
+}
+
+.draw-overlay--leave .draw-face--front {
+  box-shadow:
+    0 26px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(241, 217, 164, 0.85),
+    0 0 96px 14px rgba(196, 165, 116, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-stage--flip .draw-card {
+    animation: none;
+  }
+}
+
+.draw-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 100%;
+}
+
+.draw-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: rgba(243, 240, 233, 0.5);
+}
+
+.draw-eyebrow::before,
+.draw-eyebrow::after {
+  content: "";
+  flex: none;
+  width: 30px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 165, 116, 0.7));
+}
+
+.draw-eyebrow::after {
+  background: linear-gradient(90deg, rgba(196, 165, 116, 0.7), transparent);
+}
+
+.draw-card {
+  width: clamp(216px, 26vw, 312px);
+  aspect-ratio: 0.69;
+  perspective: 1500px;
+  transition: transform 0.35s ease;
+}
+
+.draw-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.95s cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.draw-card.is-revealed .draw-card__inner {
+  transform: rotateY(180deg);
+}
+
+.draw-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.draw-face--front {
+  transform: rotateY(180deg);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.66),
+    0 2px 10px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 54px -10px var(--card-color, #3a3d52);
+  transition: box-shadow 0.6s ease;
+}
+
+.draw-face--front::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  z-index: 3;
+  border: 1px solid rgba(228, 205, 158, 0.5);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+.draw-face--front::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  z-index: 3;
+  border-radius: 11px;
+  border: 1px solid rgba(228, 205, 158, 0.14);
+  outline: 1px solid rgba(228, 205, 158, 0.14);
+  outline-offset: 4px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.draw-card.is-revealed .draw-face--front::after {
+  animation: draw-frame-in 0.9s 0.55s ease both;
+}
+
+@keyframes draw-frame-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.draw-face--front .draw-face__img {
+  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.draw-card.is-revealed .draw-face--front .draw-face__img {
+  transform: scale(1.05);
+}
+
+.draw-stage--reveal .draw-face--front {
+  box-shadow:
+    0 34px 80px rgba(0, 0, 0, 0.7),
+    0 2px 10px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(228, 205, 158, 0.28),
+    0 0 64px -6px var(--card-color, #3a3d52),
+    0 0 34px -14px rgba(196, 165, 116, 0.6);
+}
+
+.draw-face--back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--cream);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(196, 165, 116, 0.16), transparent 58%),
+    linear-gradient(160deg, #1b1d2a, #0c0d14 70%);
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.58),
+    inset 0 0 0 1px rgba(196, 165, 116, 0.42);
+}
+
+.draw-face--back::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(196, 165, 116, 0.22);
+  border-radius: 12px;
+}
+
+.draw-face--back::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  transform: skewX(-18deg);
+}
+
+.draw-stage--shuffle .draw-face--back::after {
+  animation: draw-sweep 0.9s linear infinite;
+}
+
+.draw-face__seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid rgba(196, 165, 116, 0.75);
+  color: var(--stamp);
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.draw-stage--shuffle .draw-face__seal {
+  animation: draw-seal-pulse 1.05s ease-in-out infinite;
+}
+
+@keyframes draw-seal-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(196, 165, 116, 0.32);
+  }
+  50% {
+    transform: scale(1.07);
+    box-shadow: 0 0 26px 3px rgba(196, 165, 116, 0.35);
+  }
+}
+
+.draw-face__word {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.draw-face__sub {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  color: rgba(243, 240, 233, 0.42);
+}
+
+.draw-face__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.draw-face__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6, 7, 10, 0.82) 0%, rgba(6, 7, 10, 0.12) 38%, transparent 56%);
+}
+
+.draw-face__meta {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.draw-face__volume {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--stamp);
+}
+
+.draw-face__name {
+  font-size: clamp(28px, 3.4vw, 38px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cream);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+.draw-face__meta:not(.draw-face__meta--person) .draw-face__name::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 1px;
+  margin: 0 0 7px;
+  background: linear-gradient(90deg, rgba(228, 205, 158, 0.85), transparent);
+}
+
+.draw-face__role {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: rgba(243, 240, 233, 0.78);
+}
+
+.draw-face--person .draw-face__name {
+  font-size: clamp(18px, 2.2vw, 25px);
+  letter-spacing: 0.02em;
+  line-height: 1.18;
+}
+
+.draw-face--person .draw-face__volume {
+  letter-spacing: 0.14em;
+}
+
+.draw-face__veil--person {
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 7, 10, 0.05) 0%,
+    rgba(6, 7, 10, 0.12) 34%,
+    rgba(8, 9, 14, 0.92) 63%,
+    rgba(8, 9, 14, 0.98) 100%
+  );
+}
+
+.draw-face__chip {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  z-index: 2;
+  width: 42%;
+  margin: 0;
+  padding: 3px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f4e0b0 0%, #d8b97f 42%, #9a7638 100%);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(244, 224, 176, 0.25),
+    0 0 30px rgba(196, 165, 116, 0.5);
+  opacity: 0;
+  transform: translate(-50%, -44%) scale(0.4);
+}
+
+.draw-card.is-revealed .draw-face__chip {
+  animation: draw-chip-pop 0.72s 0.52s cubic-bezier(0.2, 0.9, 0.3, 1.35) forwards;
+}
+
+@keyframes draw-chip-pop {
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.draw-face__chip-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(12, 13, 19, 0.9);
+}
+
+.draw-face__meta--person {
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.draw-face__meta--person .draw-face__role {
+  font-size: 12px;
+}
+
+.draw-face__claim {
+  display: -webkit-box;
+  margin-top: 6px;
+  padding: 7px 12px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: rgba(243, 240, 233, 0.82);
+  background: linear-gradient(180deg, rgba(28, 24, 16, 0.62), rgba(10, 11, 17, 0.62));
+  border: 1px solid rgba(196, 165, 116, 0.34);
+  border-radius: 11px;
+  box-shadow: inset 0 1px 0 rgba(243, 240, 233, 0.07);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.draw-face__spark {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 3;
+  color: var(--stamp);
+  font-size: 15px;
+  text-shadow: 0 0 12px rgba(196, 165, 116, 0.85);
+}
+
+.draw-card.is-revealed .draw-face__spark {
+  animation: draw-spark-twinkle 2.8s ease-in-out 0.8s infinite;
+}
+
+@keyframes draw-spark-twinkle {
+  0%, 100% { opacity: 0.55; transform: scale(0.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.12) rotate(45deg); }
+}
+
+.draw-hint {
+  margin: 0;
+  min-height: 20px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: rgba(243, 240, 233, 0.66);
+}
+
+.draw-stage--reveal .draw-hint {
+  animation: draw-rise 0.6s 0.25s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.draw-stage--reveal .draw-actions {
+  animation: draw-rise 0.6s 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes draw-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.draw-dots {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.draw-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(243, 240, 233, 0.18);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, width 0.25s ease;
+}
+
+.draw-dot.is-active {
+  background: var(--dot-color, #c4a574);
+  transform: scale(1.5);
+  box-shadow: 0 0 10px -1px var(--dot-color, #c4a574);
+}
+
+.draw-dot.is-result {
+  width: 20px;
+  border-radius: 999px;
+  transform: scale(1);
+  background: linear-gradient(90deg, rgba(196, 165, 116, 0.35), var(--stamp), rgba(196, 165, 116, 0.35));
+  box-shadow: 0 0 14px rgba(196, 165, 116, 0.75);
+  animation: draw-dot-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+@keyframes draw-dot-pop {
+  from { transform: scale(0.4); }
+  to { transform: scale(1); }
+}
+
+.draw-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  min-height: 96px;
+  justify-content: flex-start;
+}
+
+.draw-btn {
+  position: relative;
+  min-width: 224px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    opacity 0.2s ease;
+}
+
+.draw-btn:disabled {
+  opacity: 0.32;
+  cursor: default;
+  pointer-events: none;
+}
+
+.draw-btn--primary {
+  color: #241d12;
+  border-color: rgba(238, 216, 170, 0.95);
+  background: linear-gradient(180deg, #e3cb99 0%, #d3b67e 46%, #bd9d63 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.75),
+    inset 0 -2px 5px rgba(105, 78, 36, 0.35),
+    0 12px 30px rgba(196, 165, 116, 0.32);
+}
+
+.draw-btn--primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 252, 240, 0.55), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.6s ease;
+}
+
+.draw-btn--ghost {
+  color: var(--cream);
+  border-color: rgba(243, 240, 233, 0.16);
+  background: rgba(255, 255, 255, 0.045);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.draw-btn--text {
+  min-width: 0;
+  padding: 6px 12px;
+  border-color: transparent;
+  color: rgba(243, 240, 233, 0.5);
+  background: transparent;
+  box-shadow: none;
+  font-weight: 400;
+}
+
+@media (hover: hover) {
+  .draw-btn--primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: #f0dda9;
+    background: linear-gradient(180deg, #ecd7a6 0%, #dcc18c 46%, #c6a66d 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 248, 232, 0.85),
+      inset 0 -2px 5px rgba(105, 78, 36, 0.35),
+      0 16px 38px rgba(196, 165, 116, 0.42);
+  }
+
+  .draw-btn--primary:hover:not(:disabled)::after {
+    left: 130%;
+  }
+
+  .draw-btn--ghost:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(243, 240, 233, 0.36);
+    background: rgba(255, 255, 255, 0.09);
+  }
+}
+
+.draw-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.draw-skip {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: 16px;
+  z-index: 2;
+  padding: 7px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: rgba(243, 240, 233, 0.62);
+  background: rgba(255, 255, 255, 0.04);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.draw-skip:hover {
+  color: var(--cream);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.draw-exit {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 16px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  color: rgba(243, 240, 233, 0.72);
+  background: rgba(18, 18, 18, 0.42);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-family: inherit;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+  animation: draw-fade 0.4s 0.15s ease both;
+}
+
+.draw-exit span {
+  transform: translateY(-1px);
+}
+
+.draw-exit:hover {
+  color: var(--stamp);
+  border-color: rgba(196, 165, 116, 0.65);
+  background: rgba(30, 26, 18, 0.7);
+  transform: rotate(90deg);
+}
+
+.share-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(88vw, 400px);
+  padding: 22px 24px 18px;
+  border: 1px solid rgba(196, 165, 116, 0.32);
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(196, 165, 116, 0.1), transparent 60%),
+    rgba(16, 17, 25, 0.82);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(243, 240, 233, 0.07);
+  animation: draw-rise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.share-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(196, 165, 116, 0.14);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.share-sheet__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--cream);
+}
+
+.share-sheet__title::before {
+  content: "✦ ";
+  color: var(--stamp);
+  font-size: 11px;
+}
+
+.share-sheet__btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.share-sheet__btns .draw-btn {
+  min-width: 240px;
+  padding: 10px 22px;
+  font-size: 13px;
+}
+
+.share-sheet__url {
+  margin: 4px 0 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: rgba(243, 240, 233, 0.4);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-sheet__tip {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+  color: rgba(243, 240, 233, 0.42);
+}
+
+.draw-overlay--sheet .draw-eyebrow,
+.draw-overlay--sheet .draw-hint,
+.draw-overlay--sheet .draw-dots {
+  visibility: hidden;
+}
+
+.draw-overlay--sheet .draw-card {
+  transform: scale(0.76);
+}
+
+.draw-stage--shuffle .draw-card {
+  animation: draw-shake 0.26s ease-in-out infinite;
+}
+
+.draw-stage--reveal .draw-card {
+  animation: draw-pop 0.72s cubic-bezier(0.18, 1.25, 0.32, 1) backwards;
+}
+
+.draw-overlay:not(.draw-overlay--sheet) .draw-stage--reveal .draw-card {
+  animation:
+    draw-pop 0.72s cubic-bezier(0.18, 1.25, 0.32, 1) backwards,
+    draw-card-float 5.6s ease-in-out 1.15s infinite;
+}
+
+@keyframes draw-card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes draw-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes draw-glow {
+  0%, 100% { opacity: 0.18; transform: translate(-50%, -54%) scale(0.95); }
+  50% { opacity: 0.3; transform: translate(-50%, -54%) scale(1.06); }
+}
+
+@keyframes draw-shake {
+  0%, 100% { transform: translate(0, 0) rotate(-0.7deg); }
+  50% { transform: translate(1px, -2px) rotate(0.8deg); }
+}
+
+@keyframes draw-pop {
+  0% { transform: scale(0.62) translateY(24px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes draw-sweep {
+  0% { left: -60%; }
+  100% { left: 130%; }
+}
+
+@media (max-height: 720px) {
+  .draw-stage { gap: 12px; }
+  .draw-card { width: clamp(190px, 30vh, 268px); }
+}
+
+@media (max-width: 560px) {
+  .shelf-nav__cast {
+    display: none;
+  }
+
+  .shelf-tag--share {
+    padding: 0 13px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-overlay,
+  .share-sheet { animation: none; }
+
+  .draw-card__inner,
+  .draw-face--front .draw-face__img { transition: none; }
+
+  .draw-stage--shuffle .draw-card,
+  .draw-stage--reveal .draw-card,
+  .draw-overlay:not(.draw-overlay--sheet) .draw-stage--reveal .draw-card,
+  .draw-glow,
+  .draw-face--back::after,
+  .draw-stage--shuffle .draw-face__seal,
+  .draw-card.is-revealed .draw-face__spark,
+  .draw-stage--reveal .draw-hint,
+  .draw-stage--reveal .draw-actions {
+    animation: none;
+  }
+
+  .draw-card.is-revealed .draw-face--front .draw-face__img {
+    transform: none;
+  }
+}

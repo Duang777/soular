@@ -4368,6 +4368,93 @@
       scene.add(dust);
     }
 
+    function makeWarmStarTexture() {
+      const size = 128;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const c = size / 2;
+      const halo = ctx.createRadialGradient(c, c, 0, c, c, c);
+      halo.addColorStop(0, "rgba(255, 250, 238, 1)");
+      halo.addColorStop(0.18, "rgba(255, 240, 214, 0.85)");
+      halo.addColorStop(0.45, "rgba(240, 214, 160, 0.22)");
+      halo.addColorStop(1, "rgba(240, 214, 160, 0)");
+      ctx.fillStyle = halo;
+      ctx.fillRect(0, 0, size, size);
+      const ray = (x1, y1, x2, y2) => {
+        const g = ctx.createLinearGradient(c + x1, c + y1, c + x2, c + y2);
+        g.addColorStop(0, "rgba(255, 244, 222, 0)");
+        g.addColorStop(0.5, "rgba(255, 244, 222, 0.55)");
+        g.addColorStop(1, "rgba(255, 244, 222, 0)");
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(c + x1, c + y1);
+        ctx.lineTo(c + x2, c + y2);
+        ctx.stroke();
+      };
+      ray(-58, 0, 58, 0);
+      ray(0, -58, 0, 58);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function addWarmStars() {
+      const group = new THREE.Group();
+      group.name = "warm-stars";
+      const texture = makeWarmStarTexture();
+      const random = seededRandom(90911);
+      const tints = [0xf7ead0, 0xeed9b0, 0xe3c188, 0xd9b274];
+      const starCount = 34;
+      for (let index = 0; index < starCount; index += 1) {
+        const material = new THREE.SpriteMaterial({
+          map: texture,
+          color: tints[Math.floor(random() * tints.length)],
+          transparent: true,
+          opacity: 0.6,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          fog: false
+        });
+        const sprite = new THREE.Sprite(material);
+        const big = random() > 0.8;
+        const scale = big ? 0.34 + random() * 0.16 : 0.15 + random() * 0.11;
+        sprite.scale.setScalar(scale);
+        sprite.position.set(
+          -8.6 + random() * 17.2,
+          2.45 + random() * 1.8,
+          -3.05 + random() * 0.5
+        );
+        sprite.userData.twinkle = {
+          base: big ? 0.6 + random() * 0.25 : 0.38 + random() * 0.24,
+          amp: 0.22 + random() * 0.2,
+          phase: random() * Math.PI * 2,
+          speed: 0.4 + random() * 0.7,
+          scale
+        };
+        material.opacity = sprite.userData.twinkle.base + sprite.userData.twinkle.amp * 0.5;
+        group.add(sprite);
+      }
+      scene.add(group);
+    }
+
+    function updateWarmStars(elapsed) {
+      const group = scene.getObjectByName("warm-stars");
+      if (!group) return;
+      group.children.forEach((sprite) => {
+        const t = sprite.userData.twinkle;
+        if (!t) return;
+        const wave = 0.5 + 0.5 * Math.sin(elapsed * t.speed + t.phase);
+        const twinkle = reducedMotion ? 0.7 : t.base + t.amp * wave;
+        sprite.material.opacity = twinkle;
+        if (!reducedMotion) {
+          sprite.scale.setScalar(t.scale * (0.9 + 0.16 * wave));
+        }
+      });
+    }
+
     function buildMarkers() {
       BOOKS.forEach((book, index) => {
         const button = document.createElement("button");
@@ -5733,6 +5820,7 @@
       updateShelfLayout(delta, elapsed);
       updateTransition(delta);
       updateDust(elapsed);
+      updateWarmStars(elapsed);
       const themeIsMoving = updateTheme(delta);
 
       if (mode === "detail") {

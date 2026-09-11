@@ -8,6 +8,9 @@ const dir = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   base: process.env.GITHUB_PAGES_BASE ?? "/",
+  define: {
+    __SCENE_VERSION__: JSON.stringify(String(Date.now())),
+  },
   plugins: [
     react(),
     {

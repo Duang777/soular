@@ -1,3 +1,7 @@
+declare global {
+  const __SCENE_VERSION__: string;
+}
+
 export type CastIdle = {
   x: string;
   y: string;
@@ -30,6 +34,10 @@ export const CASTS: Cast[] = [
 
 export function asset(file: string) {
   return `${import.meta.env.BASE_URL}${file.replace(/^\//, "")}`;
+}
+
+export function withVersion(url: string) {
+  return `${url}${url.includes("?") ? "&" : "?"}v=${__SCENE_VERSION__}`;
 }
 
 export function castCardVars(cast: Cast): Record<string, string> {

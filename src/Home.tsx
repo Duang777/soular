@@ -7,11 +7,12 @@ export function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    window.sessionStorage.setItem("jiupai:lobby", "/");
     function onMessage(event: MessageEvent) {
       const cast = event.data?.cast;
       if (event.data?.type !== "wave-open" || typeof cast !== "string") return;
       if (!CASTS.some((item) => item.key === cast)) return;
-      navigate(`/shelf/${cast}`);
+      navigate(`/shelf/${cast}?peek=1`);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);

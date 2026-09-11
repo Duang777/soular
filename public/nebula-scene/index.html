@@ -375,6 +375,9 @@
       ];
       const FOLLOWED = new Set([6, 26, 40]);
 
+      // 「我」的专属星位：固定在核球前方、离镜头更近，金色呼吸光圈 + 金徽章
+      const ME = { name: "我", castKey: "fox", claim: "这是你的星位，点开抽取你的观点人格。" };
+
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
       const loadingEl = document.getElementById("loading");
@@ -595,6 +598,32 @@
         return { canvas: c, ctx };
       }
 
+      function meBadgeTexture() {
+        const s = 128;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        const grad = ctx.createRadialGradient(s / 2, s / 2, 6, s / 2, s / 2, 56);
+        grad.addColorStop(0, "#f3dd9e");
+        grad.addColorStop(0.7, "#d9b36a");
+        grad.addColorStop(1, "#a9823f");
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 52, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(255, 246, 222, 0.9)";
+        ctx.stroke();
+        ctx.fillStyle = "#2a2013";
+        ctx.font = "700 56px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("我", s / 2, s / 2 + 3);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
       function paintAvatar(ctx, img, hex) {
         const s = 256;
         ctx.clearRect(0, 0, s, s);
@@ -729,7 +758,7 @@
         avatar.renderOrder = 2;
         const user = {
           name, stance, castKey, castName, castRole, castColor, claim,
-          followed: FOLLOWED.has(i), group, avatar, glow,
+          followed: FOLLOWED.has(i), index: i, isMe: false, group, avatar, glow,
           baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
           scale: 1,
         };
@@ -754,6 +783,52 @@
 
       const userGroup = new THREE.Group();
       users.forEach((u) => userGroup.add(u.group));
+
+      {
+        const [castName, castRole, castColor] = CASTS[ME.castKey];
+        const group = new THREE.Group();
+        group.position.set(0, 1.95, 2.7);
+        const glowMat = new THREE.SpriteMaterial({
+          map: getGlow("#e7c178"),
+          transparent: true,
+          opacity: 0.5,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const glow = new THREE.Sprite(glowMat);
+        glow.scale.setScalar(1.12);
+        glow.renderOrder = 1;
+        group.add(glow);
+
+        const holder = placeholderTexture("我", castColor);
+        const avatarTex = new THREE.CanvasTexture(holder.canvas);
+        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
+        const avatar = new THREE.Sprite(avatarMat);
+        avatar.scale.setScalar(0.86);
+        avatar.renderOrder = 2;
+        group.add(avatar);
+
+        const badge = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: meBadgeTexture(), transparent: true, opacity: 0.97, depthWrite: false,
+        }));
+        badge.position.set(0.32, 0.37, 0);
+        badge.scale.setScalar(0.32);
+        badge.renderOrder = 3;
+        group.add(badge);
+
+        const meUser = {
+          name: ME.name, stance: 0, castKey: ME.castKey, castName, castRole, castColor,
+          claim: ME.claim, followed: false, index: -1, isMe: true,
+          group, avatar, glow, badge,
+          baseY: 1.95, phase: 0, speed: 0.6, scale: 1,
+        };
+        avatar.userData.user = meUser;
+        avatarTargets.push(avatar);
+        users.push(meUser);
+        userGroup.add(group);
+      }
+
       nebula.add(userGroup);
 
       // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
@@ -823,14 +898,17 @@
       dustGroup.add(buildCoreDust(600, 0.058, 0.8));
 
       let loaded = 0;
-      users.forEach((u, i) => {
-        const file = `avatars/u${String(i + 1).padStart(2, "0")}.jpg`;
+      users.forEach((u) => {
+        const file = u.isMe
+          ? "avatars/me.jpg"
+          : `avatars/u${String(u.index + 1).padStart(2, "0")}.jpg`;
         loader.load(
           file,
           (tex) => {
             const img = tex.image;
             const holder = placeholderTexture(u.name, u.castColor);
-            paintAvatar(holder.ctx, img, u.followed ? "#e7c98c" : u.castColor);
+            const ringColor = u.isMe ? "#e7c98c" : (u.followed ? "#e7c98c" : u.castColor);
+            paintAvatar(holder.ctx, img, ringColor);
             u.avatar.material.map.dispose();
             u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
             u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
@@ -867,13 +945,18 @@
         hovered = u;
         canvas.classList.toggle("hovering", !!u);
         if (u) {
-          tip.innerHTML =
-            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
-            (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
-            `</div>` +
-            `<div class="tip-claim">“${u.claim}”</div>` +
-            `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
-            `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>`;
+          tip.innerHTML = u.isMe
+            ? `<div class="tip-row"><span class="tip-name">我</span>` +
+              `<span class="tip-follow tip-me">我的星位</span></div>` +
+              `<div class="tip-claim">“${u.claim}”</div>` +
+              `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
+              `我的人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">抽我的卡 →</span></div>`
+            : `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
+              (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
+              `</div>` +
+              `<div class="tip-claim">“${u.claim}”</div>` +
+              `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
+              `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>`;
           updateTipPosition();
           tip.classList.add("show");
         } else {
@@ -897,7 +980,11 @@
         if (moved > 8) return;
         const u = pick(e.clientX, e.clientY);
         if (u) {
-          window.parent.postMessage({ type: "nebula-open", cast: u.castKey, name: u.name }, "*");
+          if (u.isMe) {
+            window.parent.postMessage({ type: "nebula-open", cast: u.castKey, self: true }, "*");
+          } else {
+            window.parent.postMessage({ type: "nebula-open", cast: u.castKey, name: u.name, u: u.index }, "*");
+          }
         }
       });
 
@@ -941,11 +1028,13 @@
           u.group.position.y = u.baseY + floatY;
           const targetScale = hovered === u ? 1.4 : 1;
           u.scale += (targetScale - u.scale) * 0.14;
-          u.avatar.scale.setScalar(0.66 * u.scale);
-          u.glow.scale.setScalar(0.88 * u.scale);
+          u.avatar.scale.setScalar((u.isMe ? 0.86 : 0.66) * u.scale);
+          u.glow.scale.setScalar((u.isMe ? 1.12 : 0.88) * u.scale);
           const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
-          u.glow.material.opacity += (((hovered === u ? 0.85 : 0.26) * breathe) - u.glow.material.opacity) * 0.12;
+          const idleGlow = u.isMe ? 0.52 : 0.26;
+          u.glow.material.opacity += (((hovered === u ? 0.88 : idleGlow) * breathe) - u.glow.material.opacity) * 0.12;
           if (u.star) u.star.material.opacity = 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
+          if (u.badge) u.badge.material.opacity = 0.82 + Math.sin(t * 2.1 + u.phase) * 0.18;
         });
 
         fogGroup.rotation.z = t * 0.008;
