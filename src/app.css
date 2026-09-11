@@ -895,3 +895,73 @@ textarea.field:focus-visible,
     transform: none;
   }
 }
+
+.nebula-root {
+  background: #05060a;
+}
+
+.nebula-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05060a;
+}
+
+.nebula-stage .landing-page-frame {
+  background: #05060a;
+}
+
+.nebula-entry {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: 16px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 17px;
+  border: 1px solid rgba(231, 201, 140, 0.38);
+  border-radius: 999px;
+  color: var(--cream);
+  background: rgba(16, 18, 28, 0.55);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  pointer-events: auto;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.15s ease;
+}
+
+.nebula-entry__star {
+  color: var(--stamp);
+  font-size: 13px;
+  transition: transform 0.4s ease, text-shadow 0.4s ease;
+}
+
+@media (hover: hover) {
+  .nebula-entry:hover {
+    border-color: rgba(231, 201, 140, 0.75);
+    background: rgba(32, 32, 48, 0.72);
+  }
+
+  .nebula-entry:hover .nebula-entry__star {
+    transform: rotate(160deg) scale(1.15);
+    text-shadow: 0 0 12px rgba(231, 201, 140, 0.9);
+  }
+}
+
+.nebula-entry:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 720px) {
+  .nebula-entry {
+    top: max(10px, env(safe-area-inset-top));
+    right: 10px;
+    padding: 7px 13px;
+    font-size: 12px;
+  }
+}

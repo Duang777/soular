@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>观点星云 · 知乎九派</title>
+    <style>
+      :root {
+        --cream: #f3f0e9;
+        --mute: rgba(243, 240, 233, 0.56);
+        --faint: rgba(243, 240, 233, 0.34);
+        --gold: #e7c98c;
+        --blue: #5aa0ff;
+        --font: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", -apple-system, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #05060a;
+        color: var(--cream);
+        font-family: var(--font);
+        -webkit-font-smoothing: antialiased;
+      }
+      #scene { position: fixed; inset: 0; display: block; touch-action: none; cursor: grab; }
+      #scene:active { cursor: grabbing; }
+      #scene.hovering { cursor: pointer; }
+
+      .hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+      .hud-top {
+        position: absolute;
+        top: max(18px, env(safe-area-inset-top));
+        left: 20px;
+        right: 20px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        color: var(--faint);
+        text-transform: uppercase;
+      }
+      .title {
+        margin-top: 6px;
+        font-size: clamp(20px, 2.6vw, 30px);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+      }
+      .question {
+        max-width: 320px;
+        text-align: right;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--mute);
+      }
+      .question b { color: var(--cream); font-weight: 500; }
+
+      .axis {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--mute);
+      }
+      .axis-left { left: 20px; align-items: flex-start; text-align: left; }
+      .axis-right { right: 20px; align-items: flex-end; text-align: right; }
+      .axis .pole {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--cream);
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        background: rgba(10, 12, 20, 0.42);
+        backdrop-filter: blur(8px);
+      }
+      .axis .sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--faint); }
+      @media (max-width: 720px) {
+        .question { display: none; }
+        .axis { top: auto; bottom: 74px; transform: none; }
+        .axis .sub { display: none; }
+      }
+
+      .hint {
+        position: absolute;
+        left: 50%;
+        bottom: max(20px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        color: var(--faint);
+        white-space: nowrap;
+      }
+
+      #tip {
+        position: fixed;
+        z-index: 8;
+        width: 248px;
+        padding: 13px 14px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        background: rgba(12, 14, 22, 0.82);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        transform: translate(-50%, calc(-100% - 18px)) scale(0.96);
+        transition: opacity 0.16s ease, transform 0.16s ease;
+        pointer-events: none;
+      }
+      #tip.show { opacity: 1; transform: translate(-50%, calc(-100% - 18px)) scale(1); }
+      #tip.show.below { transform: translate(-50%, 18px) scale(1); }
+      .tip-row { display: flex; align-items: center; gap: 9px; }
+      .tip-name { font-size: 14px; font-weight: 600; }
+      .tip-follow {
+        margin-left: auto;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: var(--gold);
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+      }
+      .tip-claim { margin-top: 8px; font-size: 12.5px; line-height: 1.65; color: rgba(243, 240, 233, 0.82); }
+      .tip-persona {
+        margin-top: 10px;
+        padding-top: 9px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--mute);
+      }
+      .tip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+      .tip-persona b { color: var(--cream); font-weight: 600; }
+      .tip-cta { margin-left: auto; color: var(--blue); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+
+      #loading {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        background: #05060a;
+        transition: opacity 0.6s ease;
+      }
+      #loading.hide { opacity: 0; pointer-events: none; }
+      .loading-inner { text-align: center; }
+      .loading-ring {
+        width: 42px; height: 42px; margin: 0 auto 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.12);
+        border-top-color: var(--gold);
+        animation: spin 0.9s linear infinite;
+      }
+      .loading-text { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: var(--faint); }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      #error {
+        position: fixed; inset: 0; z-index: 30;
+        display: none; place-items: center;
+        padding: 30px; text-align: center;
+        background: #05060a;
+        color: var(--mute); font-size: 13px; line-height: 1.8;
+      }
+      .loading-sub {
+        margin-top: 14px;
+        max-width: 280px;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        line-height: 1.7;
+        color: var(--faint);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .loading-sub.show { opacity: 0.8; }
+      #error .retry-btn {
+        margin-top: 20px;
+        padding: 9px 22px;
+        border: 1px solid rgba(231, 201, 140, 0.5);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--cream);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: border-color 0.25s ease, background 0.25s ease;
+      }
+      #error .retry-btn:hover {
+        border-color: var(--gold);
+        background: rgba(231, 201, 140, 0.08);
+      }
+    </style>
+    <script>
+      (function () {
+        var SLOW_MS = 8000;
+        var TIMEOUT_MS = 20000;
+        var ready = false;
+        function $(id) { return document.getElementById(id); }
+        function hideLoading() {
+          var el = $("loading");
+          if (el) el.classList.add("hide");
+        }
+        function showError(detail) {
+          var el = $("error");
+          if (!el) return;
+          var slot = el.querySelector("[data-error-detail]");
+          if (slot && detail) slot.textContent = detail;
+          el.style.display = "grid";
+          hideLoading();
+        }
+        function fail(kind, msg) {
+          if (ready) { console.warn(kind, msg); return; }
+          showError(msg);
+        }
+        window.__stage = function (s) {
+          if (s === "looping") {
+            ready = true;
+            hideLoading();
+            var e = $("error");
+            if (e) e.style.display = "none";
+          }
+        };
+        window.addEventListener("error", function (e) {
+          fail("error", e && e.message ? e.message : "脚本执行出错");
+        }, true);
+        window.addEventListener("unhandledrejection", function (e) {
+          var r = e && e.reason;
+          fail("promise", r && (r.message || r.toString && r.toString()) || "资源加载失败");
+        }, true);
+        var started = Date.now();
+        var timer = setInterval(function () {
+          if (ready) { clearInterval(timer); return; }
+          var dt = Date.now() - started;
+          var sub = document.querySelector(".loading-sub");
+          if (dt >= SLOW_MS && sub) sub.classList.add("show");
+          if (dt >= TIMEOUT_MS) {
+            clearInterval(timer);
+            showError("星云资源加载超时");
+          }
+        }, 300);
+      })();
+    </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.js",
+          "three/addons/": "./vendor/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <div class="hud">
+      <div class="hud-top">
+        <div>
+          <div class="kicker">ZHIHU · SPECTRUM</div>
+          <div class="title">观点星云</div>
+        </div>
+        <div class="question">热门问题 · <b>35 岁程序员该不该转行？</b><br />每个发光头像，都是一种立场</div>
+      </div>
+      <div class="axis axis-left">
+        <span class="pole">必须转行</span>
+        <span class="sub">LEFT POLE</span>
+      </div>
+      <div class="axis axis-right">
+        <span class="pole">深耕不转</span>
+        <span class="sub">RIGHT POLE</span>
+      </div>
+      <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点击头像进入人格卡</div>
+    </div>
+
+    <div id="tip"></div>
+
+    <div id="loading">
+      <div class="loading-inner">
+        <div class="loading-ring"></div>
+        <div class="loading-text">正在凝聚观点星云</div>
+        <div class="loading-sub">正在汇聚星尘与每一种立场…</div>
+      </div>
+    </div>
+    <div id="error">
+      <div>
+        星云加载失败，请稍后重试。
+        <div data-error-detail style="margin-top:8px;font-size:11px;opacity:.7"></div>
+        <button class="retry-btn" type="button" onclick="location.reload()">重新加载</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      const CASTS = {
+        fox: ["长答派", "万字长答", "#aeb6d6"],
+        bear: ["拆题派", "先重述问题", "#9fd2d6"],
+        cat: ["盐选派", "精选长文", "#e3b27e"],
+        owl: ["深夜派", "三点的诚实", "#dde08a"],
+        rabbit: ["提问派", "把问题问清楚", "#dba3e6"],
+        penguin: ["收藏派", "先存再看", "#9cc2ee"],
+        redpanda: ["圆桌派", "把人拉齐", "#ee9d72"],
+        goat: ["杠精派", "先找反例", "#bccf96"],
+        frog: ["想法派", "三百字闪过", "#93d6a4"],
+      };
+
+      const PEOPLE = [
+        ["等喝茶的老码农", -0.98, "goat", "35 岁还不走，等着公司请你喝茶吗？管理岗就那么几个。"],
+        ["拼不过00后的P7", -0.93, "bear", "体力加班都拼不过年轻人，早转管理或业务才是正解。"],
+        ["送外卖的Tim", -0.9, "frog", "我已经转了，送外卖都比在工位等优化强。"],
+        ["不信青春饭但焦虑", -0.86, "owl", "理智上不承认是青春饭，身体却很诚实地焦虑。"],
+        ["前大厂边缘人", -0.82, "redpanda", "别眷恋大厂光环，35 岁前不找出路，之后更被动。"],
+        ["十年接口工程师", -0.74, "fox", "干了十年还是写接口，天花板肉眼可见，认真考虑转。"],
+        ["降薪去国企的磊", -0.7, "penguin", "降薪去国企我接受，至少不用凌晨两点 oncall。"],
+        ["考公上岸的强子", -0.66, "penguin", "已上岸考公，钱少点但命是自己的。"],
+        ["离钱更近的阿May", -0.62, "redpanda", "趁还能拼，转去做离钱近的岗位更稳。"],
+        ["沪漂老兵", -0.58, "owl", "身边 35+ 还在一线写代码的，真没几个安稳的。"],
+        ["转产品的小周", -0.55, "rabbit", "我转产品了，懂技术反而是一种优势。"],
+        ["CRUD退役选手", -0.52, "bear", "纯执行的开发最先被替代，得往上走或往外走。"],
+        ["背房贷的彬", -0.48, "fox", "房贷压力大，更不敢赌公司留不留我，先动。"],
+        ["创业失败回炉的坤", -0.44, "frog", "创业失败回炉，但我不后悔出来看过一眼。"],
+        ["卖咖啡的Leo", -0.4, "owl", "转行卖咖啡半年，睡得着觉了，这就够了。"],
+        ["看岗位说话的陈", -0.36, "bear", "要不要转看岗位，纯搬砖的岗位确实危险。"],
+        ["硬核派观察员", -0.33, "fox", "有硬技术的不用慌，CRUD 选手该早做打算。"],
+        ["骑驴找马的辉", -0.3, "redpanda", "我在骑驴找马，先攒管理经验再说。"],
+        ["业余独立开发者", -0.27, "frog", "转一半留一半，业余做独立产品先探探路。"],
+        ["35岁分水岭", -0.24, "cat", "35 岁是分水岭，但也不是非黑即白。"],
+        ["看性价比的楠", -0.2, "goat", "公司裁员不看能力看性价比，得给自己留后手。"],
+        ["想转没方向的林", -0.16, "rabbit", "倾向转，但没想好去哪，先观察一阵。"],
+        ["没矿求稳的娟", -0.13, "penguin", "家里没矿，求稳的话体制内确实香。"],
+        ["学业务的老徐", -0.1, "fox", "与其被动转，不如主动学点业务和商业。"],
+        ["不可替代性信徒", -0.06, "cat", "转不转都行，关键看你有没有不可替代性。"],
+        ["中立吃瓜架构师", -0.03, "bear", "我中立，见过转好的，也见过转砸的。"],
+        ["技术深耕派", 0.0, "goat", "先把技术做深，年龄歧视是行业问题，不是我的问题。"],
+        ["换赛道怀疑论者", 0.03, "owl", "哪里都有 35 岁焦虑，换个赛道未必就没有。"],
+        ["算账型选手", 0.06, "penguin", "看存款和家庭，抗风险能力强的可以慢慢选。"],
+        ["随时能走的芸", 0.09, "redpanda", "与其纠结年龄，不如保持随时能走的能力。"],
+        ["反焦虑的晴", 0.12, "goat", "转行成本很高，别被贩卖焦虑的文章带了节奏。"],
+        ["主副业两手抓", 0.15, "cat", "我把鸡蛋放几个篮子，主业副业都做着。"],
+        ["判断力值钱", 0.22, "fox", "资深工程师值钱的是判断不是手速，越老越香。"],
+        ["十年经验不清零", 0.26, "owl", "我选择深耕，攒了十年的经验凭什么清零。"],
+        ["先让自己厉害", 0.3, "bear", "真正厉害的人不会被年龄卡住，先让自己变厉害。"],
+        ["优势不归零派", 0.34, "frog", "转行等于把优势归零，除非真的讨厌这行。"],
+        ["能扛事的老兵", 0.4, "redpanda", "公司更愿意为能扛事的老兵付溢价。"],
+        ["只看活人的峰", 0.45, "cat", "别只看裁员新闻，35+ 技术专家活得好的一大把。"],
+        ["转管理不转技术", 0.5, "rabbit", "我在转技术管理，但这不算是离开技术。"],
+        ["黄金期刚开始", 0.58, "fox", "黄金期才刚开始，年轻人才有体力没沉淀。"],
+        ["踩坑护城河", 0.64, "bear", "复杂系统就得靠踩过坑的人，时间是护城河。"],
+        ["换姿势不转行", 0.7, "goat", "绝不转行，换个方式继续写代码而已。"],
+        ["学到老的勇", 0.76, "owl", "年龄大的问题不是老，是停止学习，我没停。"],
+        ["架构正当年", 0.82, "fox", "带团队做架构正当年，转行才是真浪费。"],
+        ["40岁还在一线", 0.88, "cat", "我 40 了还在一线，offer 没断过，焦虑是自己吓自己。"],
+        ["核心圈层反驳者", 0.93, "goat", "说程序员 35 就废的，多半自己没做到核心。"],
+        ["黄金期论者", 0.96, "fox", "技术人的黄金期在 35 岁后，人脉经验判断力全开。"],
+        ["深耕不认输", 1.0, "bear", "坚决不转，深耕的人从不靠青春吃饭。"],
+      ];
+      const FOLLOWED = new Set([6, 26, 40]);
+
+      const canvas = document.getElementById("scene");
+      const tip = document.getElementById("tip");
+      const loadingEl = document.getElementById("loading");
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setClearColor(0x05060a, 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x05060a, 0.028);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+      camera.position.set(0, 1.8, 11.8);
+
+      const controls = new OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.enablePan = false;
+      controls.minDistance = 6.5;
+      controls.maxDistance = 16;
+      controls.minPolarAngle = Math.PI * 0.32;
+      controls.maxPolarAngle = Math.PI * 0.82;
+      controls.rotateSpeed = 0.55;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      controls.autoRotate = !reduceMotion;
+      controls.autoRotateSpeed = 0.4;
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.5, 0.74);
+      composer.addPass(bloom);
+      composer.addPass(new OutputPass());
+
+      function softDotTexture() {
+        const s = 128;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+        g.addColorStop(0, "rgba(255,255,255,1)");
+        g.addColorStop(0.35, "rgba(255,255,255,0.55)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, s, s);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function nebulaTexture(hex) {
+        const s = 256;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        const col = new THREE.Color(hex);
+        const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+        for (let i = 0; i < 4; i++) {
+          const cx = s / 2 + (i - 1.5) * 26 * Math.cos(i * 2.1);
+          const cy = s / 2 + (i - 1.5) * 22 * Math.sin(i * 1.7);
+          const rad = s * (0.32 + i * 0.06);
+          const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+          grd.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
+          grd.addColorStop(0.5, `rgba(${r},${g},${b},0.18)`);
+          grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, s, s);
+        }
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function glowTexture(hex) {
+        const s = 128;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        const col = new THREE.Color(hex);
+        const r = Math.round(col.r * 255), g = Math.round(col.g * 255), b = Math.round(col.b * 255);
+        const grd = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+        grd.addColorStop(0, "rgba(255,255,255,0.95)");
+        grd.addColorStop(0.18, `rgba(${r},${g},${b},0.85)`);
+        grd.addColorStop(0.5, `rgba(${r},${g},${b},0.28)`);
+        grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, s, s);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function starTexture() {
+        const s = 96;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        ctx.translate(s / 2, s / 2);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, s / 2);
+        grad.addColorStop(0, "rgba(255,246,220,1)");
+        grad.addColorStop(0.4, "rgba(231,201,140,0.7)");
+        grad.addColorStop(1, "rgba(231,201,140,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const ang = (i / 8) * Math.PI * 2;
+          const rad = i % 2 === 0 ? s / 2 : s / 9;
+          ctx.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
+        }
+        ctx.closePath();
+        ctx.fill();
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      const dotTex = softDotTexture();
+
+      function buildStarfield(count, spreadX, depth, size, opacity, palette) {
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        const col = new Float32Array(count * 3);
+        const tmp = new THREE.Color();
+        for (let i = 0; i < count; i++) {
+          const x = (Math.random() - 0.5) * spreadX;
+          const envelope = 1 - Math.min(Math.abs(x) / (spreadX / 2), 1);
+          const radius = Math.pow(Math.random(), 0.6) * depth * (0.35 + 0.65 * envelope);
+          const ang = Math.random() * Math.PI * 2;
+          pos[i * 3] = x;
+          pos[i * 3 + 1] = Math.cos(ang) * radius * 0.6;
+          pos[i * 3 + 2] = Math.sin(ang) * radius;
+          tmp.set(palette[Math.floor(Math.random() * palette.length)]);
+          const v = 0.5 + Math.random() * 0.4;
+          col[i * 3] = tmp.r * v;
+          col[i * 3 + 1] = tmp.g * v;
+          col[i * 3 + 2] = tmp.b * v;
+        }
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        const mat = new THREE.PointsMaterial({
+          size,
+          map: dotTex,
+          vertexColors: true,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          sizeAttenuation: true,
+        });
+        const points = new THREE.Points(geo, mat);
+        points.renderOrder = 0;
+        return points;
+      }
+
+      const nebula = new THREE.Group();
+      scene.add(nebula);
+
+      const starPalette = ["#cfe0ff", "#a9c4ff", "#d9c6ff", "#bfa9ff", "#9fe0ff", "#ffe9c8", "#ffffff"];
+      nebula.add(buildStarfield(3000, 30, 8.5, 0.072, 0.9, starPalette));
+      nebula.add(buildStarfield(1100, 46, 17, 0.052, 0.58, ["#ffffff", "#cfe0ff", "#ffe9c8"]));
+
+      const fogGroup = new THREE.Group();
+      nebula.add(fogGroup);
+      const fogBlobs = [
+        ["#2fb8ff", -6.4, 0.1, -0.6, 9.5, 0.075],
+        ["#5b7cff", -3.6, 0.5, 0.9, 8.5, 0.06],
+        ["#8a7bff", -1.3, -0.3, -0.8, 9, 0.055],
+        ["#caa0ff", 1.0, 0.4, 0.6, 9, 0.055],
+        ["#ff9ec4", 3.6, -0.5, -0.8, 8.5, 0.06],
+        ["#ffc36e", 6.4, 0.2, 0.6, 9.5, 0.075],
+        ["#6a7cff", 0, 0.2, -3.0, 13, 0.04],
+      ];
+      fogBlobs.forEach(([color, x, y, z, scale, opacity]) => {
+        const m = new THREE.SpriteMaterial({
+          map: nebulaTexture(color),
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const sp = new THREE.Sprite(m);
+        sp.position.set(x, y, z);
+        sp.scale.setScalar(scale);
+        sp.renderOrder = 0;
+        fogGroup.add(sp);
+      });
+
+      const glowCache = {};
+      function getGlow(hex) {
+        if (!glowCache[hex]) glowCache[hex] = glowTexture(hex);
+        return glowCache[hex];
+      }
+
+      function placeholderTexture(name, hex) {
+        const s = 256;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 118, 0, Math.PI * 2);
+        ctx.fillStyle = "#11141d";
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = hex;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(243,240,233,0.85)";
+        ctx.font = "600 88px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(name[0], s / 2, s / 2 + 6);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return { canvas: c, ctx };
+      }
+
+      function paintAvatar(ctx, img, hex) {
+        const s = 256;
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 116, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        const iw = img.width, ih = img.height;
+        const scale = Math.max(232 / iw, 232 / ih);
+        const w = iw * scale, h = ih * scale;
+        ctx.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 116, 0, Math.PI * 2);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 120, 0, Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = hex;
+        ctx.shadowColor = hex;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function gaussian() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        const g = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        return Math.max(-2.2, Math.min(2.2, g));
+      }
+
+      // 立场渐变色：左极“必须转行”冷青蓝 → 中间紫白 → 右极“深耕不转”暖金
+      function stanceColor(s) {
+        const left = [0.36, 0.72, 1.0];
+        const mid = [0.88, 0.85, 1.0];
+        const right = [1.0, 0.7, 0.36];
+        const a = s < 0 ? left : mid;
+        const b = s < 0 ? mid : right;
+        const t = s < 0 ? s + 1 : s;
+        return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+      }
+
+      // 一条螺旋星系：立场沿 x 主轴拉开成左右两极，两股旋臂随立场在 yz 平面扭转缠绕；
+      // 中间派聚成发光核球，两股臂在中段张开、向两端收束成对立极；立场越近越聚拢（引力）。
+      const XSPAN = 6.4;
+      const ARM_TWIST = Math.PI * 1.45;
+      function armPoint(s, tight) {
+        const k = tight ? 0.5 : 1;
+        const ab = Math.min(Math.abs(s), 1);
+        const armR = 0.28 + 1.15 * Math.sin(ab * Math.PI);
+        const spread = (0.3 + 0.5 * (1 - Math.min(ab * 1.6, 1))) * k;
+        const arm = Math.random() < 0.5 ? 0 : Math.PI;
+        const ang = s * ARM_TWIST + arm + gaussian() * 0.22 * k;
+        const radial = armR + gaussian() * spread;
+        return {
+          x: s * XSPAN + gaussian() * 0.24 * k,
+          y: Math.sin(ang) * radial * 0.8 + gaussian() * 0.18 * k,
+          z: Math.cos(ang) * radial + gaussian() * 0.3 * k,
+        };
+      }
+
+      // 按立场排序后沿光谱轴均匀铺满（保留左右次序与阵营归属），让星系横贯两极；
+      // 轴坐标叠加双旋臂在 yz 的扭转与散布。真实立场仍用于悬停卡片与观点。
+      const N = PEOPLE.length;
+      const order = PEOPLE.map((p, i) => i).sort((a, b) => PEOPLE[a][1] - PEOPLE[b][1]);
+      const axis = new Array(N);
+      order.forEach((idx, r) => {
+        axis[idx] = -1 + (2 * r) / (N - 1) + gaussian() * 0.035;
+      });
+      const positions = PEOPLE.map((p, i) => armPoint(Math.max(-1, Math.min(1, axis[i]))));
+
+      // 最小间距松弛：x 只做极轻修正以保住左右立场，主要在纵深方向推开，避免头像叠压
+      for (let iter = 0; iter < 10; iter++) {
+        for (let a = 0; a < positions.length; a++) {
+          for (let b = a + 1; b < positions.length; b++) {
+            const pa = positions[a], pb = positions[b];
+            const dx = pb.x - pa.x, dy = pb.y - pa.y, dz = pb.z - pa.z;
+            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
+            const min = 0.74;
+            if (dist < min) {
+              const push = (min - dist) / 2;
+              const nx = dx / dist, ny = dy / dist, nz = dz / dist;
+              pa.x -= nx * push * 0.1; pb.x += nx * push * 0.1;
+              pa.y -= ny * push; pb.y += ny * push;
+              pa.z -= nz * push; pb.z += nz * push;
+            }
+          }
+        }
+      }
+
+      const loader = new THREE.TextureLoader();
+      const avatarTargets = [];
+      const users = PEOPLE.map(([name, stance, castKey, claim], i) => {
+        const [castName, castRole, castColor] = CASTS[castKey];
+        const axisVal = Math.max(-1, Math.min(1, positions[i].x / XSPAN));
+        const axisBand = Math.round(axisVal / 0.25) * 0.25;
+        const glowColor = "#" + stanceColor(axisBand)
+          .map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0"))
+          .join("");
+        const group = new THREE.Group();
+        const p = positions[i];
+        const x = p.x, y = p.y, z = p.z;
+        group.position.set(x, y, z);
+
+        const glowMat = new THREE.SpriteMaterial({
+          map: getGlow(glowColor),
+          transparent: true,
+          opacity: 0.26,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const glow = new THREE.Sprite(glowMat);
+        glow.scale.setScalar(0.88);
+        glow.renderOrder = 1;
+        group.add(glow);
+
+        const holder = placeholderTexture(name, castColor);
+        const avatarTex = new THREE.CanvasTexture(holder.canvas);
+        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
+        const avatar = new THREE.Sprite(avatarMat);
+        avatar.scale.setScalar(0.66);
+        avatar.renderOrder = 2;
+        const user = {
+          name, stance, castKey, castName, castRole, castColor, claim,
+          followed: FOLLOWED.has(i), group, avatar, glow,
+          baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
+          scale: 1,
+        };
+        avatar.userData.user = user;
+        group.add(avatar);
+
+        if (user.followed) {
+          const starMat = new THREE.SpriteMaterial({
+            map: starTexture(), transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending,
+          });
+          const star = new THREE.Sprite(starMat);
+          star.position.set(0.24, 0.3, 0);
+          star.scale.setScalar(0.34);
+          star.renderOrder = 3;
+          group.add(star);
+          user.star = star;
+        }
+
+        avatarTargets.push(avatar);
+        return user;
+      });
+
+      const userGroup = new THREE.Group();
+      users.forEach((u) => userGroup.add(u.group));
+      nebula.add(userGroup);
+
+      // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
+      // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
+      const dustGroup = new THREE.Group();
+      nebula.add(dustGroup);
+      function buildCoreDust(count, size, opacity) {
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        const col = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          let x, y, z, v, cr, cg, cb;
+          const r = Math.random();
+          if (r < 0.72) {
+            // 旋臂丝缕：立场沿整条轴铺开（中心加密），收紧贴着双臂中线，颜色随立场左冷右暖
+            let s = Math.random() * 2 - 1;
+            if (Math.random() < 0.45) s = gaussian() * 0.52;
+            s = Math.max(-1, Math.min(1, s));
+            const p = armPoint(s, true);
+            x = p.x; y = p.y; z = p.z;
+            const c = stanceColor(s);
+            cr = c[0]; cg = c[1]; cb = c[2];
+            v = 0.55 + Math.random() * 0.4;
+          } else if (r < 0.9) {
+            // 暖亮核球
+            x = gaussian() * 0.95;
+            y = gaussian() * 0.62;
+            z = gaussian() * 0.8;
+            cr = 1; cg = 0.94; cb = 0.8;
+            v = 0.7 + Math.random() * 0.35;
+          } else {
+            // 贴着真实头像的尘
+            const a = positions[Math.floor(Math.random() * positions.length)];
+            const s = Math.max(-1, Math.min(1, a.x / XSPAN));
+            const sg = 0.35 + Math.random() * 0.5;
+            x = a.x + gaussian() * sg;
+            y = a.y + gaussian() * sg * 0.85;
+            z = a.z + gaussian() * sg;
+            const c = stanceColor(s);
+            cr = c[0]; cg = c[1]; cb = c[2];
+            v = 0.45 + Math.random() * 0.4;
+          }
+          pos[i * 3] = x;
+          pos[i * 3 + 1] = y;
+          pos[i * 3 + 2] = z;
+          col[i * 3] = cr * v;
+          col[i * 3 + 1] = cg * v;
+          col[i * 3 + 2] = cb * v;
+        }
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        const mat = new THREE.PointsMaterial({
+          size,
+          map: dotTex,
+          vertexColors: true,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          sizeAttenuation: true,
+        });
+        const points = new THREE.Points(geo, mat);
+        points.renderOrder = 1;
+        return points;
+      }
+      dustGroup.add(buildCoreDust(2300, 0.034, 0.9));
+      dustGroup.add(buildCoreDust(600, 0.058, 0.8));
+
+      let loaded = 0;
+      users.forEach((u, i) => {
+        const file = `avatars/u${String(i + 1).padStart(2, "0")}.jpg`;
+        loader.load(
+          file,
+          (tex) => {
+            const img = tex.image;
+            const holder = placeholderTexture(u.name, u.castColor);
+            paintAvatar(holder.ctx, img, u.followed ? "#e7c98c" : u.castColor);
+            u.avatar.material.map.dispose();
+            u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
+            u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
+            u.avatar.material.needsUpdate = true;
+            tex.dispose();
+            finishOne();
+          },
+          undefined,
+          () => finishOne()
+        );
+      });
+      function finishOne() {
+        loaded += 1;
+        if (loaded >= users.length) {
+          setTimeout(() => loadingEl.classList.add("hide"), 350);
+        }
+      }
+      setTimeout(() => loadingEl.classList.add("hide"), 6000);
+
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      let hovered = null;
+
+      function pick(clientX, clientY) {
+        pointer.x = (clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(avatarTargets, false);
+        return hits.length ? hits[0].object.userData.user : null;
+      }
+
+      function setHovered(u) {
+        if (hovered === u) return;
+        hovered = u;
+        canvas.classList.toggle("hovering", !!u);
+        if (u) {
+          tip.innerHTML =
+            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
+            (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
+            `</div>` +
+            `<div class="tip-claim">“${u.claim}”</div>` +
+            `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
+            `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>`;
+          updateTipPosition();
+          tip.classList.add("show");
+        } else {
+          tip.classList.remove("show");
+        }
+      }
+
+      canvas.addEventListener("pointermove", (e) => {
+        setHovered(pick(e.clientX, e.clientY));
+      });
+      canvas.addEventListener("pointerleave", () => setHovered(null));
+
+      let downX = 0, downY = 0;
+      canvas.addEventListener("pointerdown", (e) => {
+        downX = e.clientX;
+        downY = e.clientY;
+        if (e.pointerType === "touch") setHovered(pick(e.clientX, e.clientY));
+      });
+      canvas.addEventListener("pointerup", (e) => {
+        const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+        if (moved > 8) return;
+        const u = pick(e.clientX, e.clientY);
+        if (u) {
+          window.parent.postMessage({ type: "nebula-open", cast: u.castKey, name: u.name }, "*");
+        }
+      });
+
+      const projected = new THREE.Vector3();
+      function updateTipPosition() {
+        if (!hovered) return;
+        hovered.group.getWorldPosition(projected);
+        projected.project(camera);
+        if (projected.z < -1 || projected.z > 1) { tip.classList.remove("show"); return; }
+        if (!tip.classList.contains("show")) tip.classList.add("show");
+        const W = window.innerWidth;
+        let x = (projected.x * 0.5 + 0.5) * W;
+        const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+        x = Math.max(132, Math.min(W - 132, x));
+        const below = y < 118;
+        tip.classList.toggle("below", below);
+        tip.style.left = `${x}px`;
+        tip.style.top = below ? `${y + 26}px` : `${y - 40}px`;
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      const clock = new THREE.Clock();
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running) { clock.getDelta(); loop(); }
+      });
+
+      function loop() {
+        if (!running) return;
+        const t = clock.getElapsedTime();
+
+        users.forEach((u) => {
+          const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
+          u.group.position.y = u.baseY + floatY;
+          const targetScale = hovered === u ? 1.4 : 1;
+          u.scale += (targetScale - u.scale) * 0.14;
+          u.avatar.scale.setScalar(0.66 * u.scale);
+          u.glow.scale.setScalar(0.88 * u.scale);
+          const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
+          u.glow.material.opacity += (((hovered === u ? 0.85 : 0.26) * breathe) - u.glow.material.opacity) * 0.12;
+          if (u.star) u.star.material.opacity = 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
+        });
+
+        fogGroup.rotation.z = t * 0.008;
+        fogGroup.rotation.y = Math.sin(t * 0.03) * 0.08;
+        if (!reduceMotion) {
+          dustGroup.rotation.y = t * 0.014;
+          dustGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
+        }
+
+        controls.update();
+        updateTipPosition();
+        composer.render();
+        requestAnimationFrame(loop);
+      }
+      loop();
+      window.__stage && window.__stage("looping");
+    </script>
+  </body>
+</html>

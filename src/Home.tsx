@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CASTS } from "./cast";
 import { WaveStage } from "./WaveStage";
 
@@ -17,5 +17,13 @@ export function Home() {
     return () => window.removeEventListener("message", onMessage);
   }, [navigate]);
 
-  return <WaveStage />;
+  return (
+    <>
+      <WaveStage />
+      <Link to="/nebula" className="nebula-entry" aria-label="进入观点星云">
+        <span className="nebula-entry__star" aria-hidden="true">✦</span>
+        观点星云
+      </Link>
+    </>
+  );
 }
