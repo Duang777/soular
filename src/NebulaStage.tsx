@@ -12,7 +12,7 @@ export function NebulaStage({
     <div className={`nebula-stage${className ? ` ${className}` : ""}`} style={style}>
       <iframe
         className="landing-page-frame"
-        src={asset("nebula/index.html")}
+        src={asset("nebula-scene/index.html")}
         title="观点星云 · 知乎九派"
       />
     </div>
