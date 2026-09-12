@@ -2099,7 +2099,11 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-      import { getNebulaPreset } from "./presets.js";
+      const sceneParams = new URLSearchParams(location.search);
+      const presetModuleVersion = sceneParams.get("v") || "dev";
+      const { getNebulaPreset } = await import(
+        `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
 
       const CASTS = {
         fox: ["长答派", "万字长答", "#aeb6d6"],
@@ -2191,7 +2195,6 @@
       // 「我」的专属星位：固定在核球前方、离镜头更近，金色呼吸光圈 + 金徽章
       const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
-      const sceneParams = new URLSearchParams(location.search);
       const PRESET = getNebulaPreset(sceneParams.get("preset"));
       const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length === 48
         ? PRESET.people

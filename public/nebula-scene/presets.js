@@ -1,4 +1,7 @@
-import { AI_MATH } from "./preset-ai-math.js";
+const presetModuleVersion = new URL(import.meta.url).searchParams.get("v") || "dev";
+const { AI_MATH } = await import(
+  `./preset-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
 
 const CAREER_35 = {
   id: "career-35",
