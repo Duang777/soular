@@ -6,11 +6,26 @@
     <title>观点星云 · 知乎九派</title>
     <style>
       :root {
-        --cream: #f3f0e9;
-        --mute: rgba(243, 240, 233, 0.56);
-        --faint: rgba(243, 240, 233, 0.34);
+        --cream: #f3f5fa;
+        --mute: rgba(214, 219, 235, 0.62);
+        --faint: rgba(196, 202, 220, 0.42);
         --gold: #e7c98c;
-        --blue: #5aa0ff;
+        --blue: #8fb4ff;
+        /* 夜石墨 Midnight：深色实色 / 发丝边 / 近白 CTA */
+        --mid: #15171f;
+        --mid-deep: #0e1016;
+        --mid-raise: #262a36;
+        --mid-btn: #22252f;
+        --line: rgba(255, 255, 255, 0.07);
+        --line-2: rgba(255, 255, 255, 0.14);
+        --hi: #f3f5fa;
+        --txt: rgba(220, 224, 238, 0.78);
+        --txt-dim: rgba(190, 196, 214, 0.82);
+        --txt-faint: #8b90a3;
+        --lav: #aeb6d6;
+        --cta: #f2f3f7;
+        --cta-ink: #17181f;
+        --shadow-pop: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
         --font: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", -apple-system, sans-serif;
         --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       }
@@ -78,12 +93,12 @@
       .axis .pole {
         font-size: 13px;
         font-weight: 600;
-        color: var(--cream);
+        color: var(--hi);
         padding: 6px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid var(--line);
         border-radius: 999px;
-        background: rgba(10, 12, 20, 0.42);
-        backdrop-filter: blur(8px);
+        background: var(--mid);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
       }
       .axis .sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--faint); }
       @media (max-width: 720px) {
@@ -109,11 +124,10 @@
         z-index: 8;
         width: 248px;
         padding: 13px 14px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid var(--line);
         border-radius: 14px;
-        background: rgba(12, 14, 22, 0.82);
-        backdrop-filter: blur(14px);
-        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55);
+        background: var(--mid);
+        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
         opacity: 0;
         transform: translate(-50%, calc(-100% - 18px)) scale(0.96);
         transition: opacity 0.16s ease, transform 0.16s ease;
@@ -134,7 +148,7 @@
         font-family: var(--mono);
         letter-spacing: 0.06em;
       }
-      .tip-claim { margin-top: 8px; font-size: 12.5px; line-height: 1.65; color: rgba(243, 240, 233, 0.82); }
+      .tip-claim { margin-top: 8px; font-size: 12.5px; line-height: 1.65; color: var(--txt); }
       .tip-persona {
         margin-top: 10px;
         padding-top: 9px;
@@ -190,19 +204,724 @@
       .loading-sub.show { opacity: 0.8; }
       #error .retry-btn {
         margin-top: 20px;
-        padding: 9px 22px;
-        border: 1px solid rgba(231, 201, 140, 0.5);
-        border-radius: 999px;
-        background: transparent;
-        color: var(--cream);
+        padding: 10px 24px;
+        border: 1px solid var(--line-2);
+        border-radius: 12px;
+        background: var(--cta);
+        color: var(--cta-ink);
+        font-family: var(--font);
         font-size: 13px;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.04em;
         cursor: pointer;
-        transition: border-color 0.25s ease, background 0.25s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
       }
       #error .retry-btn:hover {
-        border-color: var(--gold);
-        background: rgba(231, 201, 140, 0.08);
+        transform: translateY(-1px);
+        box-shadow: 0 11px 24px rgba(0, 0, 0, 0.42);
+      }
+
+      /* ===== 观点光谱：控制台 / 观点漂移 / 双视图 / 碰撞 / 小圈子 ===== */
+      .tip-actions {
+        margin-top: 10px;
+        padding-top: 9px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tip-like {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--cream);
+        font-family: var(--font);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+      }
+      .tip-like:hover { border-color: rgba(255, 255, 255, 0.34); }
+      .tip-like.is-liked {
+        border-color: transparent;
+        background: var(--cta);
+        color: var(--cta-ink);
+      }
+      .tip-tag {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--mute);
+      }
+      .tip-tag.funny { border-color: rgba(231, 201, 140, 0.5); color: var(--gold); }
+
+      .panel {
+        position: fixed;
+        z-index: 10;
+        left: 20px;
+        bottom: max(52px, calc(env(safe-area-inset-bottom) + 44px));
+        width: 236px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--mid);
+        box-shadow: var(--shadow-pop);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: auto;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 12px;
+        background: var(--mid-deep);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .seg-btn {
+        padding: 8px 0;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--txt-faint);
+        font-family: var(--font);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+      }
+      .seg-btn:hover { color: var(--hi); }
+      .seg-btn.is-active {
+        background: var(--mid-raise);
+        color: var(--hi);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 16px rgba(0, 0, 0, 0.35);
+      }
+      .switch-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: rgba(240, 242, 250, 0.9);
+        cursor: pointer;
+        user-select: none;
+      }
+      .switch { position: relative; flex: none; width: 38px; height: 22px; }
+      .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+      .switch i {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #2a2e3c;
+        border: 0;
+        transition: background 0.22s ease;
+      }
+      .switch i::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #6c7284;
+        transition: transform 0.22s ease, background 0.22s ease;
+      }
+      .switch input:checked + i { background: var(--lav); }
+      .switch input:checked + i::after {
+        transform: translateX(16px);
+        background: #fff;
+      }
+      .panel-btn {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 0;
+        background: var(--cta);
+        color: var(--cta-ink);
+        font-family: var(--font);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      }
+      .panel-btn:hover { transform: translateY(-1px); box-shadow: 0 11px 24px rgba(0, 0, 0, 0.42); }
+      .panel-btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
+      .panel-btn--ghost {
+        border: 1px solid var(--line-2);
+        background: transparent;
+        color: rgba(232, 234, 245, 0.78);
+        box-shadow: none;
+      }
+      .panel-btn--ghost:hover { border-color: rgba(255, 255, 255, 0.3); color: var(--hi); background: rgba(255, 255, 255, 0.04); box-shadow: none; }
+      .legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-top: 11px;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.06em;
+        color: rgba(190, 196, 214, 0.75);
+      }
+      .legend span { display: inline-flex; align-items: center; gap: 5px; }
+      .lg { flex: none; display: inline-block; }
+      .lg-solid { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+      .lg-hollow {
+        width: 9px; height: 9px; border-radius: 50%;
+        border: 1.5px solid rgba(220, 224, 240, 0.6);
+        background: transparent;
+      }
+      .lg-star { color: var(--gold); font-size: 11px; line-height: 1; }
+
+      .verdict {
+        position: fixed;
+        z-index: 10;
+        top: max(86px, calc(env(safe-area-inset-top) + 78px));
+        left: 50%;
+        transform: translate(-50%, -8px);
+        max-width: min(86vw, 560px);
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--mid);
+        box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: rgba(240, 242, 250, 0.92);
+        opacity: 0;
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        pointer-events: auto;
+      }
+      .verdict.show { display: inline-flex; opacity: 1; transform: translate(-50%, 0); }
+      .v-spark { color: var(--lav); font-size: 13px; flex: none; }
+      .v-clear {
+        flex: none;
+        margin-left: 4px;
+        border: 0;
+        background: transparent;
+        color: var(--txt-faint);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+      .v-clear:hover { color: var(--hi); }
+
+      /* ===== 观点卡片：夜石墨 Midnight ===== */
+      .cards {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        display: none;
+        flex-direction: column;
+        background: radial-gradient(130% 80% at 50% -10%, #171823 0%, #0d0e13 55%, #08090d 100%);
+      }
+      .cards.show { display: flex; }
+      .cards-bar {
+        flex: none;
+        display: flex;
+        align-items: flex-end;
+        gap: 16px;
+        padding: max(22px, env(safe-area-inset-top)) 28px 15px;
+        border-bottom: 1px solid var(--line);
+      }
+      .cards-title {
+        margin-top: 4px;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--hi);
+      }
+      .cards-meta { font-size: 11.5px; color: rgba(190, 196, 214, 0.5); letter-spacing: 0.03em; padding-bottom: 4px; }
+      .icon-btn {
+        margin-left: auto;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--mid-btn);
+        color: var(--txt-dim);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      }
+      .icon-btn:hover { background: var(--cta); color: var(--cta-ink); border-color: transparent; }
+      .cards-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: clip;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+        padding: 24px 28px max(34px, env(safe-area-inset-bottom));
+        align-content: start;
+      }
+      .cards-list::-webkit-scrollbar { width: 8px; }
+      .cards-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 99px; }
+      .cards-list::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+      .pcard {
+        position: relative;
+        display: flex;
+        gap: 12px;
+        padding: 15px 16px;
+        color: var(--txt);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--mid);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+      .pcard:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.13);
+        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .pcard-ava {
+        flex: none;
+        width: 46px;
+        height: 46px;
+        margin: 2px 0;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid var(--line-2);
+        background: var(--mid-deep);
+      }
+      .pcard-ava--ring {
+        display: grid;
+        place-items: center;
+        object-fit: contain;
+        background: var(--mid-deep);
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .pcard-ava--me { border-color: rgba(174, 182, 214, 0.55); }
+      .pcard-body { min-width: 0; flex: 1; }
+      .pcard-row { display: flex; align-items: center; gap: 7px; }
+      .pcard-row b { font-size: 14px; font-weight: 600; color: var(--hi); }
+      .pcard-star { color: var(--gold); font-size: 12px; }
+      .pcard-tag {
+        flex: none;
+        padding: 2px 8px;
+        border-radius: 6px;
+        border: 0;
+        background: rgba(174, 182, 214, 0.14);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: var(--lav);
+      }
+      .pcard-tag--cmt { border: 1px solid var(--line-2); background: transparent; color: var(--txt-dim); }
+      .pcard-tag--fun { border: 1px solid rgba(231, 201, 140, 0.4); color: var(--gold); background: rgba(231, 201, 140, 0.08); }
+      .pcard-like {
+        margin-left: auto;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 0;
+        background: var(--mid-btn);
+        color: #9aa0b4;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+      }
+      .pcard-like:hover { background: #2d3140; color: var(--hi); transform: translateY(-1px); }
+      .pcard-like.is-liked {
+        background: var(--cta);
+        color: var(--cta-ink);
+      }
+      .pcard-fac {
+        margin-top: 7px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        color: var(--txt-faint);
+        letter-spacing: 0.02em;
+      }
+      .pcard-fac i { width: 8px; height: 8px; border-radius: 50%; flex: none; border: 1px solid rgba(255, 255, 255, 0.18); }
+      .pcard-fac b { color: var(--txt-dim); font-weight: 600; }
+      .pcard-claim { margin-top: 7px; font-size: 13px; line-height: 1.7; color: var(--txt); }
+      .pcard--me {
+        cursor: default;
+        background: #181b25;
+        border-color: rgba(174, 182, 214, 0.3);
+      }
+      .pcard--me:hover { transform: none; border-color: rgba(174, 182, 214, 0.3); }
+      .pcard--me .pcard-like { display: none; }
+      .pcard-me-btn {
+        margin-top: 12px;
+        padding: 9px 20px;
+        border-radius: 11px;
+        border: 0;
+        background: var(--cta);
+        color: var(--cta-ink);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .pcard-me-btn:hover { transform: translateY(-1px); box-shadow: 0 11px 24px rgba(0, 0, 0, 0.45); }
+      .pcard-me-btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.38); }
+      .cards-section {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 12px 0 0;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--txt-faint);
+      }
+      .cards-section::before,
+      .cards-section::after {
+        content: "";
+        flex: 1;
+        border-top: 1px solid var(--line);
+      }
+
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 15;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(4, 5, 9, 0.68);
+        backdrop-filter: blur(6px);
+      }
+      .modal-mask.show { display: grid; }
+      .modal {
+        position: relative;
+        width: min(448px, 92vw);
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        padding: 28px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--mid);
+        box-shadow: var(--shadow-pop), 0 0 0 1px rgba(0, 0, 0, 0.4);
+      }
+      .modal-kicker {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: var(--txt-faint);
+      }
+      .modal-kicker::before {
+        content: "";
+        width: 18px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--lav);
+      }
+      .modal-title { margin-top: 12px; font-size: 24px; font-weight: 650; letter-spacing: 0; color: var(--hi); }
+      .modal-sub { margin: 8px 40px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--mute); }
+      .clash-card {
+        position: relative;
+        margin-top: 22px;
+        padding: 20px 0 18px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .clash-head { display: flex; align-items: center; gap: 14px; }
+      .clash-ava {
+        width: 58px; height: 58px; border-radius: 50%;
+        object-fit: cover; flex: none;
+        border: 1px solid rgba(174, 182, 214, 0.45);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+      }
+      .clash-name { font-size: 16px; font-weight: 650; color: var(--hi); }
+      .clash-fac { margin-top: 5px; display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--faint); }
+      .clash-fac i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.18); }
+      .clash-fac b { color: var(--mute); font-weight: 600; }
+      .clash-claim {
+        margin-top: 17px;
+        padding: 2px 0 2px 14px;
+        border-radius: 0;
+        background: transparent;
+        border-left: 2px solid rgba(174, 182, 214, 0.55);
+        font-size: 14px;
+        line-height: 1.75;
+        color: rgba(226, 229, 240, 0.84);
+      }
+      .clash-scale {
+        margin-top: 19px;
+        padding: 14px 13px 11px;
+        border-radius: 10px;
+        background: var(--mid-deep);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .clash-distance {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 13px;
+        font-size: 10.5px;
+        color: var(--txt-faint);
+      }
+      .clash-distance b {
+        color: var(--lav);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+      }
+      .clash-track {
+        position: relative;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #5cb8ff, #b9a8ff 50%, #ffb866);
+      }
+      .clash-mk {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .clash-mk--me { background: var(--cta); color: var(--cta-ink); }
+      .clash-mk--ta { background: var(--lav); color: #1e2130; }
+      .clash-labels {
+        margin-top: 7px;
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--faint);
+      }
+      .modal-actions {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+      }
+      .gbtn {
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .gbtn--primary {
+        border: 0;
+        background: var(--cta);
+        color: var(--cta-ink);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+      }
+      .gbtn--primary:hover { transform: translateY(-1px); box-shadow: 0 11px 26px rgba(0, 0, 0, 0.48); }
+      .gbtn--primary:disabled {
+        cursor: wait;
+        opacity: 0.72;
+        transform: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+      }
+      .gbtn--ghost {
+        border: 1px solid var(--line-2);
+        background: transparent;
+        color: rgba(232, 234, 245, 0.82);
+      }
+      .gbtn--ghost:hover { border-color: rgba(255, 255, 255, 0.32); color: var(--hi); background: rgba(255, 255, 255, 0.04); }
+      .gbtn--text { grid-column: 1 / -1; border: 0; background: transparent; color: var(--txt-faint); font-size: 12px; font-weight: 500; }
+      .gbtn--text:hover { color: var(--hi); }
+      .gbtn--sm { padding: 9px 18px; font-size: 12.5px; }
+      .modal-x {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--mid-btn);
+        color: var(--txt-dim);
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      }
+      .modal-x:hover { background: var(--cta); color: var(--cta-ink); border-color: transparent; }
+
+      .circle-chip {
+        position: fixed;
+        z-index: 11;
+        right: 20px;
+        bottom: max(56px, calc(env(safe-area-inset-bottom) + 48px));
+        width: 288px;
+        padding: 16px 17px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--mid);
+        box-shadow: var(--shadow-pop);
+        opacity: 0;
+        transform: translateY(14px);
+        pointer-events: none;
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+      .circle-chip.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+      .cc-title { font-size: 13px; font-weight: 600; color: var(--hi); letter-spacing: 0.04em; }
+      .cc-spark { color: var(--lav); }
+      .cc-text { margin-top: 8px; font-size: 12px; line-height: 1.75; color: var(--txt); }
+      .cc-actions {
+        margin-top: 13px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      body.is-focusing .verdict {
+        top: max(166px, calc(env(safe-area-inset-top) + 158px));
+      }
+      .focus-banner {
+        position: fixed;
+        z-index: 11;
+        top: max(86px, calc(env(safe-area-inset-top) + 78px));
+        left: 50%;
+        transform: translate(-50%, -8px);
+        display: none;
+        grid-template-columns: 28px minmax(0, 1fr) 34px;
+        align-items: center;
+        gap: 13px;
+        width: min(860px, calc(100vw - 32px));
+        padding: 14px 14px 14px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-left: 3px solid rgba(174, 182, 214, 0.78);
+        border-radius: 10px;
+        background: var(--mid);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: auto;
+      }
+      .focus-banner.show { display: grid; opacity: 1; transform: translate(-50%, 0); }
+      .focus-mark {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(174, 182, 214, 0.1);
+        color: var(--lav);
+        font-size: 14px;
+      }
+      #focusText {
+        min-width: 0;
+        color: var(--txt);
+        font-size: 12.5px;
+        line-height: 1.65;
+      }
+      #focusText b { color: var(--hi); font-weight: 650; }
+      .focus-exit {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        min-width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 9px;
+        color: var(--txt-dim);
+        font-size: 16px;
+      }
+
+      .toast {
+        position: fixed;
+        z-index: 18;
+        left: 50%;
+        bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px));
+        transform: translate(-50%, 10px);
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--mid);
+        box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: rgba(240, 242, 250, 0.92);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.28s ease, transform 0.28s ease;
+      }
+      .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+      @media (max-width: 720px) {
+        .panel {
+          left: 12px; right: 12px; bottom: max(58px, calc(env(safe-area-inset-bottom) + 50px));
+          width: auto;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          padding: 10px 12px;
+          gap: 9px 12px;
+        }
+        .seg { order: 1; flex: 1 1 150px; min-width: 150px; }
+        .switch-row { order: 2; }
+        .panel-btn { order: 3; width: auto; flex: 1 1 auto; padding: 8px 12px; }
+        .legend { order: 4; flex-basis: 100%; padding-top: 7px; }
+        .axis { bottom: 150px !important; }
+        .hint { display: none; }
+        .circle-chip { right: 12px; width: calc(100vw - 24px); bottom: 140px; }
+        .verdict, .focus-banner { top: max(76px, calc(env(safe-area-inset-top) + 68px)); }
+        body.is-focusing .verdict { top: max(148px, calc(env(safe-area-inset-top) + 140px)); }
+        .focus-banner {
+          width: calc(100vw - 24px);
+          grid-template-columns: 26px minmax(0, 1fr) 32px;
+          gap: 10px;
+          padding: 12px 10px 12px 12px;
+        }
+        .focus-mark { width: 26px; height: 26px; border-radius: 7px; font-size: 13px; }
+        #focusText { font-size: 11.5px; line-height: 1.6; }
+        .focus-exit { width: 32px; min-width: 32px; height: 32px; }
+        .verdict { font-size: 11.5px; padding: 8px 14px; }
+        .cards-list { grid-template-columns: 1fr; padding: 18px 14px 26px; gap: 14px; }
+        .cards-bar { padding: max(16px, env(safe-area-inset-top)) 16px 12px; flex-wrap: wrap; gap: 8px; }
+        .modal { width: min(420px, 94vw); padding: 22px 20px 20px; }
+        .modal-title { padding-right: 34px; font-size: 21px; }
+        .modal-sub { margin-right: 0; }
+        .clash-card { margin-top: 18px; padding: 17px 0 15px; }
+        .modal-actions { grid-template-columns: 1fr; }
+        .gbtn--text { grid-column: auto; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .panel-btn, .seg-btn, .gbtn, .icon-btn { transition: none !important; }
       }
     </style>
     <script>
@@ -283,8 +1002,96 @@
         <span class="pole">深耕不转</span>
         <span class="sub">RIGHT POLE</span>
       </div>
-      <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点击头像进入人格卡</div>
+      <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点赞校准你的立场</div>
     </div>
+
+    <div class="panel">
+      <div class="seg" role="tablist" aria-label="视图模式">
+        <button type="button" class="seg-btn is-active" id="modeDense">密集头像</button>
+        <button type="button" class="seg-btn" id="modeCards">观点卡片</button>
+      </div>
+      <label class="switch-row">
+        <span class="switch"><input type="checkbox" id="commentToggle" /><i></i></span>
+        包含评论区观点
+      </label>
+      <button type="button" class="panel-btn" id="clashBtn">✦ 找个对立观点聊聊</button>
+      <button type="button" class="panel-btn panel-btn--ghost" id="circleBtn">◎ 聚焦小圈子</button>
+      <div class="legend">
+        <span><i class="lg lg-solid"></i>回答者</span>
+        <span><i class="lg lg-hollow"></i>评论者</span>
+        <span><i class="lg lg-star">★</i>关注</span>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <span class="v-spark">✦</span>
+      <span id="verdictText"></span>
+      <button type="button" class="v-clear" id="verdictClear">清除</button>
+    </div>
+
+    <div class="cards" id="cards">
+      <div class="cards-bar">
+        <div>
+          <div class="kicker">ZHIHU · CARDS</div>
+          <div class="cards-title">观点卡片</div>
+        </div>
+        <div class="cards-meta" id="cardsMeta"></div>
+        <button type="button" class="icon-btn" id="cardsClose" aria-label="返回星云">×</button>
+      </div>
+      <div class="cards-list" id="cardsList"></div>
+    </div>
+
+    <div class="modal-mask" id="clash">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="观点碰撞">
+        <button type="button" class="modal-x" id="clashX" aria-label="关闭">×</button>
+        <div class="modal-kicker">观点碰撞 · OPPOSITE MATCH</div>
+        <div class="modal-title">听听对立面怎么想</div>
+        <p class="modal-sub">AI 从回答者中，为你匹配了与你立场距离最远的声音。</p>
+        <div class="clash-card">
+          <div class="clash-head">
+            <img class="clash-ava" id="clashAva" alt="" />
+            <div>
+              <div class="clash-name" id="clashName"></div>
+              <div class="clash-fac"><i id="clashDot"></i><span id="clashFac"></span></div>
+            </div>
+          </div>
+          <div class="clash-claim" id="clashClaim"></div>
+          <div class="clash-scale">
+            <div class="clash-distance">
+              <span>你们的立场距离</span>
+              <b id="clashDistance"></b>
+            </div>
+            <div class="clash-track">
+              <span class="clash-mk clash-mk--me" id="clashMeMk" title="你">我</span>
+              <span class="clash-mk clash-mk--ta" id="clashTaMk" title="TA">TA</span>
+            </div>
+            <div class="clash-labels"><span>必须转行</span><span>深耕不转</span></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="gbtn gbtn--primary" id="clashGo">翻开人格卡 →</button>
+          <button type="button" class="gbtn gbtn--ghost" id="clashAgain">换一位对立观点</button>
+          <button type="button" class="gbtn gbtn--text" id="clashAsk">在评论区 @TA 提问（演示）</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="circle-chip" id="circleChip">
+      <div class="cc-title"><span class="cc-spark">✦</span> 发现一个小圈子</div>
+      <div class="cc-text" id="circleText"></div>
+      <div class="cc-actions">
+        <button type="button" class="gbtn gbtn--primary gbtn--sm" id="circleFocus">看看他们</button>
+        <button type="button" class="gbtn gbtn--text gbtn--sm" id="circleSkip">稍后</button>
+      </div>
+    </div>
+
+    <div class="focus-banner" id="focusBanner">
+      <span class="focus-mark" aria-hidden="true">◎</span>
+      <span id="focusText"></span>
+      <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
 
     <div id="tip"></div>
 
@@ -375,8 +1182,31 @@
       ];
       const FOLLOWED = new Set([6, 26, 40]);
 
+      // 评论区观点：默认隐藏，开启后以“空心圆”混进星云（不提供人格卡深链，仅展示观点）
+      // 结构：[昵称, 立场, 派别, 观点, 是否幽默玩梗]
+      const COMMENTS = [
+        ["一楼沙发王", -0.95, "frog", "35 岁还不转行？等着公司请你喝茶吗哈哈哈。", true],
+        ["评论区课代表", -0.78, "bear", "总结楼上：早转早超生，晚转被优化。", false],
+        ["匿名打工人", -0.7, "owl", "别问，问就是简历已经投出去了。", false],
+        ["路过的HR", -0.54, "redpanda", "说句实话，简历上 35 岁真的会先被筛一道。", false],
+        ["体制内隔壁老王", -0.4, "penguin", "我同事去年走的，今年天天劝我一起考公。", false],
+        ["中立复读机", -0.12, "cat", "看情况，看岗位，也看个人，别一棍子打死。", false],
+        ["拱火小号", -0.04, "goat", "吵什么吵，反正都要还房贷。", true],
+        ["深夜键盘侠", 0.1, "owl", "我司架构师 40 了，比谁都稳。", false],
+        ["只看热评的猫", 0.28, "cat", "高赞说得对，不可替代性才是关键。", false],
+        ["十年老粉不请自来", 0.52, "fox", "我师父 42 还在写核心系统，转什么行。", false],
+        ["反内卷先锋", 0.7, "goat", "深耕自己的赛道，年龄就是谣言。", false],
+        ["楼下保安张叔", 0.88, "bear", "我要是懂技术，35 岁那正是好时候。", true],
+      ];
+
+      // 小圈子：mock 的“互赞互动密集”群体（成员均为 PEOPLE 索引）
+      const CLUSTERS = [
+        { members: [0, 1, 4], label: "「趁早转行」互助会" },
+        { members: [43, 45, 46], label: "「深耕到底」技术信仰组" },
+      ];
+
       // 「我」的专属星位：固定在核球前方、离镜头更近，金色呼吸光圈 + 金徽章
-      const ME = { name: "我", castKey: "fox", claim: "这是你的星位，点开抽取你的观点人格。" };
+      const ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
@@ -407,7 +1237,17 @@
       controls.rotateSpeed = 0.55;
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       controls.autoRotate = !reduceMotion;
-      controls.autoRotateSpeed = 0.4;
+      controls.autoRotateSpeed = 0.12;
+      let rotateIdleTimer = 0;
+      controls.addEventListener("start", () => {
+        controls.autoRotate = false;
+        clearTimeout(rotateIdleTimer);
+      });
+      controls.addEventListener("end", () => {
+        if (reduceMotion) return;
+        clearTimeout(rotateIdleTimer);
+        rotateIdleTimer = setTimeout(() => { controls.autoRotate = true; }, 5000);
+      });
 
       const composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
@@ -492,6 +1332,72 @@
         }
         ctx.closePath();
         ctx.fill();
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function heartTexture() {
+        const s = 96;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        ctx.translate(s / 2, s / 2);
+        const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, s / 2);
+        grad.addColorStop(0, "rgba(255,240,210,1)");
+        grad.addColorStop(0.5, "rgba(231,178,120,0.85)");
+        grad.addColorStop(1, "rgba(231,178,120,0)");
+        ctx.fillStyle = grad;
+        ctx.font = "52px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("♥", 0, 4);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      // 评论者的“空心圆”：立场色描边圆环 + 首字，区别于实心头像的回答者
+      function commentRingTexture(name, hex) {
+        const s = 256;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 104, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(10, 12, 20, 0.72)";
+        ctx.fill();
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = hex;
+        ctx.globalAlpha = 0.9;
+        ctx.shadowColor = hex;
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = hex;
+        ctx.font = "600 74px 'Noto Sans SC', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(name[0], s / 2, s / 2 + 5);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      // 聚焦/碰撞用的金色高亮环
+      function focusRingTexture() {
+        const s = 128;
+        const c = document.createElement("canvas");
+        c.width = c.height = s;
+        const ctx = c.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 52, 0, Math.PI * 2);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(231, 201, 140, 0.95)";
+        ctx.shadowColor = "rgba(231, 201, 140, 0.9)";
+        ctx.shadowBlur = 14;
+        ctx.stroke();
         const t = new THREE.CanvasTexture(c);
         t.colorSpace = THREE.SRGBColorSpace;
         return t;
@@ -831,6 +1737,88 @@
 
       nebula.add(userGroup);
 
+      // 评论区观点：空心圆环，沿各自立场悬浮在星系两侧的“评论云”里，默认不显示
+      const commentGroup = new THREE.Group();
+      commentGroup.visible = false;
+      nebula.add(commentGroup);
+      const commentTargets = [];
+      const cusers = COMMENTS.map(([name, stance, castKey, claim, funny], i) => {
+        const [castName, castRole, castColor] = CASTS[castKey];
+        const s = Math.max(-1, Math.min(1, stance + gaussian() * 0.05));
+        const p = armPoint(s, true);
+        // 沿径向往星系外推，形成环绕星系的评论云，避免压住回答者头像
+        const outAng = Math.random() * Math.PI * 2;
+        const outR = 0.85 + Math.random() * 0.55;
+        const g = new THREE.Group();
+        g.position.set(
+          s * XSPAN + gaussian() * 0.3,
+          p.y + Math.sin(outAng) * outR * 0.8,
+          p.z + Math.cos(outAng) * outR
+        );
+        const glowMat = new THREE.SpriteMaterial({
+          map: getGlow(castColor),
+          transparent: true,
+          opacity: 0.14,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const glow = new THREE.Sprite(glowMat);
+        glow.scale.setScalar(0.62);
+        g.add(glow);
+        const ringMat = new THREE.SpriteMaterial({ map: commentRingTexture(name, castColor), transparent: true, depthWrite: false, opacity: 0.92 });
+        const ring = new THREE.Sprite(ringMat);
+        ring.scale.setScalar(0.48);
+        g.add(ring);
+        const cu = {
+          name, stance, castKey, castName, castRole, castColor, claim, funny: !!funny,
+          followed: false, index: i, isMe: false, kind: "comment",
+          group: g, avatar: ring, glow,
+          baseY: g.position.y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5, scale: 1,
+        };
+        ring.userData.user = cu;
+        commentTargets.push(ring);
+        commentGroup.add(g);
+        return cu;
+      });
+
+      const meUser = users[users.length - 1];
+
+      // 「我」的立场漂移尾迹：从光谱中点连到我的星位
+      const ME_LANE_Y = 1.95;
+      const ME_LANE_Z = 2.7;
+      const trailMat = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const trailGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, ME_LANE_Y, ME_LANE_Z),
+        new THREE.Vector3(0, ME_LANE_Y, ME_LANE_Z),
+      ]);
+      trailGeo.setAttribute("color", new THREE.Float32BufferAttribute([
+        0.0, 0.0, 0.0,
+        0.91, 0.79, 0.55,
+      ], 3));
+      const trail = new THREE.Line(trailGeo, trailMat);
+      trail.renderOrder = 4;
+      nebula.add(trail);
+      const heartTex = heartTexture();
+      const ringTex = focusRingTexture();
+      function ensureRing(u) {
+        if (u.ring) return u.ring;
+        const r = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: ringTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+        }));
+        r.scale.setScalar(1.02);
+        r.renderOrder = 4;
+        u.group.add(r);
+        u.ring = r;
+        return r;
+      }
+
       // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
       // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
       const dustGroup = new THREE.Group();
@@ -928,46 +1916,246 @@
       }
       setTimeout(() => loadingEl.classList.add("hide"), 6000);
 
+      // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
+      const LIKE_KEY = "jiupai:nebula:likes:v1";
+      const liked = new Set();
+      try {
+        const raw = JSON.parse(localStorage.getItem(LIKE_KEY) || "[]");
+        if (Array.isArray(raw)) raw.forEach((i) => { if (Number.isInteger(i) && i >= 0 && i < N) liked.add(i); });
+      } catch { /* localStorage 不可用时退化为会话内状态 */ }
+
+      let myStanceVal = 0;
+      let verdictText = "";
+      const verdictEl = document.getElementById("verdict");
+      const verdictTextEl = document.getElementById("verdictText");
+
+      function computeStance(ids) {
+        const n = ids.length;
+        if (!n) return null;
+        let sum = 0, left = 0, right = 0;
+        ids.forEach((i) => {
+          const s = PEOPLE[i][1];
+          sum += s;
+          if (s < -0.05) left++;
+          else if (s > 0.05) right++;
+        });
+        const avg = sum / n;
+        const a = Math.abs(avg);
+        const dir = avg < 0 ? "转行" : "深耕";
+        let degree;
+        if (a < 0.12) degree = "基本中立，还在两种声音之间观望";
+        else if (a < 0.3) degree = `略微倾向${dir}`;
+        else if (a < 0.55) degree = `比较倾向${dir}`;
+        else degree = `坚定地站在${dir}一边`;
+        let tail = "";
+        if (left && right) {
+          tail = avg < 0 ? "，不过你也认可深耕派的部分理由" : "，不过你也认可转行派的部分理由";
+        }
+        return { avg, n, text: `基于你点赞的 ${n} 个回答，AI 认为你${degree}${tail}。` };
+      }
+
+      function setHeart(u, on) {
+        if (on) {
+          if (!u.heart) {
+            const h = new THREE.Sprite(new THREE.SpriteMaterial({
+              map: heartTex, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending,
+            }));
+            h.position.set(-0.27, 0.3, 0);
+            h.scale.setScalar(0.25);
+            h.renderOrder = 3;
+            u.group.add(h);
+            u.heart = h;
+          }
+          u.heart.visible = true;
+        } else if (u.heart) {
+          u.heart.visible = false;
+        }
+      }
+
+      function applyStance(animate) {
+        const v = computeStance([...liked]);
+        myStanceVal = v ? v.avg : 0;
+        verdictText = v ? v.text : "";
+        const tx = myStanceVal * XSPAN;
+        meUser.baseX = tx;
+        if (!animate) meUser.group.position.x = tx;
+        if (v) {
+          verdictTextEl.textContent = v.text;
+          verdictEl.classList.add("show");
+        } else {
+          verdictEl.classList.remove("show");
+        }
+      }
+
+      users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
+      applyStance(false);
+
+      function toggleLike(i) {
+        if (!Number.isInteger(i) || i < 0 || i >= N) return false;
+        if (liked.has(i)) liked.delete(i);
+        else liked.add(i);
+        try { localStorage.setItem(LIKE_KEY, JSON.stringify([...liked])); } catch { /* ignore */ }
+        const u = users[i];
+        if (u) setHeart(u, liked.has(i));
+        applyStance(true);
+        renderCardsIfOpen();
+        return liked.has(i);
+      }
+      function resetLikes() {
+        liked.clear();
+        try { localStorage.removeItem(LIKE_KEY); } catch { /* ignore */ }
+        users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
+        applyStance(true);
+        renderCardsIfOpen();
+      }
+
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
       let hovered = null;
+      let hideTipTimer = 0;
+
+      let hostReady = false;
+      const openAcks = new Set();
+      window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
+        if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
+          openAcks.add(e.data.requestId);
+        }
+      });
+      function gotoShelf(path) {
+        location.href = new URL("../shelf/" + path, document.baseURI).href;
+      }
+      function requestOpen(payload, fallbackPath) {
+        if (window.parent === window.self) {
+          gotoShelf(fallbackPath);
+          return;
+        }
+        const requestId = `neb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        try {
+          window.parent.postMessage({ ...payload, requestId }, "*");
+        } catch (e) {
+          gotoShelf(fallbackPath);
+          return;
+        }
+        // 正式 React 外壳会同步 ACK；IDE preview 等无监听容器则在短暂反馈后直跳。
+        setTimeout(() => {
+          if (!openAcks.delete(requestId)) gotoShelf(fallbackPath);
+        }, hostReady ? 240 : 180);
+      }
+      function openPerson(i) {
+        if (!Number.isInteger(i) || i < 0 || i >= N) return;
+        const [name, , castKey] = PEOPLE[i];
+        requestOpen(
+          { type: "nebula-open", cast: castKey, name, u: i },
+          castKey + "?u=" + i
+        );
+      }
+      function openSelf() {
+        requestOpen(
+          { type: "nebula-open", cast: ME.castKey, self: true },
+          ME.castKey + "?self=1"
+        );
+      }
+      function activateHovered(u) {
+        if (!u || u.kind === "comment") return;
+        if (u.isMe) openSelf();
+        else openPerson(u.index);
+      }
 
       function pick(clientX, clientY) {
         pointer.x = (clientX / window.innerWidth) * 2 - 1;
         pointer.y = -(clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects(avatarTargets, false);
+        const targets = commentGroup.visible ? avatarTargets.concat(commentTargets) : avatarTargets;
+        const hits = raycaster.intersectObjects(targets, false);
         return hits.length ? hits[0].object.userData.user : null;
       }
 
+      function cancelHideTip() {
+        if (hideTipTimer) { clearTimeout(hideTipTimer); hideTipTimer = 0; }
+      }
+      function scheduleHideTip(ms) {
+        cancelHideTip();
+        hideTipTimer = setTimeout(() => {
+          hovered = null;
+          canvas.classList.remove("hovering");
+          tip.classList.remove("show");
+          tip.style.pointerEvents = "none";
+        }, ms);
+      }
+      function syncTipPointer() {
+        tip.style.pointerEvents = tip.classList.contains("show") ? "auto" : "none";
+      }
+
+      function renderTip(u) {
+        if (u.isMe) {
+          tip.innerHTML =
+            `<div class="tip-row"><span class="tip-name">我</span>` +
+            `<span class="tip-follow tip-me">我的星位</span></div>` +
+            (verdictText
+              ? `<div class="tip-claim">${verdictText}</div>`
+              : `<div class="tip-claim">“${u.claim}”</div>`) +
+            `<div class="tip-actions"><button type="button" class="tip-like" data-go="self">抽我的人格卡 →</button></div>`;
+        } else if (u.kind === "comment") {
+          tip.innerHTML =
+            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
+            `<span class="tip-tag">评论</span>` +
+            (u.funny ? `<span class="tip-tag funny">😄 幽默观点</span>` : "") +
+            `</div>` +
+            `<div class="tip-claim">“${u.claim}”</div>` +
+            `<div class="tip-persona"><span class="tip-dot" style="border:1.4px solid ${u.castColor};background:transparent"></span>` +
+            `评论观点 · <b>${u.castName}</b> · ${u.castRole}</div>`;
+        } else {
+          const likedOne = liked.has(u.index);
+          tip.innerHTML =
+            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
+            (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
+            `</div>` +
+            `<div class="tip-claim">“${u.claim}”</div>` +
+            `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
+            `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>` +
+            `<div class="tip-actions"><button type="button" class="tip-like${likedOne ? " is-liked" : ""}" data-like="${u.index}">${likedOne ? "♥ 已赞" : "♡ 赞"}</button></div>`;
+        }
+        updateTipPosition();
+      }
+
       function setHovered(u) {
-        if (hovered === u) return;
+        if (hovered === u) {
+          if (u) cancelHideTip();
+          return;
+        }
         hovered = u;
         canvas.classList.toggle("hovering", !!u);
         if (u) {
-          tip.innerHTML = u.isMe
-            ? `<div class="tip-row"><span class="tip-name">我</span>` +
-              `<span class="tip-follow tip-me">我的星位</span></div>` +
-              `<div class="tip-claim">“${u.claim}”</div>` +
-              `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
-              `我的人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">抽我的卡 →</span></div>`
-            : `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
-              (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
-              `</div>` +
-              `<div class="tip-claim">“${u.claim}”</div>` +
-              `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
-              `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>`;
-          updateTipPosition();
+          cancelHideTip();
+          renderTip(u);
           tip.classList.add("show");
         } else {
           tip.classList.remove("show");
         }
+        syncTipPointer();
       }
+
+      tip.addEventListener("click", (e) => {
+        const likeBtn = e.target.closest("[data-like]");
+        if (likeBtn) {
+          e.stopPropagation();
+          const i = Number(likeBtn.getAttribute("data-like"));
+          toggleLike(i);
+          if (hovered && !hovered.isMe && hovered.kind !== "comment") renderTip(hovered);
+          return;
+        }
+        if (hovered && hovered.kind !== "comment" && !e.target.closest(".tip-tag")) {
+          activateHovered(hovered);
+        }
+      });
+      tip.addEventListener("pointerenter", cancelHideTip);
+      tip.addEventListener("pointerleave", () => scheduleHideTip(140));
 
       canvas.addEventListener("pointermove", (e) => {
         setHovered(pick(e.clientX, e.clientY));
       });
-      canvas.addEventListener("pointerleave", () => setHovered(null));
+      canvas.addEventListener("pointerleave", (e) => scheduleHideTip(e.pointerType === "touch" ? 4200 : 240));
 
       let downX = 0, downY = 0;
       canvas.addEventListener("pointerdown", (e) => {
@@ -980,10 +2168,14 @@
         if (moved > 8) return;
         const u = pick(e.clientX, e.clientY);
         if (u) {
-          if (u.isMe) {
-            window.parent.postMessage({ type: "nebula-open", cast: u.castKey, self: true }, "*");
+          if (u.kind === "comment") {
+            setHovered(u); // 评论者只看观点，不跳人格卡
+          } else if (e.pointerType === "touch" && hovered === u) {
+            // 触屏：第一次点按只弹卡片，再次点按才进入，避免误触
+            if (u._touchShown) { activateHovered(u); u._touchShown = false; }
+            else u._touchShown = true;
           } else {
-            window.parent.postMessage({ type: "nebula-open", cast: u.castKey, name: u.name, u: u.index }, "*");
+            activateHovered(u);
           }
         }
       });
@@ -993,8 +2185,13 @@
         if (!hovered) return;
         hovered.group.getWorldPosition(projected);
         projected.project(camera);
-        if (projected.z < -1 || projected.z > 1) { tip.classList.remove("show"); return; }
+        if (projected.z < -1 || projected.z > 1) {
+          tip.classList.remove("show");
+          tip.style.pointerEvents = "none";
+          return;
+        }
         if (!tip.classList.contains("show")) tip.classList.add("show");
+        syncTipPointer();
         const W = window.innerWidth;
         let x = (projected.x * 0.5 + 0.5) * W;
         const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
@@ -1014,28 +2211,58 @@
 
       const clock = new THREE.Clock();
       let running = true;
+      const scheduleFrame = () => (window.__rafShim || requestAnimationFrame)(loop);
       document.addEventListener("visibilitychange", () => {
         running = !document.hidden;
         if (running) { clock.getDelta(); loop(); }
       });
 
+      function animateNode(u, t, baseAva, baseGlow) {
+        const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
+        u.group.position.y = u.baseY + floatY;
+        const hoverBoost = hovered === u ? 1.4 : 1;
+        u.scale += (hoverBoost - u.scale) * 0.14;
+        u.avatar.scale.setScalar(baseAva * u.scale);
+        u.glow.scale.setScalar(baseGlow * u.scale);
+        const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
+        const dimmed = focusSet && !u.isMe && !focusSet.has(u.index);
+        const avaTarget = dimmed ? 0.07 : 1;
+        u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * 0.12;
+        const glowTarget = dimmed
+          ? 0.03
+          : (hovered === u ? 0.88 : (u.isMe ? 0.52 : 0.26) * breathe);
+        u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * 0.12;
+        if (u.star) u.star.material.opacity = dimmed ? 0.04 : 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
+        if (u.heart && u.heart.visible) {
+          u.heart.material.opacity = dimmed ? 0.1 : 0.78 + Math.sin(t * 3.2 + u.phase) * 0.22;
+          u.heart.scale.setScalar(0.25 * (1 + Math.sin(t * 4 + u.phase) * 0.14));
+        }
+        if (u.badge) u.badge.material.opacity = 0.82 + Math.sin(t * 2.1 + u.phase) * 0.18;
+        if (u.ring) {
+          const onFocus = focusSet && !u.isMe && focusSet.has(u.index);
+          const onMatch = matchIndex === u.index && performance.now() < matchUntil;
+          const target = onMatch ? 0.7 + Math.sin(t * 6) * 0.3 : onFocus ? 0.9 : 0;
+          u.ring.material.opacity += (target - u.ring.material.opacity) * 0.14;
+          if (onMatch) u.ring.scale.setScalar(1.08 + Math.sin(t * 6) * 0.07);
+          else if (!onFocus) u.ring.scale.setScalar(1.02);
+        }
+      }
+
       function loop() {
         if (!running) return;
         const t = clock.getElapsedTime();
 
-        users.forEach((u) => {
-          const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
-          u.group.position.y = u.baseY + floatY;
-          const targetScale = hovered === u ? 1.4 : 1;
-          u.scale += (targetScale - u.scale) * 0.14;
-          u.avatar.scale.setScalar((u.isMe ? 0.86 : 0.66) * u.scale);
-          u.glow.scale.setScalar((u.isMe ? 1.12 : 0.88) * u.scale);
-          const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
-          const idleGlow = u.isMe ? 0.52 : 0.26;
-          u.glow.material.opacity += (((hovered === u ? 0.88 : idleGlow) * breathe) - u.glow.material.opacity) * 0.12;
-          if (u.star) u.star.material.opacity = 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
-          if (u.badge) u.badge.material.opacity = 0.82 + Math.sin(t * 2.1 + u.phase) * 0.18;
-        });
+        users.forEach((u) => animateNode(u, t, u.isMe ? 0.86 : 0.66, u.isMe ? 1.12 : 0.88));
+        cusers.forEach((u) => animateNode(u, t, 0.48, 0.62));
+
+        // 「我」沿光谱漂移到由点赞计算出的立场，并拖出一道金色尾迹
+        meUser.group.position.x += (meUser.baseX - meUser.group.position.x) * 0.08;
+        const tp = trailGeo.attributes.position;
+        const meX = meUser.group.position.x;
+        tp.setXYZ(0, 0, ME_LANE_Y, ME_LANE_Z);
+        tp.setXYZ(1, meX, ME_LANE_Y, ME_LANE_Z);
+        tp.needsUpdate = true;
+        trailMat.opacity += ((liked.size ? 0.32 : 0) - trailMat.opacity) * 0.08;
 
         fogGroup.rotation.z = t * 0.008;
         fogGroup.rotation.y = Math.sin(t * 0.03) * 0.08;
@@ -1047,8 +2274,305 @@
         controls.update();
         updateTipPosition();
         composer.render();
-        requestAnimationFrame(loop);
+        scheduleFrame();
       }
+
+      // ===== 控制面板 / 双视图 / 评论区 / 观点碰撞 / 小圈子 =====
+      let focusSet = null;
+      let matchIndex = -1;
+      let matchUntil = 0;
+      let includeComments = false;
+
+      const $ = (id) => document.getElementById(id);
+      const toastEl = $("toast");
+      let toastTimer = 0;
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+      }
+
+      // ---- 观点卡片视图 ----
+      const cardsEl = $("cards");
+      const cardsListEl = $("cardsList");
+      const cardsMetaEl = $("cardsMeta");
+      const modeDenseBtn = $("modeDense");
+      const modeCardsBtn = $("modeCards");
+
+      function personCard(i) {
+        const [name, , castKey, claim] = PEOPLE[i];
+        const [castName, castRole, castColor] = CASTS[castKey];
+        const on = liked.has(i);
+        return `<div class="pcard" data-u="${i}">
+          <img class="pcard-ava" src="avatars/u${String(i + 1).padStart(2, "0")}.jpg" alt="${name}" />
+          <div class="pcard-body">
+            <div class="pcard-row">
+              <b>@${name}</b>${FOLLOWED.has(i) ? '<span class="pcard-star">★</span>' : ''}
+              <span class="pcard-tag">回答</span>
+              <button type="button" class="pcard-like${on ? " is-liked" : ''}" data-like="${i}" aria-label="赞">${on ? "♥" : "♡"}</button>
+            </div>
+            <div class="pcard-fac"><i style="background:${castColor}"></i><b>${castName}</b> · ${castRole}</div>
+            <div class="pcard-claim">“${claim}”</div>
+          </div>
+        </div>`;
+      }
+      function commentCard(cmt, i) {
+        const [name, stance, castKey, claim, funny] = cmt;
+        const [castName, castRole, castColor] = CASTS[castKey];
+        return `<div class="pcard">
+          <div class="pcard-ava pcard-ava--ring" style="display:grid;place-items:center;color:${castColor}">${name[0]}</div>
+          <div class="pcard-body">
+            <div class="pcard-row">
+              <b>@${name}</b>
+              <span class="pcard-tag pcard-tag--cmt">评论</span>
+              ${funny ? '<span class="pcard-tag pcard-tag--fun">😄 幽默观点</span>' : ''}
+            </div>
+            <div class="pcard-fac"><i style="border:1.2px solid ${castColor};background:transparent"></i><b>${castName}</b> · ${castRole} · 立场 ${stance > 0 ? "+" : ""}${stance.toFixed(2)}</div>
+            <div class="pcard-claim">“${claim}”</div>
+          </div>
+        </div>`;
+      }
+      function renderCards() {
+        const scrollTop = cardsListEl.scrollTop;
+        const meClaim = verdictText || ME.claim;
+        const head = `<div class="pcard pcard--me">
+          <img class="pcard-ava pcard-ava--me" src="avatars/me.jpg" alt="我" />
+          <div class="pcard-body">
+            <div class="pcard-row"><b>我的星位</b><span class="pcard-tag">你</span></div>
+            <div class="pcard-fac"><i style="background:#e7c98c"></i><b>${CASTS[ME.castKey][0]}</b> · ${CASTS[ME.castKey][1]}</div>
+            <div class="pcard-claim">${meClaim}</div>
+            <button type="button" class="pcard-me-btn" data-self>抽我的人格卡 →</button>
+          </div>
+        </div>`;
+        const answerSection = `<div class="cards-section">回答者观点 · ${N}</div>` +
+          PEOPLE.map((_, i) => personCard(i)).join("");
+        const commentSection = includeComments
+          ? `<div class="cards-section">评论区观点 · ${COMMENTS.length}</div>` + COMMENTS.map((c, i) => commentCard(c, i)).join("")
+          : "";
+        cardsListEl.innerHTML = head + answerSection + commentSection;
+        cardsListEl.scrollTop = scrollTop;
+        cardsMetaEl.textContent = `${N} 位回答者${includeComments ? ` · ${COMMENTS.length} 位评论者` : ""} · 已赞 ${liked.size} · 按立场从「必须转行」到「深耕不转」排列`;
+      }
+      function renderCardsIfOpen() {
+        if (cardsEl.classList.contains("show")) renderCards();
+      }
+      function openCards() {
+        exitFocus();
+        renderCards();
+        cardsEl.classList.add("show");
+        modeDenseBtn.classList.remove("is-active");
+        modeCardsBtn.classList.add("is-active");
+      }
+      function closeCards() {
+        cardsEl.classList.remove("show");
+        modeCardsBtn.classList.remove("is-active");
+        modeDenseBtn.classList.add("is-active");
+      }
+      modeCardsBtn.addEventListener("click", openCards);
+      modeDenseBtn.addEventListener("click", closeCards);
+      $("cardsClose").addEventListener("click", closeCards);
+      cardsListEl.addEventListener("click", (e) => {
+        const likeBtn = e.target.closest("[data-like]");
+        if (likeBtn) {
+          e.stopPropagation();
+          toggleLike(Number(likeBtn.getAttribute("data-like")));
+          return;
+        }
+        if (e.target.closest("[data-self]")) { openSelf(); return; }
+        const card = e.target.closest(".pcard[data-u]");
+        if (card) openPerson(Number(card.getAttribute("data-u")));
+      });
+
+      // ---- 评论区开关 ----
+      $("commentToggle").addEventListener("change", (e) => {
+        includeComments = e.target.checked;
+        commentGroup.visible = includeComments && !focusSet;
+        if (!includeComments && hovered && hovered.kind === "comment") setHovered(null);
+        renderCardsIfOpen();
+        if (includeComments) showToast(`已纳入 ${COMMENTS.length} 条评论区观点，空心圆即评论者`);
+      });
+
+      // ---- 观点碰撞 ----
+      const clashEl = $("clash");
+      const clashGoBtn = $("clashGo");
+      let clashCurrent = -1;
+      function pickClash(exclude) {
+        const my = (computeStance([...liked]) || { avg: 0 }).avg;
+        const ranked = PEOPLE
+          .map((p, i) => ({ i, d: Math.abs(p[1] - my) }))
+          .filter((x) => x.i !== exclude && !liked.has(x.i))
+          .sort((a, b) => b.d - a.d);
+        const pool = ranked.slice(0, 6);
+        return pool[Math.floor(Math.random() * pool.length)].i;
+      }
+      function openClash() {
+        clashGoBtn.disabled = false;
+        clashGoBtn.textContent = "翻开人格卡 →";
+        clashCurrent = pickClash(-1);
+        renderClash();
+        clashEl.classList.add("show");
+      }
+      function renderClash() {
+        const i = clashCurrent;
+        ensureRing(users[i]);
+        const [name, stance, castKey, claim] = PEOPLE[i];
+        const [castName, castRole, castColor] = CASTS[castKey];
+        $("clashAva").src = `avatars/u${String(i + 1).padStart(2, "0")}.jpg`;
+        $("clashAva").alt = `${name}的头像`;
+        $("clashName").textContent = `@${name}`;
+        $("clashDot").style.background = castColor;
+        $("clashFac").innerHTML = `<b>${castName}</b> · ${castRole}`;
+        $("clashClaim").textContent = `“${claim}”`;
+        const my = (computeStance([...liked]) || { avg: 0 }).avg;
+        const pct = (v) => `${Math.max(5, Math.min(95, v * 50 + 50))}%`;
+        const meMk = $("clashMeMk");
+        const taMk = $("clashTaMk");
+        meMk.style.left = pct(my);
+        taMk.style.left = pct(stance);
+        meMk.title = liked.size ? `你（${my.toFixed(2)}）` : "你（中立，尚未点赞）";
+        $("clashDistance").textContent = `相距 ${Math.round(Math.abs(stance - my) * 50)} / 100`;
+        matchIndex = i;
+        matchUntil = performance.now() + 6000;
+      }
+      function closeClash() {
+        clashEl.classList.remove("show");
+        matchIndex = -1;
+      }
+      $("clashBtn").addEventListener("click", openClash);
+      $("clashX").addEventListener("click", closeClash);
+      clashEl.addEventListener("click", (e) => { if (e.target === clashEl) closeClash(); });
+      $("clashAgain").addEventListener("click", () => { clashCurrent = pickClash(clashCurrent); renderClash(); });
+      clashGoBtn.addEventListener("click", () => {
+        if (clashGoBtn.disabled) return;
+        clashGoBtn.disabled = true;
+        clashGoBtn.textContent = "正在翻开…";
+        openPerson(clashCurrent);
+      });
+      $("clashAsk").addEventListener("click", () => {
+        showToast(`已为你向 @${PEOPLE[clashCurrent][0]} 生成提问（演示版暂未接入评论区）`);
+      });
+
+      // ---- 小圈子 ----
+      const chipEl = $("circleChip");
+      const focusBannerEl = $("focusBanner");
+      let focusLines = null;
+      let chipQueue = [];
+      let chipTimer = 0;
+      let chipCluster = null;
+      let manualCircleIdx = 0;
+
+      function clusterSide(c) {
+        const avg = c.members.reduce((s, i) => s + PEOPLE[i][1], 0) / c.members.length;
+        return avg < 0 ? "光谱左端（倾向转行）" : "光谱右端（选择深耕）";
+      }
+      function clusterNames(c) {
+        return c.members.map((i) => `@${PEOPLE[i][0]}`).join("、");
+      }
+      function clusterBlurb(c) {
+        return `<b>${c.label}</b> · ${clusterNames(c)} 都站在${clusterSide(c)}，最近互相点赞了对方的回答。`;
+      }
+      function showChip(c) {
+        chipCluster = c;
+        $("circleText").innerHTML = clusterBlurb(c);
+        chipEl.classList.add("show");
+      }
+      function queueNextChip(delay) {
+        clearTimeout(chipTimer);
+        chipTimer = setTimeout(() => {
+          if (cardsEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet) return;
+          if (chipQueue.length) showChip(chipQueue.shift());
+        }, delay);
+      }
+      chipQueue = CLUSTERS.slice();
+      queueNextChip(5200);
+
+      function exitFocus() {
+        focusSet = null;
+        if (focusLines) {
+          nebula.remove(focusLines);
+          focusLines.geometry.dispose();
+          focusLines.material.dispose();
+          focusLines = null;
+        }
+        focusBannerEl.classList.remove("show");
+        document.body.classList.remove("is-focusing");
+        commentGroup.visible = includeComments;
+      }
+      function focusCluster(c) {
+        exitFocus();
+        focusSet = new Set(c.members);
+        c.members.forEach((i) => ensureRing(users[i]));
+        const pts = [];
+        c.members.forEach((a) => c.members.forEach((b) => {
+          if (a < b) {
+            pts.push(users[a].group.position.clone(), users[b].group.position.clone());
+          }
+        }));
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const mat = new THREE.LineBasicMaterial({
+          color: 0xe7c98c, transparent: true, opacity: 0.45,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        });
+        focusLines = new THREE.LineSegments(geo, mat);
+        focusLines.renderOrder = 4;
+        nebula.add(focusLines);
+        commentGroup.visible = false;
+        $("focusText").innerHTML = clusterBlurb(c);
+        focusBannerEl.classList.add("show");
+        document.body.classList.add("is-focusing");
+      }
+      $("circleFocus").addEventListener("click", () => {
+        if (chipCluster) focusCluster(chipCluster);
+        chipEl.classList.remove("show");
+      });
+      $("circleSkip").addEventListener("click", () => {
+        chipEl.classList.remove("show");
+        if (chipQueue.length) queueNextChip(9000);
+      });
+      $("circleBtn").addEventListener("click", () => {
+        if (focusSet) { exitFocus(); return; }
+        const c = CLUSTERS[manualCircleIdx];
+        manualCircleIdx = (manualCircleIdx + 1) % CLUSTERS.length;
+        chipEl.classList.remove("show");
+        focusCluster(c);
+      });
+      $("focusExit").addEventListener("click", exitFocus);
+
+      $("verdictClear").addEventListener("click", () => {
+        resetLikes();
+        showToast("已清除点赞记录，你的星位回到光谱中点");
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (clashEl.classList.contains("show")) closeClash();
+        else if (cardsEl.classList.contains("show")) closeCards();
+        else if (focusSet) exitFocus();
+        else if (chipEl.classList.contains("show")) chipEl.classList.remove("show");
+      });
+
+      window.__neb = {
+        meX: () => meUser.group.position.x,
+        meBaseX: () => meUser.baseX,
+        trailOpacity: () => trailMat.opacity,
+        commentsVisible: () => commentGroup.visible,
+        commentCount: () => cusers.length,
+        likeCount: () => liked.size,
+        liked: () => [...liked],
+        myStance: () => myStanceVal,
+        focusSize: () => (focusSet ? focusSet.size : 0),
+        clashIndex: () => clashCurrent,
+        matchIndex: () => matchIndex,
+        play: () => { running = true; clock.getDelta(); loop(); },
+        heartOn: (i) => !!(users[i] && users[i].heart && users[i].heart.visible),
+        ringOpacity: (i) => (users[i] && users[i].ring ? users[i].ring.material.opacity : 0),
+        avatarOpacity: (i) => (users[i] ? users[i].avatar.material.opacity : -1),
+      };
+
+      try {
+        if (window.parent !== window.self) window.parent.postMessage({ type: "nebula-scene-ready" }, "*");
+      } catch (e) {}
       loop();
       window.__stage && window.__stage("looping");
     </script>

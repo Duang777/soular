@@ -11,9 +11,24 @@ export function Nebula() {
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
       const data = event.data;
+      if (data?.type === "nebula-scene-ready") {
+        const source = event.source as (Window & { __nebHost?: boolean }) | null;
+        if (source) {
+          source.__nebHost = true;
+          source.postMessage({ type: "nebula-host-ready" }, event.origin);
+        }
+        return;
+      }
       const cast = data?.cast;
       if (data?.type !== "nebula-open" || typeof cast !== "string") return;
       if (!CASTS.some((item) => item.key === cast)) return;
+      const source = event.source as Window | null;
+      if (source && typeof data.requestId === "string") {
+        source.postMessage(
+          { type: "nebula-open-ack", requestId: data.requestId },
+          event.origin,
+        );
+      }
       if (data?.self === true) {
         navigate(`/shelf/${cast}?self=1`);
       } else if (Number.isInteger(data?.u) && data.u >= 0 && data.u < 48) {
