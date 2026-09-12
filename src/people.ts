@@ -5,6 +5,9 @@ export type Person = {
   stance: number;
   cast: Cast["key"];
   claim: string;
+  avatar?: string;
+  sourceUrl?: string;
+  votes?: number;
 };
 
 export const DEFAULT_NEBULA_PRESET = "career-35";
@@ -64,6 +67,10 @@ export function avatarFile(index: number) {
   return `nebula-scene/avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
 }
 
+export function personAvatarFile(person: Person | null, index: number) {
+  return person?.avatar ?? avatarFile(index);
+}
+
 export function personByIndex(index: number): Person | null {
   return Number.isInteger(index) && index >= 0 && index < PEOPLE.length ? PEOPLE[index] : null;
 }
@@ -90,6 +97,11 @@ export function stagedPersonByIndex(preset: string, index: number): Person | nul
       stance: Math.max(-1, Math.min(1, value.stance)),
       cast: value.cast as Person["cast"],
       claim: value.claim,
+      avatar: typeof value.avatar === "string" ? value.avatar : undefined,
+      sourceUrl: typeof value.sourceUrl === "string" ? value.sourceUrl : undefined,
+      votes: typeof value.votes === "number" && Number.isFinite(value.votes)
+        ? value.votes
+        : undefined,
     };
   } catch {
     return null;

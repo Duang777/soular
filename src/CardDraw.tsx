@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { asset, CASTS, type Cast } from "./cast";
-import { avatarFile, personByIndex, type Person } from "./people";
+import { personAvatarFile, personByIndex, type Person } from "./people";
 import { WarmStars } from "./WarmStars";
 
 export type CardSubject =
@@ -179,7 +179,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     const subjectIndex = subject.kind === "person" ? subject.index : 0;
     const [art, ava] = await Promise.all([
       loadImage(asset(`personas/${cast.key}.jpg`)),
-      loadImage(asset(avatarFile(subjectIndex))),
+      loadImage(asset(personAvatarFile(person, subjectIndex))),
     ]);
 
     const cardX = 150;
@@ -304,7 +304,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
 
   const personName = person ? `@${person.name}` : cast.name;
   const artSrc = asset(`personas/${cast.key}.jpg`);
-  const personAvatarSrc = person ? asset(avatarFile(personIndex)) : null;
+  const personAvatarSrc = person ? asset(personAvatarFile(person, personIndex)) : null;
 
   const shareUrl = useMemo(() => {
     const base = import.meta.env.BASE_URL;

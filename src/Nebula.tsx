@@ -33,6 +33,14 @@ export function Nebula() {
         }
         return;
       }
+      if (
+        data?.type === "nebula-preset-change" &&
+        typeof data.preset === "string" &&
+        /^[a-z0-9-]+$/.test(data.preset)
+      ) {
+        navigate(`/nebula?preset=${encodeURIComponent(data.preset)}`, { replace: true });
+        return;
+      }
       const cast = data?.cast;
       if (data?.type !== "nebula-open" || typeof cast !== "string") return;
       if (!CASTS.some((item) => item.key === cast)) return;
@@ -49,7 +57,7 @@ export function Nebula() {
       }
       if (data?.self === true) {
         navigate(`/shelf/${cast}?self=1&preset=${encodeURIComponent(activePreset)}`);
-      } else if (Number.isInteger(data?.u) && data.u >= 0 && data.u < 48) {
+      } else if (Number.isInteger(data?.u) && data.u >= 0 && data.u < 200) {
         if (data.person && typeof data.person === "object") {
           try {
             window.sessionStorage.setItem(

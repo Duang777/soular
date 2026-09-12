@@ -516,6 +516,32 @@
       .mini-constellation i:nth-child(1) { left: 5px; top: 24px; }
       .mini-constellation i:nth-child(2) { left: 29px; top: 7px; background: #e7c17f; }
       .mini-constellation i:nth-child(3) { right: 4px; bottom: 7px; }
+      .topic-picker {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 10px;
+        padding: 9px 11px;
+        border: 1px solid rgba(143, 216, 220, 0.16);
+        border-radius: 8px;
+        background: #0a1218;
+      }
+      .topic-picker > span {
+        color: rgba(196, 207, 211, 0.52);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .topic-picker select {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #eef2ef;
+        font: 600 11px/1.4 var(--sans);
+        cursor: pointer;
+      }
       .zh-links {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1217,6 +1243,15 @@
         background: rgba(231, 193, 127, 0.1);
         color: #e7c17f;
       }
+      .pcard-source {
+        display: block;
+        margin-top: 7px;
+        color: rgba(143, 216, 220, 0.72);
+        font-size: 9px;
+        text-align: right;
+        text-decoration: none;
+      }
+      .pcard-source:hover { color: #b8e5e7; text-decoration: underline; }
       .pcard-fac {
         margin-top: 5px;
         display: flex;
@@ -1844,6 +1879,10 @@
             <i></i><i></i><i></i>
           </span>
         </div>
+        <label class="topic-picker">
+          <span>讨论热点</span>
+          <select id="presetSelect" aria-label="切换讨论热点"></select>
+        </label>
         <nav class="zh-links" aria-label="浏览知乎">
           <a class="zh-link" id="presetSearchLink" href="https://www.zhihu.com/search?type=content&amp;q=35%20%E5%B2%81%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AF%A5%E4%B8%8D%E8%AF%A5%E8%BD%AC%E8%A1%8C" target="_blank" rel="noopener noreferrer">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -2101,7 +2140,7 @@
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
       const sceneParams = new URLSearchParams(location.search);
       const presetModuleVersion = sceneParams.get("v") || "dev";
-      const { getNebulaPreset } = await import(
+      const { getNebulaPreset, listNebulaPresets } = await import(
         `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
 
@@ -2196,17 +2235,18 @@
       const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
       const PRESET = getNebulaPreset(sceneParams.get("preset"));
-      const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length === 48
+      const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length >= 2
         ? PRESET.people
         : DEFAULT_PEOPLE;
       const FOLLOWED = Array.isArray(PRESET.followed)
         ? new Set(PRESET.followed)
         : DEFAULT_FOLLOWED;
       const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
-      const CLUSTERS = Array.isArray(PRESET.circles) && PRESET.circles.length
-        ? PRESET.circles
-        : DEFAULT_CLUSTERS;
+      const CLUSTERS = Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS;
       const ME = PRESET.me || DEFAULT_ME;
+      const personAvatarPath = (index) => PRESET.avatarBase
+        ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
+        : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
 
       document.title = `${PRESET.question} · 观点星云`;
       document.getElementById("presetQuestion").textContent = PRESET.question;
@@ -2221,7 +2261,15 @@
       document.getElementById("presetFilterLeft").textContent = PRESET.axis.leftTendency;
       document.getElementById("presetFilterCenter").textContent = PRESET.axis.center;
       document.getElementById("presetFilterRight").textContent = PRESET.axis.rightTendency;
+      document.getElementById("filterAllCount").textContent = PEOPLE.length;
+      document.getElementById("filterLeftCount").textContent =
+        PEOPLE.filter((person) => person[1] < -0.2).length;
+      document.getElementById("filterCenterCount").textContent =
+        PEOPLE.filter((person) => person[1] >= -0.2 && person[1] <= 0.2).length;
+      document.getElementById("filterRightCount").textContent =
+        PEOPLE.filter((person) => person[1] > 0.2).length;
       document.getElementById("commentToggleRow").hidden = COMMENTS.length === 0;
+      document.getElementById("circleBtn").style.display = CLUSTERS.length ? "" : "none";
 
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
@@ -2229,6 +2277,14 @@
       const exploreShellEl = document.getElementById("exploreShell");
       const exploreMenuEl = document.getElementById("exploreMenu");
       const exploreToggleEl = document.getElementById("exploreToggle");
+      const presetSelectEl = document.getElementById("presetSelect");
+      listNebulaPresets().forEach((preset) => {
+        const option = document.createElement("option");
+        option.value = preset.id;
+        option.textContent = `${preset.serial} · ${preset.question}`;
+        presetSelectEl.appendChild(option);
+      });
+      presetSelectEl.value = PRESET.id;
       const captureMode = sceneParams.has("capture");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
@@ -3024,7 +3080,7 @@
       users.forEach((u) => {
         const file = u.isMe
           ? "avatars/me.jpg"
-          : `avatars/u${String(u.index + 1).padStart(2, "0")}.jpg`;
+          : personAvatarPath(u.index);
         loader.load(
           file,
           (tex) => {
@@ -3173,6 +3229,20 @@
           openAcks.add(e.data.requestId);
         }
       });
+      presetSelectEl.addEventListener("change", () => {
+        const nextPreset = presetSelectEl.value;
+        if (!nextPreset || nextPreset === PRESET.id) return;
+        if (window.parent !== window.self && hostReady) {
+          window.parent.postMessage(
+            { type: "nebula-preset-change", preset: nextPreset },
+            "*"
+          );
+          return;
+        }
+        const next = new URL(location.href);
+        next.searchParams.set("preset", nextPreset);
+        location.href = next.href;
+      });
       function gotoShelf(path) {
         location.href = new URL("../shelf/" + path, document.baseURI).href;
       }
@@ -3195,7 +3265,7 @@
       }
       function openPerson(i) {
         if (!Number.isInteger(i) || i < 0 || i >= N) return;
-        const [name, stance, castKey, claim, sourceUrl, sourceTitle] = PEOPLE[i];
+        const [name, stance, castKey, claim, sourceUrl, sourceTitle, votes] = PEOPLE[i];
         const subject = {
           preset: PRESET.id,
           index: i,
@@ -3203,8 +3273,10 @@
           stance,
           cast: castKey,
           claim,
+          avatar: `nebula-scene/${personAvatarPath(i)}`,
           sourceUrl,
           sourceTitle,
+          votes,
         };
         try {
           sessionStorage.setItem("jiupai:nebula:subject", JSON.stringify(subject));
@@ -3539,17 +3611,18 @@
       }
 
       function personCard(i) {
-        const [name, stance, castKey, claim] = PEOPLE[i];
+        const [name, stance, castKey, claim, sourceUrl, , votes] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
         const on = liked.has(i);
         return `<article class="pcard" data-u="${i}" data-signal="${String(i + 1).padStart(2, "0")}" style="--cast:${castColor};--stance:${stancePercent(stance)}%" tabindex="0" role="link" aria-label="查看 ${name} 的人格卡">
-          <img class="pcard-ava" src="avatars/u${String(i + 1).padStart(2, "0")}.jpg" alt="${name}" />
+          <img class="pcard-ava" src="${personAvatarPath(i)}" alt="${name}" />
           <div class="pcard-body">
             <div class="pcard-row">
               <b>@${name}</b>${FOLLOWED.has(i) ? '<span class="pcard-star">★</span>' : ''}
             </div>
             <div class="pcard-fac"><i style="background:${castColor}"></i><b>${castName}</b> · ${castRole}</div>
             <div class="pcard-claim">“${claim}”</div>
+            ${sourceUrl ? `<a class="pcard-source" data-source href="${sourceUrl}" target="_blank" rel="noopener noreferrer">查看原回答${Number.isFinite(votes) ? ` · ${votes} 赞同` : ""}</a>` : ""}
           </div>
           <div class="pcard-side">
             <div class="pcard-position">
@@ -3698,6 +3771,7 @@
         });
       });
       cardsListEl.addEventListener("click", (e) => {
+        if (e.target.closest("[data-source]")) return;
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
@@ -3752,7 +3826,7 @@
         ensureRing(users[i]);
         const [name, stance, castKey, claim] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
-        $("clashAva").src = `avatars/u${String(i + 1).padStart(2, "0")}.jpg`;
+        $("clashAva").src = personAvatarPath(i);
         $("clashAva").alt = `${name}的头像`;
         $("clashName").textContent = `@${name}`;
         $("clashDot").style.background = castColor;
@@ -3871,6 +3945,7 @@
         if (chipQueue.length) queueNextChip(9000);
       });
       $("circleBtn").addEventListener("click", () => {
+        if (!CLUSTERS.length) return;
         setExploreOpen(false);
         if (focusSet) { exitFocus(); return; }
         const c = CLUSTERS[manualCircleIdx];
@@ -3896,6 +3971,7 @@
 
       window.__neb = {
         presetId: () => PRESET.id,
+        answerCount: () => N,
         meX: () => meUser.group.position.x,
         meBaseX: () => meUser.baseX,
         trailOpacity: () => trailMat.opacity,
