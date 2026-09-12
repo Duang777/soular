@@ -564,6 +564,10 @@ a {
   pointer-events: none;
 }
 
+.shelf-nav--nebula {
+  justify-content: center;
+}
+
 .shelf-nav__tags {
   display: flex;
   flex-direction: row;
@@ -1829,6 +1833,10 @@ textarea.field:focus-visible,
 }
 
 @media (max-width: 560px) {
+  .shelf-nav--nebula {
+    justify-content: flex-end;
+  }
+
   .shelf-nav__cast {
     display: none;
   }

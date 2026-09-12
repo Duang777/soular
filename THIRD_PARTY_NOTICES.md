@@ -2,7 +2,7 @@
 
 ## Its Hover Icons
 
-The inline SVG paths for the sparkles, refresh, message-circle, and close
+The inline SVG paths for the sparkles, refresh, message-circle, users, and close
 icons in `public/nebula-scene/index.html` are adapted from Its Hover:
 
 - Source: https://github.com/itshover/itshover

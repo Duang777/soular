@@ -1,16 +1,24 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CASTS } from "./cast";
 import { NebulaStage } from "./NebulaStage";
 
 export function Nebula() {
   const navigate = useNavigate();
+  const [isCardsView, setIsCardsView] = useState(false);
 
   useEffect(() => {
     window.sessionStorage.setItem("jiupai:lobby", "/nebula");
     function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return;
       const data = event.data;
+      if (
+        data?.type === "nebula-view-change" &&
+        (data.view === "cards" || data.view === "nebula")
+      ) {
+        setIsCardsView(data.view === "cards");
+        return;
+      }
       if (data?.type === "nebula-scene-ready") {
         const source = event.source as (Window & { __nebHost?: boolean }) | null;
         if (source) {
@@ -40,16 +48,17 @@ export function Nebula() {
   }, [navigate]);
 
   return (
-    <div className="shelf-root nebula-root">
+    <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>
       <NebulaStage />
-      <nav className="shelf-nav" aria-label="星云导航">
-        <div className="shelf-nav__tags">
-          <Link to="/" className="shelf-tag">
-            返回九派
-          </Link>
-        </div>
-        <p className="shelf-nav__cast">SPECTRUM · 观点星云</p>
-      </nav>
+      {!isCardsView && (
+        <nav className="shelf-nav shelf-nav--nebula" aria-label="星云导航">
+          <div className="shelf-nav__tags">
+            <Link to="/" className="shelf-tag">
+              返回九派
+            </Link>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
