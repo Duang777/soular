@@ -12,6 +12,7 @@ export function BrandMark({ className = "" }: { className?: string }) {
         viewBox="0 0 64 64"
         aria-hidden="true"
       >
+        <rect className="brand-lockup__mark-bg" x="1" y="1" width="62" height="62" rx="14" />
         <g fill="none" strokeLinecap="round" strokeLinejoin="round">
           <path
             className="brand-lockup__orbit brand-lockup__orbit--primary"

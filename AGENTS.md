@@ -19,7 +19,7 @@
 - `server/`：部署为 Cloudflare Worker 的 Node 22 TypeScript 服务，负责 OAuth、知乎开放平台访问、KV 会话与缓存，并托管 `dist/`。
 - `docs/api-contract.md`：前后端边界和公开响应结构的唯一事实来源。
 
-正式环境地址为 `https://soular.top/`；GitHub Pages 在 `/zhihu-character-wave/` 下提供静态镜像。
+正式环境地址为 `https://soular.top/`；开源仓库为 `Duang777/soular`，GitHub Pages 在 `/soular/` 下提供静态镜像。
 
 ## 赛事约束
 

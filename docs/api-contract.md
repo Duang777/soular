@@ -4,7 +4,7 @@
 
 - 正式前端：`https://soular.top/`
 - API Base URL：`https://soular.top`
-- GitHub Pages 镜像：`https://duang777.github.io/zhihu-character-wave/`
+- GitHub Pages 镜像：`https://duang777.github.io/soular/`
 - 前端生产请求使用同源相对路径；GitHub Pages 镜像使用 `https://soular.top`
 - 后端代码：仓库内 `server/`
 - Worker 托管正式前端 `dist`，并优先处理 `/api/*`、`/login` 和 `/auth/callback`。

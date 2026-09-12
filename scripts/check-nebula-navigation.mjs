@@ -75,10 +75,10 @@ assert.equal(
 assert.equal(
   buildNebulaShelfUrl(
     { protocol: "https:" },
-    "https://example.test/zhihu-character-wave/nebula-scene/index.html",
+    "https://example.test/soular/nebula-scene/index.html",
     path,
   ),
-  "https://example.test/zhihu-character-wave/shelf/goat?self=1&preset=ai-math&version=20260912",
+  "https://example.test/soular/shelf/goat?self=1&preset=ai-math&version=20260912",
 );
 
 const likeStorageKeys = new Set();

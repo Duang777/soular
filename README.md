@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./public/brand/soular-logo.svg" width="480" alt="思想银河 Soular" />
+  <img src="./public/brand/soular-logo.svg?v=3" width="480" alt="思想银河 Soular" />
 </h1>
 
 <p align="center"><strong>把一场讨论，变成一张可以漫游的观点地图。</strong></p>
@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://soular.top/"><strong>soular.top</strong></a> ·
   <a href="https://soular.top/nebula?preset=ai-math">探索真实热点</a> ·
-  <a href="https://duang777.github.io/zhihu-character-wave/">GitHub Pages</a> ·
+  <a href="https://duang777.github.io/soular/">GitHub Pages</a> ·
   <a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">产品方案</a>
 </p>
 
@@ -28,8 +28,8 @@
 | --- | --- | --- |
 | 正式站 | [https://soular.top](https://soular.top/) | 完整产品流程 |
 | 真实热点星云 | [AI 是否正在毁掉数学？](https://soular.top/nebula?preset=ai-math) | 31 位真实回答者与观点光谱 |
-| 静态镜像 | [GitHub Pages](https://duang777.github.io/zhihu-character-wave/) | 无后端浏览 |
-| 开源仓库 | [Duang777/zhihu-character-wave](https://github.com/Duang777/zhihu-character-wave) | 源码、文档与本地运行 |
+| 静态镜像 | [GitHub Pages](https://duang777.github.io/soular/) | 无后端浏览 |
+| 开源仓库 | [Duang777/soular](https://github.com/Duang777/soular) | 源码、文档与本地运行 |
 
 ## 一次完整体验
 
@@ -99,8 +99,8 @@
 需要 Node.js 22+ 和 npm 10+。静态快照与完整视觉体验不需要任何密钥：
 
 ```bash
-git clone https://github.com/Duang777/zhihu-character-wave.git
-cd zhihu-character-wave
+git clone https://github.com/Duang777/soular.git
+cd soular
 npm ci
 npm run dev
 ```
