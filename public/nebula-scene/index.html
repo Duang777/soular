@@ -1819,14 +1819,14 @@
           <div class="kicker">ZHIHU · SPECTRUM</div>
           <div class="title">观点星云</div>
         </div>
-        <div class="question">热门问题 · <b>35 岁程序员该不该转行？</b><br />每个发光头像，都是一种立场</div>
+        <div class="question">热门问题 · <b id="presetQuestion">35 岁程序员该不该转行？</b><br />每个发光头像，都是一种立场</div>
       </div>
       <div class="axis axis-left">
-        <span class="pole">必须转行</span>
+        <span class="pole" id="presetLeftPole">必须转行</span>
         <span class="sub">LEFT POLE</span>
       </div>
       <div class="axis axis-right">
-        <span class="pole">深耕不转</span>
+        <span class="pole" id="presetRightPole">深耕不转</span>
         <span class="sub">RIGHT POLE</span>
       </div>
       <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点赞校准你的立场</div>
@@ -1836,7 +1836,7 @@
       <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河盲盒与星云工具">
         <div class="explore-head">
           <div>
-            <span class="explore-series">GALAXY BLIND BOX · 01</span>
+            <span class="explore-series" id="presetSeries">GALAXY BLIND BOX · 01</span>
             <b>开启一条新问题线</b>
             <p>知乎发现 × 观点星云</p>
           </div>
@@ -1845,7 +1845,7 @@
           </span>
         </div>
         <nav class="zh-links" aria-label="浏览知乎">
-          <a class="zh-link" href="https://www.zhihu.com/search?type=content&amp;q=35%20%E5%B2%81%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AF%A5%E4%B8%8D%E8%AF%A5%E8%BD%AC%E8%A1%8C" target="_blank" rel="noopener noreferrer">
+          <a class="zh-link" id="presetSearchLink" href="https://www.zhihu.com/search?type=content&amp;q=35%20%E5%B2%81%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AF%A5%E4%B8%8D%E8%AF%A5%E8%BD%AC%E8%A1%8C" target="_blank" rel="noopener noreferrer">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m16 16 4 4"></path>
@@ -1913,7 +1913,7 @@
               <span>光谱阅读</span>
             </button>
           </div>
-          <label class="switch-row">
+          <label class="switch-row" id="commentToggleRow">
             <span class="switch-copy">
               <b>纳入评论区观点</b>
               <small>让更多声音进入星图</small>
@@ -1931,7 +1931,7 @@
         <span class="blindbox-lid" aria-hidden="true"></span>
         <span class="zh-orbit-ring" aria-hidden="true"></span>
         <span class="zh-mark">知</span>
-        <span class="zh-mini" aria-hidden="true">OPEN · 01</span>
+        <span class="zh-mini" id="presetOpenLabel" aria-hidden="true">OPEN · 01</span>
       </button>
       <span class="explore-nudge" id="exploreNudge" aria-hidden="true">
         <span class="explore-nudge-line"></span>
@@ -1959,7 +1959,7 @@
         <div class="cards-heading">
           <div class="cards-series">SPECTRUM INDEX · 48 SIGNALS</div>
           <div class="cards-title">观点光谱索引</div>
-          <div class="cards-question">35 岁程序员该不该转行？</div>
+          <div class="cards-question" id="presetCardsQuestion">35 岁程序员该不该转行？</div>
           <div class="cards-meta" id="cardsMeta"></div>
         </div>
         <label class="cards-search">
@@ -1971,17 +1971,17 @@
         </label>
       </div>
       <div class="cards-spectrum" aria-label="立场光谱">
-        <span>必须转行</span>
+        <span id="presetCardsLeftPole">必须转行</span>
         <span class="cards-spectrum-track"><i class="cards-me-marker" id="cardsMeMarker"></i></span>
-        <span>深耕不转</span>
+        <span id="presetCardsRightPole">深耕不转</span>
       </div>
       <div class="cards-layout">
         <aside class="cards-rail" aria-label="筛选观点">
           <div class="cards-rail-title">FILTER · 立场筛选</div>
           <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">48</b></button>
-          <button type="button" class="cards-filter" data-card-filter="left"><span>倾向转行</span><b id="filterLeftCount">0</b></button>
-          <button type="button" class="cards-filter" data-card-filter="center"><span>中立观察</span><b id="filterCenterCount">0</b></button>
-          <button type="button" class="cards-filter" data-card-filter="right"><span>倾向深耕</span><b id="filterRightCount">0</b></button>
+          <button type="button" class="cards-filter" data-card-filter="left"><span id="presetFilterLeft">倾向转行</span><b id="filterLeftCount">0</b></button>
+          <button type="button" class="cards-filter" data-card-filter="center"><span id="presetFilterCenter">中立观察</span><b id="filterCenterCount">0</b></button>
+          <button type="button" class="cards-filter" data-card-filter="right"><span id="presetFilterRight">倾向深耕</span><b id="filterRightCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="liked"><span>我赞过的</span><b id="filterLikedCount">0</b></button>
           <p class="cards-rail-note">沿观点光谱从左到右排列。坐标越靠近两端，立场越明确。</p>
         </aside>
@@ -2099,6 +2099,7 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+      import { getNebulaPreset } from "./presets.js";
 
       const CASTS = {
         fox: ["长答派", "万字长答", "#aeb6d6"],
@@ -2112,7 +2113,7 @@
         frog: ["想法派", "三百字闪过", "#93d6a4"],
       };
 
-      const PEOPLE = [
+      const DEFAULT_PEOPLE = [
         ["等喝茶的老码农", -0.98, "goat", "35 岁还不走，等着公司请你喝茶吗？管理岗就那么几个。"],
         ["拼不过00后的P7", -0.93, "bear", "体力加班都拼不过年轻人，早转管理或业务才是正解。"],
         ["送外卖的Tim", -0.9, "frog", "我已经转了，送外卖都比在工位等优化强。"],
@@ -2162,11 +2163,11 @@
         ["黄金期论者", 0.96, "fox", "技术人的黄金期在 35 岁后，人脉经验判断力全开。"],
         ["深耕不认输", 1.0, "bear", "坚决不转，深耕的人从不靠青春吃饭。"],
       ];
-      const FOLLOWED = new Set([6, 26, 40]);
+      const DEFAULT_FOLLOWED = new Set([6, 26, 40]);
 
       // 评论区观点：默认隐藏，开启后以“空心圆”混进星云（不提供人格卡深链，仅展示观点）
       // 结构：[昵称, 立场, 派别, 观点, 是否幽默玩梗]
-      const COMMENTS = [
+      const DEFAULT_COMMENTS = [
         ["一楼沙发王", -0.95, "frog", "35 岁还不转行？等着公司请你喝茶吗哈哈哈。", true],
         ["评论区课代表", -0.78, "bear", "总结楼上：早转早超生，晚转被优化。", false],
         ["匿名打工人", -0.7, "owl", "别问，问就是简历已经投出去了。", false],
@@ -2182,13 +2183,42 @@
       ];
 
       // 小圈子：mock 的“互赞互动密集”群体（成员均为 PEOPLE 索引）
-      const CLUSTERS = [
+      const DEFAULT_CLUSTERS = [
         { members: [0, 1, 4], label: "「趁早转行」互助会" },
         { members: [43, 45, 46], label: "「深耕到底」技术信仰组" },
       ];
 
       // 「我」的专属星位：固定在核球前方、离镜头更近，金色呼吸光圈 + 金徽章
-      const ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
+      const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
+
+      const sceneParams = new URLSearchParams(location.search);
+      const PRESET = getNebulaPreset(sceneParams.get("preset"));
+      const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length === 48
+        ? PRESET.people
+        : DEFAULT_PEOPLE;
+      const FOLLOWED = Array.isArray(PRESET.followed)
+        ? new Set(PRESET.followed)
+        : DEFAULT_FOLLOWED;
+      const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
+      const CLUSTERS = Array.isArray(PRESET.circles) && PRESET.circles.length
+        ? PRESET.circles
+        : DEFAULT_CLUSTERS;
+      const ME = PRESET.me || DEFAULT_ME;
+
+      document.title = `${PRESET.question} · 观点星云`;
+      document.getElementById("presetQuestion").textContent = PRESET.question;
+      document.getElementById("presetLeftPole").textContent = PRESET.axis.left;
+      document.getElementById("presetRightPole").textContent = PRESET.axis.right;
+      document.getElementById("presetSeries").textContent = `GALAXY BLIND BOX · ${PRESET.serial}`;
+      document.getElementById("presetOpenLabel").textContent = `OPEN · ${PRESET.serial}`;
+      document.getElementById("presetSearchLink").href = PRESET.searchUrl;
+      document.getElementById("presetCardsQuestion").textContent = PRESET.question;
+      document.getElementById("presetCardsLeftPole").textContent = PRESET.axis.left;
+      document.getElementById("presetCardsRightPole").textContent = PRESET.axis.right;
+      document.getElementById("presetFilterLeft").textContent = PRESET.axis.leftTendency;
+      document.getElementById("presetFilterCenter").textContent = PRESET.axis.center;
+      document.getElementById("presetFilterRight").textContent = PRESET.axis.rightTendency;
+      document.getElementById("commentToggleRow").hidden = COMMENTS.length === 0;
 
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
@@ -2196,7 +2226,7 @@
       const exploreShellEl = document.getElementById("exploreShell");
       const exploreMenuEl = document.getElementById("exploreMenu");
       const exploreToggleEl = document.getElementById("exploreToggle");
-      const captureMode = new URLSearchParams(location.search).has("capture");
+      const captureMode = sceneParams.has("capture");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
       const deviceMemory = navigator.deviceMemory || 8;
@@ -3019,7 +3049,7 @@
       setTimeout(() => loadingEl.classList.add("hide"), 6000);
 
       // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
-      const LIKE_KEY = "jiupai:nebula:likes:v1";
+      const LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
       const liked = new Set();
       try {
         const raw = JSON.parse(localStorage.getItem(LIKE_KEY) || "[]");
@@ -3043,7 +3073,7 @@
         });
         const avg = sum / n;
         const a = Math.abs(avg);
-        const dir = avg < 0 ? "转行" : "深耕";
+        const dir = avg < 0 ? PRESET.axis.leftChoice : PRESET.axis.rightChoice;
         let degree;
         if (a < 0.12) degree = "基本中立，还在两种声音之间观望";
         else if (a < 0.3) degree = `略微倾向${dir}`;
@@ -3051,7 +3081,9 @@
         else degree = `坚定地站在${dir}一边`;
         let tail = "";
         if (left && right) {
-          tail = avg < 0 ? "，不过你也认可深耕派的部分理由" : "，不过你也认可转行派的部分理由";
+          tail = avg < 0
+            ? `，不过你也认可${PRESET.axis.rightChoice}一侧的部分理由`
+            : `，不过你也认可${PRESET.axis.leftChoice}一侧的部分理由`;
         }
         return { avg, n, text: `基于你点赞的 ${n} 个回答，AI 认为你${degree}${tail}。` };
       }
@@ -3160,16 +3192,29 @@
       }
       function openPerson(i) {
         if (!Number.isInteger(i) || i < 0 || i >= N) return;
-        const [name, , castKey] = PEOPLE[i];
+        const [name, stance, castKey, claim, sourceUrl, sourceTitle] = PEOPLE[i];
+        const subject = {
+          preset: PRESET.id,
+          index: i,
+          name,
+          stance,
+          cast: castKey,
+          claim,
+          sourceUrl,
+          sourceTitle,
+        };
+        try {
+          sessionStorage.setItem("jiupai:nebula:subject", JSON.stringify(subject));
+        } catch (e) {}
         requestOpen(
-          { type: "nebula-open", cast: castKey, name, u: i },
-          castKey + "?u=" + i
+          { type: "nebula-open", cast: castKey, name, u: i, preset: PRESET.id, person: subject },
+          castKey + "?u=" + i + "&preset=" + encodeURIComponent(PRESET.id)
         );
       }
       function openSelf() {
         requestOpen(
-          { type: "nebula-open", cast: ME.castKey, self: true },
-          ME.castKey + "?self=1"
+          { type: "nebula-open", cast: ME.castKey, self: true, preset: PRESET.id },
+          ME.castKey + "?self=1&preset=" + encodeURIComponent(PRESET.id)
         );
       }
       function activateHovered(u) {
@@ -3474,9 +3519,9 @@
         return Math.max(0, Math.min(100, Math.round((stance + 1) * 50)));
       }
       function stanceLabel(stance) {
-        if (stance < -0.2) return "倾向转行";
-        if (stance > 0.2) return "倾向深耕";
-        return "中立观察";
+        if (stance < -0.2) return PRESET.axis.leftTendency;
+        if (stance > 0.2) return PRESET.axis.rightTendency;
+        return PRESET.axis.center;
       }
       function matchesCardFilter(stance, isLiked) {
         if (cardsFilter === "left") return stance < -0.2;
@@ -3574,7 +3619,7 @@
           <button type="button" class="pcard-me-btn" data-self>生成人格卡 →</button>
         </section>`;
         const answerSection = visibleAnswers.length
-          ? `<div class="cards-section"><span>回答者观点</span><b>${visibleAnswers.length}</b></div>` +
+          ? `<div class="cards-section"><span>${PRESET.peopleLabel || "回答者观点"}</span><b>${visibleAnswers.length}</b></div>` +
             visibleAnswers.map(({ index }) => personCard(index)).join("")
           : "";
         const commentSection = visibleComments.length
@@ -3753,12 +3798,15 @@
 
       function clusterSide(c) {
         const avg = c.members.reduce((s, i) => s + PEOPLE[i][1], 0) / c.members.length;
-        return avg < 0 ? "光谱左端（倾向转行）" : "光谱右端（选择深耕）";
+        return avg < 0
+          ? `光谱左端（${PRESET.axis.leftTendency}）`
+          : `光谱右端（${PRESET.axis.rightTendency}）`;
       }
       function clusterNames(c) {
         return c.members.map((i) => `@${PEOPLE[i][0]}`).join("、");
       }
       function clusterBlurb(c) {
+        if (c.blurb) return `<b>${c.label}</b> · ${c.blurb}`;
         return `<b>${c.label}</b> · ${clusterNames(c)} 都站在${clusterSide(c)}，最近互相点赞了对方的回答。`;
       }
       function showChip(c) {
@@ -3844,6 +3892,7 @@
       });
 
       window.__neb = {
+        presetId: () => PRESET.id,
         meX: () => meUser.group.position.x,
         meBaseX: () => meUser.baseX,
         trailOpacity: () => trailMat.opacity,

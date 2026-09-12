@@ -1,0 +1,28 @@
+name = "soul-match-server"
+main = "src/worker.ts"
+compatibility_date = "2026-09-01"
+
+# 自定义域名（Cloudflare 自动签 HTTPS 并创建 DNS 记录）。
+# workers.dev 默认入口仍保留，作为备用地址。
+routes = [
+  { pattern = "soular.top", custom_domain = true }
+]
+# 保留 workers.dev 默认入口作为备用地址
+workers_dev = true
+
+# KV 命名空间：会话与内容缓存。
+# 首次使用先执行：npm run cf:kv:create
+# 把输出的 id 填到下面（preview_id 用于 preview 环境，可省略）。
+# 本地 wrangler dev 会自动模拟 KV，无需真实 id。
+[[kv_namespaces]]
+binding = "KV"
+id = "0f1009bb96144aa7b117a581d6ef7f93"
+
+[observability]
+enabled = true
+
+[vars]
+ZHIHU_APP_ID = ""
+ZHIHU_REDIRECT_URI = "https://soular.top/auth/callback"
+FRONTEND_URL = "https://duang777.github.io/zhihu-character-wave/"
+FRONTEND_ORIGIN = "https://duang777.github.io"

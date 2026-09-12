@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
-import { personByIndex } from "./people";
+import {
+  DEFAULT_NEBULA_PRESET,
+  personByIndex,
+  stagedPersonByIndex,
+} from "./people";
 
 type ShelfPhase = "draw" | "book" | "card";
 
@@ -19,19 +23,24 @@ export function ShelfPage() {
   const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
 
   let subject: CardSubject = { kind: "self" };
+  const presetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {
     const index = Number(uRaw);
-    const person = personByIndex(index);
+    const staged = stagedPersonByIndex(presetId, index);
+    const person = staged ??
+      (presetId === DEFAULT_NEBULA_PRESET ? personByIndex(index) : null);
     if (person && person.cast === cast.key) {
-      subject = { kind: "person", index };
+      subject = { kind: "person", index, person };
     }
   } else if (searchParams.get("peek") !== null) {
     subject = { kind: "peek" };
   }
 
   const lobbyRaw = typeof window !== "undefined" ? window.sessionStorage.getItem("jiupai:lobby") : null;
-  const lobbyTarget = lobbyRaw === "/nebula" || lobbyRaw === "/" ? lobbyRaw : "/";
+  const lobbyTarget = lobbyRaw === "/" || lobbyRaw === "/nebula" || lobbyRaw?.startsWith("/nebula?")
+    ? lobbyRaw
+    : "/";
 
   function handleExit() {
     navigate(lobbyTarget);
@@ -44,7 +53,7 @@ export function ShelfPage() {
       <nav className="shelf-nav" aria-label="书页">
         <div className="shelf-nav__tags">
           <Link to={lobbyTarget} className="shelf-tag">
-            {lobbyTarget === "/nebula" ? "返回星云" : "返回九派"}
+            {lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回九派"}
           </Link>
         </div>
         <p className="shelf-nav__cast">

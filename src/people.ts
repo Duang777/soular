@@ -7,6 +7,8 @@ export type Person = {
   claim: string;
 };
 
+export const DEFAULT_NEBULA_PRESET = "career-35";
+
 export const PEOPLE: Person[] = [
   { name: "等喝茶的老码农", stance: -0.98, cast: "goat", claim: "35 岁还不走，等着公司请你喝茶吗？管理岗就那么几个。" },
   { name: "拼不过00后的P7", stance: -0.93, cast: "bear", claim: "体力加班都拼不过年轻人，早转管理或业务才是正解。" },
@@ -64,4 +66,32 @@ export function avatarFile(index: number) {
 
 export function personByIndex(index: number): Person | null {
   return Number.isInteger(index) && index >= 0 && index < PEOPLE.length ? PEOPLE[index] : null;
+}
+
+export function stagedPersonByIndex(preset: string, index: number): Person | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem("jiupai:nebula:subject");
+    const value = raw ? JSON.parse(raw) as Record<string, unknown> : null;
+    if (
+      !value ||
+      value.preset !== preset ||
+      value.index !== index ||
+      typeof value.name !== "string" ||
+      typeof value.stance !== "number" ||
+      !Number.isFinite(value.stance) ||
+      typeof value.cast !== "string" ||
+      typeof value.claim !== "string"
+    ) {
+      return null;
+    }
+    return {
+      name: value.name,
+      stance: Math.max(-1, Math.min(1, value.stance)),
+      cast: value.cast as Person["cast"],
+      claim: value.claim,
+    };
+  } catch {
+    return null;
+  }
 }

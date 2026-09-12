@@ -6,7 +6,7 @@ import { WarmStars } from "./WarmStars";
 export type CardSubject =
   | { kind: "self" }
   | { kind: "peek" }
-  | { kind: "person"; index: number };
+  | { kind: "person"; index: number; person?: Person };
 
 type DrawMode = "enter" | "revisit";
 type Phase = "shuffle" | "flip" | "reveal";
@@ -89,7 +89,9 @@ function drawImageCover(
 
 async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   const flavor = subject.kind;
-  const person: Person | null = flavor === "person" ? personByIndex(subject.index) : null;
+  const person: Person | null = flavor === "person"
+    ? subject.person ?? personByIndex(subject.index)
+    : null;
   const isSelf = flavor === "self";
   const isPeek = flavor === "peek";
   const W = 1080;
@@ -281,7 +283,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   onExit: () => void;
 }) {
   const reduceMotion = useMemo(prefersReducedMotion, []);
-  const person = subject.kind === "person" ? personByIndex(subject.index) : null;
+  const person = subject.kind === "person"
+    ? subject.person ?? personByIndex(subject.index)
+    : null;
   const isSelf = subject.kind === "self";
   const isPeek = subject.kind === "peek";
   const personIndex = subject.kind === "person" ? subject.index : 0;

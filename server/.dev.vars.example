@@ -1,0 +1,12 @@
+# wrangler dev 本地环境变量（复制为 .dev.vars，该文件已被 git 忽略）
+# 注意：本地 localhost 无法完成知乎真实登录，仅用于页面与接口预览。
+# 端到端登录请用部署后的 https://<worker>.<subdomain>.workers.dev/auth/callback。
+
+ZHIHU_APP_ID=
+ZHIHU_REDIRECT_URI=
+FRONTEND_ORIGIN=http://localhost:4325
+FRONTEND_URL=http://localhost:4325/
+
+# 密钥也可以放在 .dev.vars 里做本地联调；线上务必使用 wrangler secret put
+ZHIHU_OAUTH_APP_KEY=
+ZHIHU_ACCESS_SECRET=
