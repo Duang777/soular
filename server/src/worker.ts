@@ -4,12 +4,17 @@ import { corsPreflight, withCors } from "./core/cors.js";
 import { SessionStore } from "./core/session.js";
 import { KvContentCache, KvSessionBackend, type KVNamespaceLike } from "./adapters/cloudflare-kv.js";
 
+interface AssetBinding {
+  fetch(request: Request): Promise<Response>;
+}
+
 export interface Env {
   ZHIHU_APP_ID?: string;
   ZHIHU_OAUTH_APP_KEY?: string;
   ZHIHU_ACCESS_SECRET?: string;
   ZHIHU_REDIRECT_URI?: string;
   FRONTEND_ORIGIN?: string;
+  ASSETS: AssetBinding;
   KV: KVNamespaceLike;
   [key: string]: unknown;
 }
@@ -59,9 +64,19 @@ function errorResponse(status: number, code: string, message: string): Response 
   });
 }
 
+function isBackendPath(pathname: string): boolean {
+  return pathname.startsWith("/api/") ||
+    pathname === "/login" ||
+    pathname === "/auth/callback";
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
+      const url = new URL(request.url);
+      if (!isBackendPath(url.pathname)) {
+        return env.ASSETS.fetch(request);
+      }
       const preflight = corsPreflight(request, env.FRONTEND_ORIGIN);
       if (preflight) return preflight;
       const response = await resolveHandler(env)(request);

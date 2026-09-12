@@ -13,6 +13,14 @@ function corsHeaders(origin: string): Headers {
   return headers;
 }
 
+function isAllowedOrigin(origin: string, allowedOrigins: string | undefined): boolean {
+  return (allowedOrigins ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .includes(origin);
+}
+
 export function corsPreflight(
   request: Request,
   allowedOrigin: string | undefined,
@@ -22,7 +30,7 @@ export function corsPreflight(
   }
 
   const origin = request.headers.get("Origin");
-  if (!origin || origin !== allowedOrigin) {
+  if (!origin || !isAllowedOrigin(origin, allowedOrigin)) {
     return new Response(null, { status: 403 });
   }
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -34,7 +42,11 @@ export function withCors(
   allowedOrigin: string | undefined,
 ): Response {
   const origin = request.headers.get("Origin");
-  if (!origin || origin !== allowedOrigin || !new URL(request.url).pathname.startsWith("/api/")) {
+  if (
+    !origin ||
+    !isAllowedOrigin(origin, allowedOrigin) ||
+    !new URL(request.url).pathname.startsWith("/api/")
+  ) {
     return response;
   }
 

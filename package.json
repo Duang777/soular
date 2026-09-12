@@ -9,7 +9,8 @@
     "preview": "vite preview --port 4325",
     "server:dev": "npm --prefix server run dev",
     "server:typecheck": "npm --prefix server run typecheck",
-    "server:deploy": "npm --prefix server run deploy"
+    "server:deploy": "npm --prefix server run deploy",
+    "deploy": "npm run build && npm run server:typecheck && npm run server:deploy"
   },
   "dependencies": {
     "react": "^19.1.1",

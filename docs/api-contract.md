@@ -2,12 +2,12 @@
 
 ## 1. 部署边界
 
-- 正式前端：`https://duang777.github.io/zhihu-character-wave/`
+- 正式前端：`https://soular.top/`
 - API Base URL：`https://soular.top`
-- 前端配置建议：`VITE_API_BASE_URL=https://soular.top`
-- 前端 Origin：`https://duang777.github.io`（Origin 不包含 `/zhihu-character-wave/`）
+- GitHub Pages 镜像：`https://duang777.github.io/zhihu-character-wave/`
+- 前端生产请求使用同源相对路径；GitHub Pages 镜像使用 `https://soular.top`
 - 后端代码：仓库内 `server/`
-- Worker 只提供 JSON API 与 OAuth 跳转，不托管产品页面。
+- Worker 托管正式前端 `dist`，并优先处理 `/api/*`、`/login` 和 `/auth/callback`。
 - 正式观点星云默认读取随前端发布的静态快照，不在页面访问时调用知乎或 AI。
 
 除 OAuth 跳转接口外，所有 JSON 响应均使用：
@@ -30,7 +30,8 @@
 
 ## 2. CORS 与认证
 
-生产环境只允许 Origin `https://duang777.github.io` 跨域访问 `/api/*`：
+`soular.top` 正式前端使用同源请求，不需要 CORS。GitHub Pages 镜像跨域调用时，
+后端按请求 Origin 精确返回：
 
 - `Access-Control-Allow-Origin: https://duang777.github.io`
 - `Access-Control-Allow-Credentials: true`
@@ -49,11 +50,8 @@ window.location.assign(`${API_BASE_URL}/api/oauth/start`);
 OAuth 成功或失败后，后端跳回正式前端，并追加 `oauth=success` 或
 `oauth=error` 查询参数。
 
-> 当前正式前端位于 `github.io`，与 `soular.top` 属于跨站点。Safari 和禁用第三方
-> Cookie 的浏览器可能阻止后续个性化 API 携带 Session Cookie。因此公开接口可立即
-> 稳定接入；`/api/oauth/status` 与 `/api/me/portrait` 暂不视为跨浏览器生产就绪。
-> 稳定方案是给正式前端绑定 `app.soular.top`，使前后端同站点；届时前端请求仍需
-> `credentials: "include"`，并将 Worker 的 `FRONTEND_ORIGIN` 改为该 Origin。
+正式前端、API 和 OAuth 回调均位于 `soular.top`，Session Cookie 是第一方 Cookie。
+GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式入口。
 
 ## 3. 公开接口
 
@@ -216,7 +214,7 @@ OAuth 成功或失败后，后端跳回正式前端，并追加 `oauth=success` 
 成功后 `302` 到：
 
 ```text
-https://duang777.github.io/zhihu-character-wave/?oauth=success
+https://soular.top/?oauth=success
 ```
 
 失败后跳回同一前端并携带 `oauth=error`。
@@ -340,7 +338,7 @@ public/nebula-scene/presets.js
 
 ```ts
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "https://soular.top";
+  location.origin === "https://soular.top" ? "" : "https://soular.top";
 
 const response = await fetch(
   `${API_BASE_URL}/api/zhihu/search?q=${encodeURIComponent(query)}&count=10`,
