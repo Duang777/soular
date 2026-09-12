@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>观点星云 · 知乎九派</title>
+    <title>观点星云 · 思想银河</title>
+    <link rel="icon" type="image/svg+xml" href="../brand/soular-favicon.svg" />
     <style>
       :root {
         --cream: #f3f5fa;
@@ -55,10 +56,19 @@
         justify-content: space-between;
         gap: 16px;
       }
+      .scene-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .scene-brand img {
+        width: 38px;
+        height: 38px;
+      }
       .kicker {
         font-family: var(--mono);
         font-size: 11px;
-        letter-spacing: 0.22em;
+        letter-spacing: 0;
         color: var(--faint);
         text-transform: uppercase;
       }
@@ -102,6 +112,8 @@
       }
       .axis .sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--faint); }
       @media (max-width: 720px) {
+        .scene-brand { gap: 7px; }
+        .scene-brand img { width: 32px; height: 32px; }
         .question { display: none; }
         .axis { top: auto; bottom: 74px; transform: none; }
         .axis .sub { display: none; }
@@ -565,30 +577,140 @@
       .mini-constellation i:nth-child(2) { left: 29px; top: 7px; background: #e7c17f; }
       .mini-constellation i:nth-child(3) { right: 4px; bottom: 7px; }
       .topic-picker {
+        position: relative;
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center;
-        gap: 10px;
+        gap: 7px;
         margin: 0 0 10px;
-        padding: 9px 11px;
+        padding: 9px 10px 10px;
         border: 1px solid rgba(143, 216, 220, 0.16);
         border-radius: 8px;
         background: #0a1218;
       }
-      .topic-picker > span {
+      .topic-picker-label {
         color: rgba(196, 207, 211, 0.52);
         font-family: var(--mono);
-        font-size: 8px;
+        font-size: 7.5px;
+        letter-spacing: 0.08em;
       }
-      .topic-picker select {
+      .topic-picker-trigger {
+        display: grid;
+        grid-template-columns: 25px minmax(0, 1fr) 16px;
+        align-items: center;
+        gap: 8px;
         width: 100%;
         min-width: 0;
-        border: 0;
-        outline: 0;
-        background: transparent;
+        min-height: 38px;
+        padding: 6px 8px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 6px;
+        background: #101c23;
         color: #eef2ef;
-        font: 600 11px/1.4 var(--sans);
+        font: inherit;
+        text-align: left;
+        appearance: none;
         cursor: pointer;
+      }
+      .topic-picker-trigger:hover,
+      .topic-picker-trigger[aria-expanded="true"] {
+        border-color: rgba(143, 216, 220, 0.48);
+        background: #14232b;
+      }
+      .topic-picker-trigger:active { transform: translateY(1px); }
+      .topic-picker-trigger:focus-visible,
+      .topic-picker-option:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: 2px;
+      }
+      .topic-picker-serial {
+        color: #e7c17f;
+        font: 600 9px/1 var(--mono);
+        letter-spacing: 0.05em;
+      }
+      .topic-picker-current {
+        min-width: 0;
+        color: #eef2ef;
+        font: 600 11px/1.35 var(--sans);
+      }
+      .topic-picker-chevron {
+        width: 14px;
+        height: 14px;
+        color: rgba(184, 220, 222, 0.68);
+        transition: transform 0.16s ease;
+      }
+      .topic-picker-trigger[aria-expanded="true"] .topic-picker-chevron {
+        transform: rotate(180deg);
+      }
+      .topic-picker-options {
+        position: absolute;
+        z-index: 12;
+        left: 0;
+        right: 0;
+        top: calc(100% + 7px);
+        display: grid;
+        gap: 3px;
+        padding: 5px;
+        border: 1px solid rgba(143, 216, 220, 0.38);
+        border-radius: 9px;
+        background: #0c171e;
+        box-shadow: 4px 5px 0 rgba(4, 8, 12, 0.92), 0 18px 42px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-4px);
+        pointer-events: none;
+        transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+      }
+      .topic-picker.is-open .topic-picker-options {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .topic-picker-option {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 7px 8px;
+        width: 100%;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: rgba(224, 232, 232, 0.72);
+        font: inherit;
+        text-align: left;
+        appearance: none;
+        cursor: pointer;
+      }
+      .topic-picker-option:hover,
+      .topic-picker-option.is-active,
+      .topic-picker-option:focus-visible {
+        background: rgba(143, 216, 220, 0.08);
+        color: #f0f4f2;
+      }
+      .topic-picker-option[aria-selected="true"] {
+        background: rgba(231, 193, 127, 0.1);
+        color: #f5f1e5;
+      }
+      .topic-picker-option[aria-selected="true"] .topic-picker-serial::before {
+        content: "✓";
+        margin-right: 4px;
+        color: #b8dcde;
+      }
+      .topic-picker-question {
+        font: 600 10.5px/1.35 var(--sans);
+      }
+      .topic-picker-kind {
+        padding: 3px 5px;
+        border: 1px solid rgba(143, 216, 220, 0.18);
+        border-radius: 4px;
+        color: rgba(184, 220, 222, 0.56);
+        font: 600 6.5px/1 var(--mono);
+        letter-spacing: 0.08em;
+      }
+      .topic-picker-option[aria-selected="true"] .topic-picker-kind {
+        border-color: rgba(231, 193, 127, 0.28);
+        color: rgba(231, 193, 127, 0.72);
       }
       .zh-links {
         display: grid;
@@ -604,12 +726,16 @@
         display: grid;
         justify-items: center;
         gap: 6px;
+        width: 100%;
         min-height: 78px;
         padding: 20px 4px 10px;
+        border: 0;
         border-right: 1px dashed rgba(143, 216, 220, 0.16);
+        background: transparent;
         color: rgba(221, 229, 230, 0.74);
-        text-decoration: none;
-        font-size: 11px;
+        font: 11px/1.2 var(--sans);
+        appearance: none;
+        cursor: pointer;
         transition: background 0.18s ease, color 0.18s ease;
       }
       .zh-link::before {
@@ -624,8 +750,198 @@
       .zh-link:nth-child(2)::before { content: "02"; }
       .zh-link:nth-child(3)::before { content: "03"; }
       .zh-link:last-child { border-right: 0; }
-      .zh-link:hover { background: #13232b; color: #f3eee0; }
+      .zh-link:hover,
+      .zh-link[aria-selected="true"] {
+        background: #13232b;
+        color: #f3eee0;
+      }
+      .zh-link:focus-visible {
+        z-index: 1;
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: -2px;
+      }
       .zh-link .ui-icon { width: 18px; height: 18px; color: #9fd8db; }
+      .zh-link[aria-selected="true"] .ui-icon { color: #e7c17f; }
+      .discovery-panel {
+        position: relative;
+        display: grid;
+        gap: 9px;
+        margin: 10px 0 0;
+        padding: 10px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 9px;
+        background: #091117;
+      }
+      .discovery-panel[hidden] { display: none; }
+      .discovery-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 30px;
+        align-items: center;
+        gap: 8px;
+      }
+      .discovery-bar b {
+        color: #f3eee0;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .discovery-close,
+      .discovery-submit {
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        background: #101c23;
+        color: #9fd8db;
+        appearance: none;
+        cursor: pointer;
+      }
+      .discovery-close {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 6px;
+      }
+      .discovery-close:hover,
+      .discovery-submit:hover {
+        border-color: rgba(231, 193, 127, 0.5);
+        color: #e7c17f;
+      }
+      .discovery-close:focus-visible,
+      .discovery-submit:focus-visible,
+      .discovery-search input:focus-visible,
+      .discovery-result:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: 2px;
+      }
+      .discovery-close .ui-icon,
+      .discovery-submit .ui-icon {
+        width: 14px;
+        height: 14px;
+      }
+      .discovery-search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px;
+        gap: 6px;
+      }
+      .discovery-search[hidden] { display: none; }
+      .discovery-search input {
+        min-width: 0;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid rgba(143, 216, 220, 0.22);
+        border-radius: 6px;
+        background: #0d1920;
+        color: #eef2ef;
+        font: 10.5px/1 var(--sans);
+        outline: none;
+      }
+      .discovery-search input::placeholder { color: rgba(196, 207, 211, 0.4); }
+      .discovery-submit {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 6px;
+      }
+      .discovery-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .discovery-status {
+        flex: 1;
+        min-height: 13px;
+        color: rgba(196, 207, 211, 0.5);
+        font: 8px/1.45 var(--mono);
+      }
+      .discovery-direct {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 4px;
+        color: rgba(159, 216, 219, 0.72);
+        font: 8px/1 var(--mono);
+        text-decoration: none;
+      }
+      .discovery-direct:hover { color: #e7c17f; }
+      .discovery-direct:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: 3px;
+      }
+      .discovery-direct .ui-icon {
+        width: 11px;
+        height: 11px;
+      }
+      .discovery-results {
+        display: grid;
+        gap: 3px;
+        max-height: 208px;
+        margin: 0;
+        padding: 0 3px 0 0;
+        overflow-y: auto;
+        list-style: none;
+      }
+      .discovery-results:empty { display: none; }
+      .discovery-result {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) 15px;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 50px;
+        padding: 7px 6px;
+        border: 0;
+        border-bottom: 1px dashed rgba(143, 216, 220, 0.11);
+        background: transparent;
+        color: rgba(224, 232, 232, 0.76);
+        font: inherit;
+        text-align: left;
+        text-decoration: none;
+        appearance: none;
+        cursor: pointer;
+      }
+      .discovery-result:last-child { border-bottom: 0; }
+      .discovery-result:hover {
+        background: rgba(143, 216, 220, 0.06);
+        color: #f3eee0;
+      }
+      .discovery-rank {
+        color: rgba(231, 193, 127, 0.62);
+        font: 600 8px/1 var(--mono);
+        text-align: center;
+      }
+      .discovery-result-copy {
+        min-width: 0;
+      }
+      .discovery-result-copy b {
+        display: -webkit-box;
+        overflow: hidden;
+        color: inherit;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.4;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+      }
+      .discovery-result-copy small {
+        display: block;
+        margin-top: 3px;
+        overflow: hidden;
+        color: rgba(196, 207, 211, 0.42);
+        font: 7.5px/1.3 var(--mono);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .discovery-result > .ui-icon {
+        width: 13px;
+        height: 13px;
+        color: rgba(159, 216, 219, 0.48);
+      }
+      .explore-menu.has-discovery > .explore-section-label,
+      .explore-menu.has-discovery > .dock-action,
+      .explore-menu.has-discovery > .dock-settings {
+        display: none;
+      }
       .explore-section-label {
         margin: 15px 1px 5px;
         color: rgba(196, 207, 211, 0.5);
@@ -1763,6 +2079,26 @@
           max-height: calc(100vh - 104px);
           overflow-y: auto;
         }
+        .topic-picker-trigger,
+        .topic-picker-option,
+        .discovery-search input {
+          min-height: 44px;
+        }
+        .discovery-bar {
+          grid-template-columns: minmax(0, 1fr) 44px;
+        }
+        .discovery-search {
+          grid-template-columns: minmax(0, 1fr) 44px;
+        }
+        .discovery-close,
+        .discovery-submit {
+          width: 44px;
+          height: 44px;
+        }
+        .discovery-direct {
+          min-height: 44px;
+          padding: 0 2px;
+        }
         .axis { bottom: 82px !important; }
         .hint { display: none; }
         .circle-chip {
@@ -1835,7 +2171,7 @@
         .gbtn--text { grid-column: auto; justify-self: center; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .dock-action-icon, .seg-btn, .gbtn, .cards-back { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -1903,9 +2239,12 @@
 
     <div class="hud">
       <div class="hud-top">
-        <div>
-          <div class="kicker">ZHIHU · SPECTRUM</div>
-          <div class="title">观点星云</div>
+        <div class="scene-brand">
+          <img src="../brand/soular-mark.svg?v=2" alt="" />
+          <div>
+            <div class="kicker">思想银河 · SPECTRUM</div>
+            <div class="title">观点星云</div>
+          </div>
         </div>
         <div class="question">热门问题 · <b id="presetQuestion">35 岁程序员该不该转行？</b><br />每个发光头像，都是一种立场</div>
       </div>
@@ -1932,33 +2271,88 @@
             <i></i><i></i><i></i>
           </span>
         </div>
-        <label class="topic-picker">
-          <span>讨论热点</span>
-          <select id="presetSelect" aria-label="切换讨论热点"></select>
-        </label>
-        <nav class="zh-links" aria-label="浏览知乎">
-          <a class="zh-link" id="presetSearchLink" href="https://www.zhihu.com/search?type=content&amp;q=35%20%E5%B2%81%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AF%A5%E4%B8%8D%E8%AF%A5%E8%BD%AC%E8%A1%8C" target="_blank" rel="noopener noreferrer">
+        <div class="topic-picker" id="presetPicker">
+          <span class="topic-picker-label" id="presetPickerLabel">讨论热点</span>
+          <button
+            type="button"
+            class="topic-picker-trigger"
+            id="presetPickerTrigger"
+            role="combobox"
+            aria-labelledby="presetPickerLabel presetPickerCurrent"
+            aria-haspopup="listbox"
+            aria-controls="presetPickerOptions"
+            aria-expanded="false"
+            aria-autocomplete="none"
+          >
+            <span class="topic-picker-serial" id="presetPickerSerial">01</span>
+            <span class="topic-picker-current" id="presetPickerCurrent">35 岁程序员该不该转行？</span>
+            <svg class="ui-icon topic-picker-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m7 9 5 5 5-5"></path>
+            </svg>
+          </button>
+          <div
+            class="topic-picker-options"
+            id="presetPickerOptions"
+            role="listbox"
+            aria-labelledby="presetPickerLabel"
+            aria-hidden="true"
+          ></div>
+        </div>
+        <div class="zh-links" role="tablist" aria-label="知乎发现">
+          <button type="button" class="zh-link" data-discovery-mode="search" role="tab" aria-selected="false" aria-controls="discoveryPanel">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m16 16 4 4"></path>
             </svg>
             <span>搜索</span>
-          </a>
-          <a class="zh-link" href="https://www.zhihu.com/" target="_blank" rel="noopener noreferrer">
+          </button>
+          <button type="button" class="zh-link" data-discovery-mode="recommend" role="tab" aria-selected="false" aria-controls="discoveryPanel">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="9"></circle>
               <path d="m15.5 8.5-2 5-5 2 2-5z"></path>
             </svg>
             <span>推荐</span>
-          </a>
-          <a class="zh-link" href="https://www.zhihu.com/hot" target="_blank" rel="noopener noreferrer">
+          </button>
+          <button type="button" class="zh-link" data-discovery-mode="hot" role="tab" aria-selected="false" aria-controls="discoveryPanel">
             <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m3 17 6-6 4 4 8-8"></path>
               <path d="M14 7h7v7"></path>
             </svg>
             <span>热榜</span>
-          </a>
-        </nav>
+          </button>
+        </div>
+        <section class="discovery-panel" id="discoveryPanel" role="tabpanel" aria-label="知乎发现结果" hidden>
+          <div class="discovery-bar">
+            <b id="discoveryTitle">站内搜索</b>
+            <button type="button" class="discovery-close" id="discoveryClose" aria-label="关闭发现结果" title="关闭">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6 6 18"></path>
+              </svg>
+            </button>
+          </div>
+          <form class="discovery-search" id="discoverySearch">
+            <input id="discoveryQuery" type="search" maxlength="80" autocomplete="off" aria-label="搜索知乎内容" placeholder="输入问题或话题" />
+            <button type="submit" class="discovery-submit" aria-label="搜索" title="搜索">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m16 16 4 4"></path>
+              </svg>
+            </button>
+          </form>
+          <div class="discovery-foot">
+            <div class="discovery-status" id="discoveryStatus" role="status">输入关键词，在当前页面查看结果</div>
+            <a class="discovery-direct" id="discoveryDirect" href="https://www.zhihu.com/" target="_blank" rel="noopener noreferrer">
+              <span id="discoveryDirectLabel">前往知乎</span>
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 5h5v5"></path>
+                <path d="m10 14 9-9"></path>
+                <path d="M19 13v6H5V5h6"></path>
+              </svg>
+            </a>
+          </div>
+          <ol class="discovery-results" id="discoveryResults"></ol>
+        </section>
         <div class="explore-section-label">盒内隐藏功能</div>
         <button type="button" class="dock-action" id="clashBtn">
           <span class="dock-action-icon" aria-hidden="true">
@@ -2029,7 +2423,7 @@
         <i aria-hidden="true">✦</i>
         <span class="self-draw-entry-copy">
           <b>抽我的人格卡</b>
-          <small>点赞后更贴近你的立场</small>
+          <small id="selfDrawHint">点赞后更贴近你的立场</small>
         </span>
         <span aria-hidden="true">→</span>
       </button>
@@ -2193,7 +2587,12 @@
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
       const sceneParams = new URLSearchParams(location.search);
       const presetModuleVersion = sceneParams.get("v") || "dev";
-      const { getNebulaPreset, listNebulaPresets } = await import(
+      const {
+        buildNebulaShelfUrl,
+        getNebulaLikeStorageKey,
+        getNebulaPreset,
+        listNebulaPresets,
+      } = await import(
         `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
 
@@ -2301,13 +2700,12 @@
         ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
         : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
 
-      document.title = `${PRESET.question} · 观点星云`;
+      document.title = `${PRESET.question} · 思想银河`;
       document.getElementById("presetQuestion").textContent = PRESET.question;
       document.getElementById("presetLeftPole").textContent = PRESET.axis.left;
       document.getElementById("presetRightPole").textContent = PRESET.axis.right;
       document.getElementById("presetSeries").textContent = `GALAXY STORIES · ${PRESET.serial}`;
       document.getElementById("presetOpenLabel").textContent = `OPEN · ${PRESET.serial}`;
-      document.getElementById("presetSearchLink").href = PRESET.searchUrl;
       document.getElementById("presetCardsQuestion").textContent = PRESET.question;
       document.getElementById("presetCardsLeftPole").textContent = PRESET.axis.left;
       document.getElementById("presetCardsRightPole").textContent = PRESET.axis.right;
@@ -2330,14 +2728,36 @@
       const exploreShellEl = document.getElementById("exploreShell");
       const exploreMenuEl = document.getElementById("exploreMenu");
       const exploreToggleEl = document.getElementById("exploreToggle");
-      const presetSelectEl = document.getElementById("presetSelect");
-      listNebulaPresets().forEach((preset) => {
-        const option = document.createElement("option");
-        option.value = preset.id;
-        option.textContent = `${preset.serial} · ${preset.question}`;
-        presetSelectEl.appendChild(option);
+      const presetPickerEl = document.getElementById("presetPicker");
+      const presetPickerTriggerEl = document.getElementById("presetPickerTrigger");
+      const presetPickerOptionsEl = document.getElementById("presetPickerOptions");
+      document.getElementById("presetPickerSerial").textContent = PRESET.serial;
+      document.getElementById("presetPickerCurrent").textContent = PRESET.question;
+      const availablePresets = listNebulaPresets();
+      availablePresets.forEach((preset) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.id = `preset-option-${preset.id}`;
+        option.className = "topic-picker-option";
+        option.dataset.preset = preset.id;
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String(preset.id === PRESET.id));
+        option.tabIndex = -1;
+
+        const serial = document.createElement("span");
+        serial.className = "topic-picker-serial";
+        serial.textContent = preset.serial;
+        const question = document.createElement("span");
+        question.className = "topic-picker-question";
+        question.textContent = preset.question;
+        const kind = document.createElement("span");
+        kind.className = "topic-picker-kind";
+        kind.textContent = preset.kind === "real" ? "真实" : "示例";
+        option.append(serial, question, kind);
+        presetPickerOptionsEl.appendChild(option);
       });
-      presetSelectEl.value = PRESET.id;
+      const presetOptionEls = [...presetPickerOptionsEl.querySelectorAll("[role='option']")];
+      let activePresetIndex = Math.max(0, presetOptionEls.findIndex((option) => option.getAttribute("aria-selected") === "true"));
       const captureMode = sceneParams.has("capture");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
@@ -3161,12 +3581,29 @@
       setTimeout(() => loadingEl.classList.add("hide"), 6000);
 
       // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
-      const LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
+      const PRESET_VERSION = String(PRESET.version || "1");
+      const LEGACY_LIKE_VERSIONS = { "career-35": "1", "ai-math": "20260912" };
+      const LIKE_KEY = getNebulaLikeStorageKey(PRESET);
+      const LEGACY_LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
       const liked = new Set();
       try {
-        const raw = JSON.parse(localStorage.getItem(LIKE_KEY) || "[]");
+        const current = localStorage.getItem(LIKE_KEY);
+        const legacy = current === null && LEGACY_LIKE_VERSIONS[PRESET.id] === PRESET_VERSION
+          ? localStorage.getItem(LEGACY_LIKE_KEY)
+          : null;
+        const raw = JSON.parse(current ?? legacy ?? "[]");
         if (Array.isArray(raw)) raw.forEach((i) => { if (Number.isInteger(i) && i >= 0 && i < N) liked.add(i); });
+        if (legacy !== null) {
+          localStorage.setItem(LIKE_KEY, JSON.stringify([...liked]));
+          localStorage.removeItem(LEGACY_LIKE_KEY);
+        } else if (current === null && LEGACY_LIKE_VERSIONS[PRESET.id]) {
+          localStorage.removeItem(LEGACY_LIKE_KEY);
+        }
       } catch { /* localStorage 不可用时退化为会话内状态 */ }
+
+      function saveLikesLocally() {
+        try { localStorage.setItem(LIKE_KEY, JSON.stringify([...liked])); } catch { /* ignore */ }
+      }
 
       let myStanceVal = 0;
       let verdictText = "";
@@ -3197,7 +3634,50 @@
             ? `，不过你也认可${PRESET.axis.rightChoice}一侧的部分理由`
             : `，不过你也认可${PRESET.axis.leftChoice}一侧的部分理由`;
         }
-        return { avg, n, text: `基于你点赞的 ${n} 个回答，AI 认为你${degree}${tail}。` };
+        return { avg, n, text: `基于你点赞的 ${n} 个回答，观点光谱显示你${degree}${tail}。` };
+      }
+
+      function inferSelfProfile() {
+        const stance = computeStance([...liked]);
+        if (!stance) {
+          const [castName, castRole] = CASTS[ME.castKey];
+          return {
+            preset: PRESET.id,
+            version: PRESET.version || "1",
+            cast: ME.castKey,
+            stance: 0,
+            likedCount: 0,
+            claim: `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`,
+          };
+        }
+
+        const scores = {};
+        liked.forEach((index) => {
+          const [, answerStance, castKey] = PEOPLE[index];
+          if (!Object.hasOwn(CASTS, castKey)) return;
+          const current = scores[castKey] || { count: 0, affinity: 0 };
+          current.count += 1;
+          current.affinity += 1 - Math.min(2, Math.abs(answerStance - stance.avg)) / 2;
+          scores[castKey] = current;
+        });
+        const castKeys = Object.keys(CASTS);
+        const cast = castKeys.reduce((winner, castKey) => {
+          const candidate = scores[castKey] || { count: 0, affinity: 0 };
+          const best = scores[winner] || { count: 0, affinity: 0 };
+          const candidateScore = candidate.count * 10 + candidate.affinity;
+          const bestScore = best.count * 10 + best.affinity;
+          return candidateScore > bestScore ? castKey : winner;
+        }, castKeys[0]);
+        const [castName, castRole] = CASTS[cast];
+        const matched = scores[cast]?.count || 0;
+        return {
+          preset: PRESET.id,
+          version: PRESET.version || "1",
+          cast,
+          stance: Number(stance.avg.toFixed(4)),
+          likedCount: stance.n,
+          claim: `你点赞的 ${stance.n} 个观点中，${matched} 个最接近「${castName}」特征：${castRole}。`,
+        };
       }
 
       function setHeart(u, on) {
@@ -3231,6 +3711,10 @@
         } else {
           verdictEl.classList.remove("show");
         }
+        const profile = inferSelfProfile();
+        document.getElementById("selfDrawHint").textContent = v
+          ? `已根据 ${v.n} 个点赞匹配${CASTS[profile.cast][0]}`
+          : "点赞后更贴近你的立场";
       }
 
       users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
@@ -3240,7 +3724,7 @@
         if (!Number.isInteger(i) || i < 0 || i >= N) return false;
         if (liked.has(i)) liked.delete(i);
         else liked.add(i);
-        try { localStorage.setItem(LIKE_KEY, JSON.stringify([...liked])); } catch { /* ignore */ }
+        saveLikesLocally();
         const u = users[i];
         if (u) setHeart(u, liked.has(i));
         applyStance(true);
@@ -3249,7 +3733,10 @@
       }
       function resetLikes() {
         liked.clear();
-        try { localStorage.removeItem(LIKE_KEY); } catch { /* ignore */ }
+        try {
+          localStorage.removeItem(LIKE_KEY);
+          localStorage.removeItem(LEGACY_LIKE_KEY);
+        } catch { /* ignore */ }
         users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
         applyStance(true);
         renderCardsIfOpen();
@@ -3277,27 +3764,80 @@
       let hostReady = false;
       const openAcks = new Set();
       window.addEventListener("message", (e) => {
+        if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
         }
       });
-      presetSelectEl.addEventListener("change", () => {
-        const nextPreset = presetSelectEl.value;
-        if (!nextPreset || nextPreset === PRESET.id) return;
+      function setActivePreset(index) {
+        activePresetIndex = (index + presetOptionEls.length) % presetOptionEls.length;
+        presetOptionEls.forEach((option, optionIndex) => {
+          option.classList.toggle("is-active", optionIndex === activePresetIndex);
+        });
+        presetPickerTriggerEl.setAttribute("aria-activedescendant", presetOptionEls[activePresetIndex]?.id || "");
+      }
+      function setPresetPickerOpen(open) {
+        presetPickerEl.classList.toggle("is-open", open);
+        presetPickerTriggerEl.setAttribute("aria-expanded", String(open));
+        presetPickerOptionsEl.setAttribute("aria-hidden", String(!open));
+        if (open) setActivePreset(activePresetIndex);
+        else presetPickerTriggerEl.removeAttribute("aria-activedescendant");
+      }
+      function movePresetFocus(delta) {
+        setActivePreset(activePresetIndex + delta);
+      }
+      function activatePreset(nextPreset) {
+        if (!nextPreset) return;
+        setPresetPickerOpen(false);
+        if (nextPreset === PRESET.id) {
+          presetPickerTriggerEl.focus();
+          return;
+        }
         if (window.parent !== window.self && hostReady) {
           window.parent.postMessage(
             { type: "nebula-preset-change", preset: nextPreset },
-            "*"
+            location.origin
           );
           return;
         }
         const next = new URL(location.href);
         next.searchParams.set("preset", nextPreset);
         location.href = next.href;
+      }
+      presetPickerTriggerEl.addEventListener("click", () => {
+        setPresetPickerOpen(!presetPickerEl.classList.contains("is-open"));
+      });
+      presetPickerTriggerEl.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (presetPickerEl.classList.contains("is-open")) {
+            movePresetFocus(event.key === "ArrowDown" ? 1 : -1);
+          } else {
+            setPresetPickerOpen(true);
+          }
+        } else if ((event.key === "Enter" || event.key === " ") && presetPickerEl.classList.contains("is-open")) {
+          event.preventDefault();
+          activatePreset(presetOptionEls[activePresetIndex]?.dataset.preset);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          setPresetPickerOpen(false);
+        } else if (event.key === "Tab") {
+          setPresetPickerOpen(false);
+        }
+      });
+      presetPickerOptionsEl.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-preset]");
+        if (option) activatePreset(option.dataset.preset);
+      });
+      presetPickerOptionsEl.addEventListener("pointermove", (event) => {
+        const option = event.target.closest("[data-preset]");
+        const index = presetOptionEls.indexOf(option);
+        if (index >= 0) setActivePreset(index);
       });
       function gotoShelf(path) {
-        location.href = new URL("../shelf/" + path, document.baseURI).href;
+        location.href = buildNebulaShelfUrl(location, document.baseURI, path);
       }
       function requestOpen(payload, fallbackPath) {
         if (window.parent === window.self) {
@@ -3306,7 +3846,7 @@
         }
         const requestId = `neb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         try {
-          window.parent.postMessage({ ...payload, requestId }, "*");
+          window.parent.postMessage({ ...payload, requestId }, location.origin);
         } catch (e) {
           gotoShelf(fallbackPath);
           return;
@@ -3316,11 +3856,42 @@
           if (!openAcks.delete(requestId)) gotoShelf(fallbackPath);
         }, hostReady ? 240 : 180);
       }
+      function stageStandaloneContext(kind, value) {
+        if (window.parent !== window.self) return "";
+        try {
+          const prefix = "jiupai:nebula:";
+          const existing = [];
+          for (let index = 0; index < sessionStorage.length; index += 1) {
+            const storageKey = sessionStorage.key(index);
+            if (storageKey?.startsWith(prefix)) existing.push(storageKey);
+          }
+          const timestamp = (storageKey) => {
+            const token = storageKey.slice(storageKey.lastIndexOf(":") + 1);
+            const match = token.match(/^([a-z0-9]+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+            if (!match) return 0;
+            const value = Number.parseInt(match[1], 36);
+            return Number.isSafeInteger(value) ? value : 0;
+          };
+          existing.sort((left, right) => {
+            return timestamp(left) - timestamp(right) || left.localeCompare(right);
+          });
+          const key = `${Date.now().toString(36)}-${crypto.randomUUID()}`;
+          sessionStorage.setItem(`${prefix}${kind}:${key}`, JSON.stringify(value));
+          while (existing.length >= 24) {
+            const storageKey = existing.shift();
+            if (storageKey) sessionStorage.removeItem(storageKey);
+          }
+          return key;
+        } catch {
+          return "";
+        }
+      }
       function openPerson(i) {
         if (!Number.isInteger(i) || i < 0 || i >= N) return;
         const [name, stance, castKey, claim, sourceUrl, sourceTitle, votes] = PEOPLE[i];
         const subject = {
           preset: PRESET.id,
+          version: PRESET.version || "1",
           index: i,
           name,
           stance,
@@ -3331,18 +3902,42 @@
           sourceTitle,
           votes,
         };
-        try {
-          sessionStorage.setItem("jiupai:nebula:subject", JSON.stringify(subject));
-        } catch (e) {}
+        const personKey = stageStandaloneContext("subject", subject);
+        const versionPath =
+          "&preset=" + encodeURIComponent(PRESET.id) +
+          "&version=" + encodeURIComponent(PRESET.version || "1");
+        const fallbackPath = personKey
+          ? castKey + "?u=" + i + versionPath +
+            "&person=" + encodeURIComponent(personKey)
+          : castKey + "?self=1" + versionPath;
         requestOpen(
-          { type: "nebula-open", cast: castKey, name, u: i, preset: PRESET.id, person: subject },
-          castKey + "?u=" + i + "&preset=" + encodeURIComponent(PRESET.id)
+          {
+            type: "nebula-open",
+            cast: castKey,
+            name,
+            u: i,
+            preset: PRESET.id,
+            version: PRESET.version || "1",
+            person: subject,
+          },
+          fallbackPath
         );
       }
       function openSelf() {
+        const profile = inferSelfProfile();
+        const profileKey = stageStandaloneContext("self", profile);
         requestOpen(
-          { type: "nebula-open", cast: ME.castKey, self: true, preset: PRESET.id },
-          ME.castKey + "?self=1&preset=" + encodeURIComponent(PRESET.id)
+          {
+            type: "nebula-open",
+            cast: profile.cast,
+            self: true,
+            preset: PRESET.id,
+            version: PRESET.version || "1",
+            selfProfile: profile,
+          },
+          profile.cast + "?self=1&preset=" + encodeURIComponent(PRESET.id) +
+            "&version=" + encodeURIComponent(PRESET.version || "1") +
+            (profileKey ? "&profile=" + encodeURIComponent(profileKey) : "")
         );
       }
       document.getElementById("selfDrawEntry").addEventListener("click", openSelf);
@@ -3377,34 +3972,72 @@
         tip.style.pointerEvents = tip.classList.contains("show") ? "auto" : "none";
       }
 
+      function uiNode(tag, className, content) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (content !== undefined) node.textContent = String(content);
+        return node;
+      }
+
       function renderTip(u) {
+        const row = uiNode("div", "tip-row");
+        const claim = uiNode(
+          "div",
+          "tip-claim",
+          u.isMe && verdictText ? verdictText : `“${u.claim}”`,
+        );
         if (u.isMe) {
-          tip.innerHTML =
-            `<div class="tip-row"><span class="tip-name">我</span>` +
-            `<span class="tip-follow tip-me">我的星位</span></div>` +
-            (verdictText
-              ? `<div class="tip-claim">${verdictText}</div>`
-              : `<div class="tip-claim">“${u.claim}”</div>`) +
-            `<div class="tip-actions"><button type="button" class="tip-like" data-go="self">抽我的人格卡 →</button></div>`;
+          row.append(
+            uiNode("span", "tip-name", "我"),
+            uiNode("span", "tip-follow tip-me", "我的星位"),
+          );
+          const actions = uiNode("div", "tip-actions");
+          const button = uiNode("button", "tip-like", "抽我的人格卡 →");
+          button.type = "button";
+          button.dataset.go = "self";
+          actions.appendChild(button);
+          tip.replaceChildren(row, claim, actions);
         } else if (u.kind === "comment") {
-          tip.innerHTML =
-            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
-            `<span class="tip-tag">评论</span>` +
-            (u.funny ? `<span class="tip-tag funny">😄 幽默观点</span>` : "") +
-            `</div>` +
-            `<div class="tip-claim">“${u.claim}”</div>` +
-            `<div class="tip-persona"><span class="tip-dot" style="border:1.4px solid ${u.castColor};background:transparent"></span>` +
-            `评论观点 · <b>${u.castName}</b> · ${u.castRole}</div>`;
+          row.append(
+            uiNode("span", "tip-name", `@${u.name}`),
+            uiNode("span", "tip-tag", "评论"),
+          );
+          if (u.funny) row.appendChild(uiNode("span", "tip-tag funny", "😄 幽默观点"));
+          const persona = uiNode("div", "tip-persona");
+          const dot = uiNode("span", "tip-dot");
+          dot.style.border = `1.4px solid ${u.castColor}`;
+          dot.style.background = "transparent";
+          persona.append(
+            dot,
+            document.createTextNode("评论观点 · "),
+            uiNode("b", "", u.castName),
+            document.createTextNode(` · ${u.castRole}`),
+          );
+          tip.replaceChildren(row, claim, persona);
         } else {
           const likedOne = liked.has(u.index);
-          tip.innerHTML =
-            `<div class="tip-row"><span class="tip-name">@${u.name}</span>` +
-            (u.followed ? `<span class="tip-follow">★ 关注</span>` : "") +
-            `</div>` +
-            `<div class="tip-claim">“${u.claim}”</div>` +
-            `<div class="tip-persona"><span class="tip-dot" style="background:${u.castColor}"></span>` +
-            `人格 · <b>${u.castName}</b> · ${u.castRole}<span class="tip-cta">进入 →</span></div>` +
-            `<div class="tip-actions"><button type="button" class="tip-like${likedOne ? " is-liked" : ""}" data-like="${u.index}">${likedOne ? "♥ 已赞" : "♡ 赞"}</button></div>`;
+          row.appendChild(uiNode("span", "tip-name", `@${u.name}`));
+          if (u.followed) row.appendChild(uiNode("span", "tip-follow", "★ 关注"));
+          const persona = uiNode("div", "tip-persona");
+          const dot = uiNode("span", "tip-dot");
+          dot.style.background = u.castColor;
+          persona.append(
+            dot,
+            document.createTextNode("人格 · "),
+            uiNode("b", "", u.castName),
+            document.createTextNode(` · ${u.castRole}`),
+            uiNode("span", "tip-cta", "进入 →"),
+          );
+          const actions = uiNode("div", "tip-actions");
+          const button = uiNode(
+            "button",
+            `tip-like${likedOne ? " is-liked" : ""}`,
+            likedOne ? "♥ 已赞" : "♡ 赞",
+          );
+          button.type = "button";
+          button.dataset.like = String(u.index);
+          actions.appendChild(button);
+          tip.replaceChildren(row, claim, persona, actions);
         }
         updateTipPosition();
       }
@@ -3611,11 +4244,290 @@
       }
 
       // ---- 知乎发现：默认收起，集中承载站内入口与星云工具 ----
+      const discoveryPanelEl = $("discoveryPanel");
+      const discoveryTitleEl = $("discoveryTitle");
+      const discoverySearchEl = $("discoverySearch");
+      const discoveryQueryEl = $("discoveryQuery");
+      const discoveryStatusEl = $("discoveryStatus");
+      const discoveryDirectEl = $("discoveryDirect");
+      const discoveryDirectLabelEl = $("discoveryDirectLabel");
+      const discoveryResultsEl = $("discoveryResults");
+      const discoveryModeButtons = [...document.querySelectorAll("[data-discovery-mode]")];
+      const DISCOVERY_CACHE_TTL_MS = 10 * 60 * 1000;
+      const discoveryCache = new Map();
+      const discoveryInflight = new Map();
+      const discoveryApiBase = location.hostname.endsWith("github.io") ? "https://soular.top" : "";
+      let discoveryMode = null;
+      let discoveryRequest = 0;
+
+      function plainDiscoveryText(value) {
+        const doc = new DOMParser().parseFromString(String(value || ""), "text/html");
+        return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+      }
+
+      function safeZhihuUrl(value) {
+        try {
+          const url = new URL(String(value || ""));
+          if (url.protocol !== "https:" || !/(^|\.)zhihu\.com$/.test(url.hostname)) return "";
+          return url.href;
+        } catch {
+          return "";
+        }
+      }
+
+      function externalIcon() {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.classList.add("ui-icon");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("aria-hidden", "true");
+        const pathA = document.createElementNS(svg.namespaceURI, "path");
+        pathA.setAttribute("d", "M14 5h5v5");
+        const pathB = document.createElementNS(svg.namespaceURI, "path");
+        pathB.setAttribute("d", "m10 14 9-9");
+        const pathC = document.createElementNS(svg.namespaceURI, "path");
+        pathC.setAttribute("d", "M19 13v6H5V5h6");
+        svg.append(pathA, pathB, pathC);
+        return svg;
+      }
+
+      function normalizeDiscoveryItems(mode, data) {
+        const items = Array.isArray(data?.Items) ? data.Items.slice(0, 8) : [];
+        return items.map((item, index) => {
+          const url = safeZhihuUrl(item?.Url);
+          if (!url) return null;
+          const title = plainDiscoveryText(item?.Title) || "未命名内容";
+          let meta = "知乎原文";
+          if (mode === "hot") {
+            meta = `热榜 ${String(index + 1).padStart(2, "0")} · 知乎原文`;
+          } else if (mode === "recommend") {
+            meta = "相关问题 · 知乎原文";
+          } else {
+            const author = plainDiscoveryText(item?.AuthorName);
+            const votes = Number(item?.VoteUpCount);
+            const parts = [author || plainDiscoveryText(item?.ContentType) || "知乎内容"];
+            if (Number.isFinite(votes) && votes > 0) parts.push(`${votes} 赞同`);
+            parts.push("查看原文");
+            meta = parts.join(" · ");
+          }
+          return { title, meta, url };
+        }).filter(Boolean);
+      }
+
+      function renderDiscoveryItems(items) {
+        discoveryResultsEl.replaceChildren();
+        items.forEach((item, index) => {
+          const row = document.createElement("li");
+          const link = document.createElement("a");
+          const rank = document.createElement("span");
+          const copy = document.createElement("span");
+          const title = document.createElement("b");
+          const meta = document.createElement("small");
+
+          link.className = "discovery-result";
+          link.href = item.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.setAttribute("aria-label", `${item.title}，在知乎查看`);
+          link.addEventListener("click", () => setExploreOpen(false));
+          rank.className = "discovery-rank";
+          rank.textContent = String(index + 1).padStart(2, "0");
+          copy.className = "discovery-result-copy";
+          title.textContent = item.title;
+          meta.textContent = item.meta;
+          copy.append(title, meta);
+          link.append(rank, copy, externalIcon());
+          row.appendChild(link);
+          discoveryResultsEl.appendChild(row);
+        });
+      }
+
+      function renderPublishedPresets(query) {
+        const normalizedQuery = plainDiscoveryText(query).toLocaleLowerCase("zh-CN");
+        const matches = availablePresets.filter((preset) =>
+          `${preset.question} ${preset.id}`.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+        );
+        discoveryResultsEl.replaceChildren();
+        matches.forEach((preset) => {
+          const row = document.createElement("li");
+          const button = document.createElement("button");
+          const rank = document.createElement("span");
+          const copy = document.createElement("span");
+          const title = document.createElement("b");
+          const meta = document.createElement("small");
+          const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          const path = document.createElementNS(arrow.namespaceURI, "path");
+
+          button.type = "button";
+          button.className = "discovery-result";
+          button.setAttribute("aria-label", `进入${preset.question}观点星云`);
+          button.addEventListener("click", () => {
+            if (preset.id === PRESET.id) setExploreOpen(false);
+            else activatePreset(preset.id);
+          });
+          rank.className = "discovery-rank";
+          rank.textContent = preset.serial;
+          copy.className = "discovery-result-copy";
+          title.textContent = preset.question;
+          meta.textContent = preset.id === PRESET.id ? "当前观点星云" : "已发布观点星云";
+          copy.append(title, meta);
+          arrow.classList.add("ui-icon");
+          arrow.setAttribute("viewBox", "0 0 24 24");
+          arrow.setAttribute("aria-hidden", "true");
+          path.setAttribute("d", "m9 18 6-6-6-6");
+          arrow.appendChild(path);
+          button.append(rank, copy, arrow);
+          row.appendChild(button);
+          discoveryResultsEl.appendChild(row);
+        });
+        discoveryStatusEl.textContent = matches.length
+          ? `已找到 ${matches.length} 个已发布星云`
+          : "这个话题还没有星云，可前往知乎搜索";
+      }
+
+      function updateDiscoveryDirect(mode, query = "") {
+        if (mode === "hot") {
+          discoveryDirectEl.href = "https://www.zhihu.com/hot";
+          discoveryDirectLabelEl.textContent = "打开知乎热榜";
+          return;
+        }
+        if (mode === "recommend") {
+          discoveryDirectEl.href = "https://www.zhihu.com/";
+          discoveryDirectLabelEl.textContent = "前往知乎首页";
+          return;
+        }
+        const trimmedQuery = query.trim();
+        discoveryDirectEl.href = trimmedQuery
+          ? `https://www.zhihu.com/search?type=content&q=${encodeURIComponent(trimmedQuery)}`
+          : PRESET.searchUrl;
+        discoveryDirectLabelEl.textContent = "在知乎搜索";
+      }
+
+      async function loadDiscovery(mode, query = "") {
+        const trimmedQuery = query.trim();
+        updateDiscoveryDirect(mode, trimmedQuery);
+        if (mode === "search" && !trimmedQuery) {
+          discoveryResultsEl.replaceChildren();
+          discoveryStatusEl.textContent = "请输入关键词，再按回车搜索";
+          discoveryQueryEl.focus();
+          return;
+        }
+        if (mode === "search") {
+          renderPublishedPresets(trimmedQuery);
+          return;
+        }
+        if (mode === "recommend") {
+          discoveryResultsEl.replaceChildren();
+          discoveryStatusEl.textContent = "相关推荐正在开发中，可先前往知乎首页";
+          return;
+        }
+
+        const endpoint = "/api/zhihu/hot?limit=8";
+        const cacheKey = `${mode}:${trimmedQuery}`;
+        const cached = discoveryCache.get(cacheKey);
+        if (cached && Date.now() - cached.cachedAt < DISCOVERY_CACHE_TTL_MS) {
+          renderDiscoveryItems(cached.items);
+          discoveryStatusEl.textContent = `已找到 ${cached.items.length} 条内容`;
+          return;
+        }
+        if (cached) discoveryCache.delete(cacheKey);
+
+        const requestId = ++discoveryRequest;
+        discoveryPanelEl.setAttribute("aria-busy", "true");
+        discoveryResultsEl.replaceChildren();
+        discoveryStatusEl.textContent = mode === "search" ? "正在搜索知乎…" : "正在读取知乎内容…";
+
+        let pending = discoveryInflight.get(cacheKey);
+        if (!pending) {
+          pending = (async () => {
+            const response = await fetch(`${discoveryApiBase}${endpoint}`, {
+              headers: { Accept: "application/json" },
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload?.ok) {
+              throw new Error(payload?.error?.message || "知乎内容暂时不可用");
+            }
+            const items = normalizeDiscoveryItems(mode, payload.data);
+            discoveryCache.set(cacheKey, { items, cachedAt: Date.now() });
+            return items;
+          })().finally(() => discoveryInflight.delete(cacheKey));
+          discoveryInflight.set(cacheKey, pending);
+        }
+
+        try {
+          const items = await pending;
+          if (requestId !== discoveryRequest || discoveryMode !== mode) return;
+          renderDiscoveryItems(items);
+          discoveryStatusEl.textContent = items.length
+            ? `已找到 ${items.length} 条内容，选择一条查看原讨论`
+            : "暂时没有找到相关内容";
+        } catch (error) {
+          if (
+            requestId !== discoveryRequest ||
+            discoveryMode !== mode
+          ) return;
+          discoveryStatusEl.textContent = mode === "search"
+            ? "站内搜索正在开发中，可先前往知乎搜索"
+            : mode === "recommend"
+              ? "相关推荐正在开发中，可先前往知乎首页"
+              : "站内热榜正在开发中，可先打开知乎热榜";
+        } finally {
+          if (requestId === discoveryRequest) discoveryPanelEl.removeAttribute("aria-busy");
+        }
+      }
+
+      function setDiscoveryMode(mode) {
+        discoveryRequest += 1;
+        discoveryPanelEl.removeAttribute("aria-busy");
+        discoveryMode = mode;
+        const open = Boolean(mode);
+        discoveryPanelEl.hidden = !open;
+        exploreMenuEl.classList.toggle("has-discovery", open);
+        discoveryModeButtons.forEach((button) => {
+          button.setAttribute("aria-selected", String(button.dataset.discoveryMode === mode));
+        });
+        if (!open) {
+          syncResponsiveOffsets();
+          return;
+        }
+
+        discoverySearchEl.hidden = mode !== "search";
+        updateDiscoveryDirect(mode, discoveryQueryEl.value);
+        discoveryTitleEl.textContent = mode === "hot"
+          ? "知乎热榜"
+          : mode === "recommend"
+            ? "相关推荐"
+            : "站内搜索";
+        discoveryResultsEl.replaceChildren();
+        if (mode === "search") {
+          discoveryStatusEl.textContent = "输入关键词，在当前页面查看结果";
+          requestAnimationFrame(() => discoveryQueryEl.focus());
+        } else {
+          loadDiscovery(mode);
+        }
+        syncResponsiveOffsets();
+      }
+
+      discoveryModeButtons.forEach((button) => {
+        button.addEventListener("click", () => setDiscoveryMode(button.dataset.discoveryMode));
+      });
+      $("discoveryClose").addEventListener("click", () => setDiscoveryMode(null));
+      discoverySearchEl.addEventListener("submit", (event) => {
+        event.preventDefault();
+        loadDiscovery("search", discoveryQueryEl.value);
+      });
+      discoveryQueryEl.addEventListener("input", () => {
+        if (discoveryMode === "search") updateDiscoveryDirect("search", discoveryQueryEl.value);
+      });
+
       function setExploreOpen(open) {
         exploreShellEl.classList.toggle("is-open", open);
         exploreToggleEl.setAttribute("aria-expanded", String(open));
         exploreToggleEl.setAttribute("aria-label", open ? "收起银河故事" : "打开银河故事");
         exploreMenuEl.setAttribute("aria-hidden", String(!open));
+        if (!open) {
+          setPresetPickerOpen(false);
+          setDiscoveryMode(null);
+        }
         if (open) $("circleChip").classList.remove("show");
         syncResponsiveOffsets();
       }
@@ -3626,6 +4538,7 @@
         link.addEventListener("click", () => setExploreOpen(false));
       });
       document.addEventListener("pointerdown", (e) => {
+        if (!e.target.closest(".topic-picker")) setPresetPickerOpen(false);
         if (exploreShellEl.classList.contains("is-open") && !e.target.closest(".explore-shell")) {
           setExploreOpen(false);
         }
@@ -3668,51 +4581,126 @@
         const [name, stance, castKey, claim, sourceUrl, , votes] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
         const on = liked.has(i);
-        return `<article class="pcard" data-u="${i}" data-signal="${String(i + 1).padStart(2, "0")}" style="--cast:${castColor};--stance:${stancePercent(stance)}%" tabindex="0" role="link" aria-label="查看 ${name} 的人格卡">
-          <img class="pcard-ava" src="${personAvatarPath(i)}" alt="${name}" />
-          <div class="pcard-body">
-            <div class="pcard-row">
-              <b>@${name}</b>${FOLLOWED.has(i) ? '<span class="pcard-star">★</span>' : ''}
-            </div>
-            <div class="pcard-fac"><i style="background:${castColor}"></i><b>${castName}</b> · ${castRole}</div>
-            <div class="pcard-claim">“${claim}”</div>
-            ${sourceUrl ? `<a class="pcard-source" data-source href="${sourceUrl}" target="_blank" rel="noopener noreferrer">查看原回答${Number.isFinite(votes) ? ` · ${votes} 赞同` : ""}</a>` : ""}
-          </div>
-          <div class="pcard-side">
-            <div class="pcard-position">
-              <span>${stanceLabel(stance)} · ${stance > 0 ? "+" : ""}${stance.toFixed(2)}</span>
-              <span class="mini-spectrum"><i></i></span>
-            </div>
-            <button type="button" class="pcard-like${on ? " is-liked" : ''}" data-like="${i}" aria-label="${on ? "取消赞" : "赞同"}">${on ? "♥" : "♡"}</button>
-          </div>
-        </article>`;
+        const article = uiNode("article", "pcard");
+        article.dataset.u = String(i);
+        article.dataset.signal = String(i + 1).padStart(2, "0");
+        article.style.setProperty("--cast", castColor);
+        article.style.setProperty("--stance", `${stancePercent(stance)}%`);
+        article.tabIndex = 0;
+        article.setAttribute("role", "link");
+        article.setAttribute("aria-label", `查看 ${name} 的人格卡`);
+
+        const avatar = uiNode("img", "pcard-ava");
+        avatar.src = personAvatarPath(i);
+        avatar.alt = name;
+
+        const body = uiNode("div", "pcard-body");
+        const row = uiNode("div", "pcard-row");
+        row.appendChild(uiNode("b", "", `@${name}`));
+        if (FOLLOWED.has(i)) row.appendChild(uiNode("span", "pcard-star", "★"));
+
+        const persona = uiNode("div", "pcard-fac");
+        const dot = uiNode("i");
+        dot.style.background = castColor;
+        persona.append(
+          dot,
+          uiNode("b", "", castName),
+          document.createTextNode(` · ${castRole}`),
+        );
+        body.append(row, persona, uiNode("div", "pcard-claim", `“${claim}”`));
+
+        const verifiedSourceUrl = safeZhihuUrl(sourceUrl);
+        if (verifiedSourceUrl) {
+          const source = uiNode(
+            "a",
+            "pcard-source",
+            `查看原回答${Number.isFinite(votes) ? ` · ${votes} 赞同` : ""}`,
+          );
+          source.dataset.source = "";
+          source.href = verifiedSourceUrl;
+          source.target = "_blank";
+          source.rel = "noopener noreferrer";
+          body.appendChild(source);
+        }
+
+        const side = uiNode("div", "pcard-side");
+        const position = uiNode("div", "pcard-position");
+        const spectrum = uiNode("span", "mini-spectrum");
+        spectrum.appendChild(uiNode("i"));
+        position.append(
+          uiNode(
+            "span",
+            "",
+            `${stanceLabel(stance)} · ${stance > 0 ? "+" : ""}${stance.toFixed(2)}`,
+          ),
+          spectrum,
+        );
+        const like = uiNode(
+          "button",
+          `pcard-like${on ? " is-liked" : ""}`,
+          on ? "♥" : "♡",
+        );
+        like.type = "button";
+        like.dataset.like = String(i);
+        like.setAttribute("aria-label", on ? "取消赞" : "赞同");
+        side.append(position, like);
+        article.append(avatar, body, side);
+        return article;
       }
       function commentCard(cmt, i) {
         const [name, stance, castKey, claim, funny] = cmt;
         const [castName, castRole, castColor] = CASTS[castKey];
-        return `<article class="pcard pcard--comment" data-signal="C${String(i + 1).padStart(2, "0")}" style="--cast:${castColor};--stance:${stancePercent(stance)}%">
-          <div class="pcard-ava pcard-ava--ring" style="display:grid;place-items:center;color:${castColor}">${name[0]}</div>
-          <div class="pcard-body">
-            <div class="pcard-row">
-              <b>@${name}</b>
-              <span class="pcard-tag pcard-tag--cmt">评论</span>
-              ${funny ? '<span class="pcard-tag pcard-tag--fun">😄 幽默观点</span>' : ''}
-            </div>
-            <div class="pcard-fac"><i style="border:1.2px solid ${castColor};background:transparent"></i><b>${castName}</b> · ${castRole}</div>
-            <div class="pcard-claim">“${claim}”</div>
-          </div>
-          <div class="pcard-side">
-            <div class="pcard-position">
-              <span>${stanceLabel(stance)} · ${stance > 0 ? "+" : ""}${stance.toFixed(2)}</span>
-              <span class="mini-spectrum"><i></i></span>
-            </div>
-          </div>
-        </article>`;
+        const article = uiNode("article", "pcard pcard--comment");
+        article.dataset.signal = `C${String(i + 1).padStart(2, "0")}`;
+        article.style.setProperty("--cast", castColor);
+        article.style.setProperty("--stance", `${stancePercent(stance)}%`);
+
+        const avatar = uiNode("div", "pcard-ava pcard-ava--ring", name[0] || "?");
+        avatar.style.display = "grid";
+        avatar.style.placeItems = "center";
+        avatar.style.color = castColor;
+
+        const body = uiNode("div", "pcard-body");
+        const row = uiNode("div", "pcard-row");
+        row.append(
+          uiNode("b", "", `@${name}`),
+          uiNode("span", "pcard-tag pcard-tag--cmt", "评论"),
+        );
+        if (funny) {
+          row.appendChild(uiNode("span", "pcard-tag pcard-tag--fun", "😄 幽默观点"));
+        }
+        const persona = uiNode("div", "pcard-fac");
+        const dot = uiNode("i");
+        dot.style.border = `1.2px solid ${castColor}`;
+        dot.style.background = "transparent";
+        persona.append(
+          dot,
+          uiNode("b", "", castName),
+          document.createTextNode(` · ${castRole}`),
+        );
+        body.append(row, persona, uiNode("div", "pcard-claim", `“${claim}”`));
+
+        const side = uiNode("div", "pcard-side");
+        const position = uiNode("div", "pcard-position");
+        const spectrum = uiNode("span", "mini-spectrum");
+        spectrum.appendChild(uiNode("i"));
+        position.append(
+          uiNode(
+            "span",
+            "",
+            `${stanceLabel(stance)} · ${stance > 0 ? "+" : ""}${stance.toFixed(2)}`,
+          ),
+          spectrum,
+        );
+        side.appendChild(position);
+        article.append(avatar, body, side);
+        return article;
       }
       function renderCards(resetScroll = false) {
         const scrollTop = resetScroll ? 0 : cardsListEl.scrollTop;
         const meClaim = verdictText || ME.claim;
         const my = myStanceVal;
+        const selfProfile = inferSelfProfile();
         const totalEntries = [
           ...PEOPLE.map((person, i) => ({ kind: "answer", data: person, index: i })),
           ...(includeComments ? COMMENTS.map((comment, i) => ({ kind: "comment", data: comment, index: i })) : []),
@@ -3736,32 +4724,63 @@
         $("filterLikedCount").textContent = liked.size;
         cardsMeMarkerEl.style.left = `${stancePercent(my)}%`;
 
-        const head = `<section class="me-strip" style="--cast:#e7c17f;--stance:${stancePercent(my)}%">
-          <img class="pcard-ava pcard-ava--me" src="avatars/me.jpg" alt="我" />
-          <div class="me-strip-copy">
-            <div class="me-strip-title">我的立场坐标 <span>${liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "待形成"}</span></div>
-            <div class="me-strip-desc">${meClaim}</div>
-          </div>
-          <div class="me-strip-position">
-            <strong>${CASTS[ME.castKey][0]} · ${CASTS[ME.castKey][1]}</strong>
-            <span class="mini-spectrum"><i></i></span>
-          </div>
-          <button type="button" class="pcard-me-btn" data-self>生成人格卡 →</button>
-        </section>`;
-        const answerSection = visibleAnswers.length
-          ? `<div class="cards-section"><span>${PRESET.peopleLabel || "回答者观点"}</span><b>${visibleAnswers.length}</b></div>` +
-            visibleAnswers.map(({ index }) => personCard(index)).join("")
-          : "";
-        const commentSection = visibleComments.length
-          ? `<div class="cards-section"><span>评论区观点</span><b>${visibleComments.length}</b></div>` +
-            visibleComments.map(({ data, index }) => commentCard(data, index)).join("")
-          : "";
-        const empty = visibleEntries.length
-          ? ""
-          : `<div class="cards-empty">没有找到符合条件的观点</div>`;
-        cardsListEl.innerHTML = head + answerSection + commentSection;
+        const head = uiNode("section", "me-strip");
+        head.style.setProperty("--cast", "#e7c17f");
+        head.style.setProperty("--stance", `${stancePercent(my)}%`);
+        const meAvatar = uiNode("img", "pcard-ava pcard-ava--me");
+        meAvatar.src = "avatars/me.jpg";
+        meAvatar.alt = "我";
+        const meCopy = uiNode("div", "me-strip-copy");
+        const meTitle = uiNode("div", "me-strip-title", "我的立场坐标 ");
+        meTitle.appendChild(uiNode(
+          "span",
+          "",
+          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "待形成",
+        ));
+        meCopy.append(meTitle, uiNode("div", "me-strip-desc", meClaim));
+        const mePosition = uiNode("div", "me-strip-position");
+        const meSpectrum = uiNode("span", "mini-spectrum");
+        meSpectrum.appendChild(uiNode("i"));
+        mePosition.append(
+          uiNode(
+            "strong",
+            "",
+            `${CASTS[selfProfile.cast][0]} · ${CASTS[selfProfile.cast][1]}`,
+          ),
+          meSpectrum,
+        );
+        const meButton = uiNode("button", "pcard-me-btn", "生成人格卡 →");
+        meButton.type = "button";
+        meButton.dataset.self = "";
+        head.append(meAvatar, meCopy, mePosition, meButton);
+
+        cardsListEl.replaceChildren(head);
+        if (visibleAnswers.length) {
+          const section = uiNode("div", "cards-section");
+          section.append(
+            uiNode("span", "", PRESET.peopleLabel || "回答者观点"),
+            uiNode("b", "", visibleAnswers.length),
+          );
+          cardsListEl.append(
+            section,
+            ...visibleAnswers.map(({ index }) => personCard(index)),
+          );
+        }
+        if (visibleComments.length) {
+          const section = uiNode("div", "cards-section");
+          section.append(
+            uiNode("span", "", "评论区观点"),
+            uiNode("b", "", visibleComments.length),
+          );
+          cardsListEl.append(
+            section,
+            ...visibleComments.map(({ data, index }) => commentCard(data, index)),
+          );
+        }
+        if (!visibleEntries.length) {
+          cardsListEl.appendChild(uiNode("div", "cards-empty", "没有找到符合条件的观点"));
+        }
         cardsListEl.scrollTop = scrollTop;
-        if (empty) cardsListEl.insertAdjacentHTML("beforeend", empty);
         cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size} · 按立场从左到右排列`;
       }
       function renderCardsIfOpen() {
@@ -3769,7 +4788,9 @@
       }
       function notifyHostView(view) {
         if (window.parent === window.self) return;
-        try { window.parent.postMessage({ type: "nebula-view-change", view }, "*"); } catch (e) {}
+        try {
+          window.parent.postMessage({ type: "nebula-view-change", view }, location.origin);
+        } catch (e) {}
       }
       function openCards() {
         if (cardsEl.classList.contains("show") || cardsTransitioning) return;
@@ -3884,7 +4905,10 @@
         $("clashAva").alt = `${name}的头像`;
         $("clashName").textContent = `@${name}`;
         $("clashDot").style.background = castColor;
-        $("clashFac").innerHTML = `<b>${castName}</b> · ${castRole}`;
+        $("clashFac").replaceChildren(
+          uiNode("b", "", castName),
+          document.createTextNode(` · ${castRole}`),
+        );
         $("clashClaim").textContent = claim;
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
         const pct = (v) => `${Math.max(5, Math.min(95, v * 50 + 50))}%`;
@@ -3936,13 +4960,17 @@
       function clusterNames(c) {
         return c.members.map((i) => `@${PEOPLE[i][0]}`).join("、");
       }
-      function clusterBlurb(c) {
-        if (c.blurb) return `<b>${c.label}</b> · ${c.blurb}`;
-        return `<b>${c.label}</b> · ${clusterNames(c)} 都站在${clusterSide(c)}，最近互相点赞了对方的回答。`;
+      function renderClusterBlurb(target, c) {
+        const detail = c.blurb ||
+          `${clusterNames(c)} 都站在${clusterSide(c)}，最近互相点赞了对方的回答。`;
+        target.replaceChildren(
+          uiNode("b", "", c.label),
+          document.createTextNode(` · ${detail}`),
+        );
       }
       function showChip(c) {
         chipCluster = c;
-        $("circleText").innerHTML = clusterBlurb(c);
+        renderClusterBlurb($("circleText"), c);
         chipEl.classList.add("show");
       }
       function queueNextChip(delay) {
@@ -3986,7 +5014,7 @@
         focusLines.renderOrder = 4;
         nebula.add(focusLines);
         commentGroup.visible = false;
-        $("focusText").innerHTML = clusterBlurb(c);
+        renderClusterBlurb($("focusText"), c);
         focusBannerEl.classList.add("show");
         document.body.classList.add("is-focusing");
       }
@@ -4034,6 +5062,7 @@
         likeCount: () => liked.size,
         liked: () => [...liked],
         myStance: () => myStanceVal,
+        selfProfile: () => inferSelfProfile(),
         quality: () => quality.name,
         particleCount: () => quality.farStars + quality.haloStars + quality.armDust + quality.brightDust,
         pointerEnergy: () => pointerEnergy,
@@ -4047,7 +5076,9 @@
       };
 
       try {
-        if (window.parent !== window.self) window.parent.postMessage({ type: "nebula-scene-ready" }, "*");
+        if (window.parent !== window.self) {
+          window.parent.postMessage({ type: "nebula-scene-ready" }, location.origin);
+        }
       } catch (e) {}
       loop();
       window.__stage && window.__stage("looping");

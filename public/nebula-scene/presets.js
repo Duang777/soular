@@ -5,6 +5,7 @@ const { AI_MATH } = await import(
 
 const CAREER_35 = {
   id: "career-35",
+  version: "1",
   serial: "01",
   kind: "mock",
   question: "35 岁程序员该不该转行？",
@@ -104,9 +105,20 @@ export function getNebulaPreset(id) {
   return PRESETS.get(id) || CAREER_35;
 }
 
+export function getNebulaLikeStorageKey(preset) {
+  return `jiupai:nebula:likes:v2:${preset.id}:${preset.version || "1"}`;
+}
+
+export function buildNebulaShelfUrl(locationLike, baseUrl, path) {
+  return locationLike.protocol === "file:"
+    ? new URL(`/shelf/${path}`, "https://soular.top").href
+    : new URL(`../shelf/${path}`, baseUrl).href;
+}
+
 export function listNebulaPresets() {
-  return [...PRESETS.values()].map(({ id, serial, kind, question, axis }) => ({
+  return [...PRESETS.values()].map(({ id, version, serial, kind, question, axis }) => ({
     id,
+    version,
     serial,
     kind,
     question,

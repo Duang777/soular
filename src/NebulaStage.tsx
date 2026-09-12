@@ -1,35 +1,26 @@
-import type { CSSProperties, SyntheticEvent } from "react";
+import type { CSSProperties, RefObject } from "react";
 import { asset, withVersion } from "./cast";
 
 export function NebulaStage({
   className = "",
   style,
   presetId = "career-35",
+  iframeRef,
 }: {
   className?: string;
   style?: CSSProperties;
   presetId?: string;
+  iframeRef?: RefObject<HTMLIFrameElement | null>;
 }) {
-  const markHost = (event: SyntheticEvent<HTMLIFrameElement>) => {
-    try {
-      const win = event.currentTarget.contentWindow as
-        | (Window & { __nebHost?: boolean })
-        | null;
-      if (win) win.__nebHost = true;
-    } catch {
-      // 跨域或 iframe 尚未就绪时忽略；场景页会退化为直接跳转
-    }
-  };
-
   return (
     <div className={`nebula-stage${className ? ` ${className}` : ""}`} style={style}>
       <iframe
+        ref={iframeRef}
         className="landing-page-frame"
         src={withVersion(
           `${asset("nebula-scene/index.html")}?preset=${encodeURIComponent(presetId)}`,
         )}
-        title="观点星云 · 知乎九派"
-        onLoad={markHost}
+        title="观点星云 · 思想银河"
       />
     </div>
   );

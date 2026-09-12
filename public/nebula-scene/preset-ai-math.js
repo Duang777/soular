@@ -1,5 +1,6 @@
 export const AI_MATH = {
   id: "ai-math",
+  version: "20260912",
   serial: "02",
   kind: "real",
   question: "AI 是否正在毁掉数学？",

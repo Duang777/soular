@@ -19,8 +19,17 @@ const CACHE_PREFIX = "cache:";
 const STALE_TTL_FACTOR = 6;
 const MAX_STORAGE_TTL_SECONDS = 24 * 60 * 60;
 
-function encodeCacheKey(raw: string): string {
-  return CACHE_PREFIX + encodeURIComponent(raw);
+async function encodeCacheKey(raw: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  const hash = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+  return CACHE_PREFIX + hash;
+}
+
+function legacyCacheKey(raw: string): string | null {
+  const key = CACHE_PREFIX + encodeURIComponent(raw);
+  return new TextEncoder().encode(key).length <= 512 ? key : null;
 }
 
 export class KvSessionBackend implements SessionBackend {
@@ -68,7 +77,14 @@ export class KvContentCache implements AsyncCache {
       return { value: l1Hit.value as T, ageMs: Date.now() - l1Hit.storedAt };
     }
 
-    const result = await this.kv.getWithMetadata(encodeCacheKey(key), { type: "json" });
+    const encodedKey = await encodeCacheKey(key);
+    let result = await this.kv.getWithMetadata(encodedKey, { type: "json" });
+    if (!result || result.value === null || result.value === undefined) {
+      const legacyKey = legacyCacheKey(key);
+      if (legacyKey) {
+        result = await this.kv.getWithMetadata(legacyKey, { type: "json" });
+      }
+    }
     if (!result || result.value === null || result.value === undefined) return null;
     const cachedAt = result.metadata?.cachedAt;
     if (!cachedAt) return null;
@@ -86,7 +102,7 @@ export class KvContentCache implements AsyncCache {
       Math.max(ttlSeconds * STALE_TTL_FACTOR, 60),
       MAX_STORAGE_TTL_SECONDS,
     );
-    await this.kv.put(encodeCacheKey(key), JSON.stringify(value), {
+    await this.kv.put(await encodeCacheKey(key), JSON.stringify(value), {
       expirationTtl: storageTtl,
       metadata: { cachedAt: Math.floor(now / 1000) },
     });

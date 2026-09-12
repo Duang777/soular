@@ -51,16 +51,25 @@ export interface SearchItem {
   RankingScore?: number;
 }
 
-export interface ZhihuSearchData {
-  HasMore: boolean;
-  SearchHashId?: string;
-  Items: SearchItem[];
-  EmptyReason?: string;
-}
-
 export interface GlobalSearchData {
   HasMore: boolean;
   Items: SearchItem[];
+}
+
+export interface QuestionAnswerItem {
+  ContentType: string;
+  ContentToken: string;
+  Url: string;
+  Summary: string;
+}
+
+export interface QuestionAnswersData {
+  Items: QuestionAnswerItem[];
+  Paging: {
+    IsEnd: boolean;
+    NextOffset?: string | number;
+    Totals?: string | number;
+  };
 }
 
 export interface FolloweeItem {

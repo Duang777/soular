@@ -6,12 +6,6 @@ import { ZhihuClient, ZhihuApiError } from "../zhihu/client.js";
 import { buildPortrait, PORTRAIT_TTL_SECONDS } from "./portrait.js";
 import type { Portrait } from "./portrait.js";
 import {
-  buildGalaxy,
-  GALAXY_FALLBACK_TTL_SECONDS,
-  GALAXY_TTL_SECONDS,
-} from "./galaxy.js";
-import type { Galaxy } from "./galaxy.js";
-import {
   buildAuthorizeUrl,
   exchangeCodeForToken,
   fetchProfile,
@@ -23,8 +17,6 @@ export interface HandlerDeps {
   sessions: SessionStore;
   contentCache?: AsyncCache | null;
 }
-
-const GALAXY_ERROR_BACKOFF_SECONDS = 10 * 60;
 
 function publicStatus(config: RuntimeConfig) {
   return {
@@ -53,7 +45,6 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
   const client = config.dataApiConfigured
     ? new ZhihuClient(config.accessSecret, contentCache)
     : null;
-  let galaxyInflight: Promise<Galaxy> | null = null;
 
   return async function handler(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -203,92 +194,6 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         );
       }
 
-      if (request.method === "GET" && url.pathname === "/api/galaxy") {
-        if (!client) {
-          return jsonResponse(503, {
-            ok: false,
-            error: { code: "NOT_CONFIGURED", message: "未配置 ZHIHU_ACCESS_SECRET" },
-          });
-        }
-
-        const cacheKey = "galaxy:current";
-        const errorKey = "galaxy:error-backoff";
-        let staleGalaxy: Galaxy | null = null;
-        if (contentCache) {
-          const cached = await contentCache.get<Galaxy>(cacheKey);
-          if (cached) {
-            staleGalaxy = cached.value;
-            const ttl = cached.value.source === "ai"
-              ? GALAXY_TTL_SECONDS
-              : GALAXY_FALLBACK_TTL_SECONDS;
-            if (cached.ageMs <= ttl * 1000) {
-              return jsonResponse(200, { ok: true, cached: true, data: cached.value });
-            }
-          }
-          const blocked = await contentCache.get<{ code: number | string; message: string }>(
-            errorKey,
-          );
-          if (blocked && blocked.ageMs <= GALAXY_ERROR_BACKOFF_SECONDS * 1000) {
-            if (staleGalaxy) {
-              return jsonResponse(200, {
-                ok: true,
-                cached: true,
-                stale: true,
-                data: staleGalaxy,
-              });
-            }
-            throw new ZhihuApiError(blocked.value.code, blocked.value.message);
-          }
-        }
-
-        const load = (): Promise<Galaxy> => {
-          if (!galaxyInflight) {
-            galaxyInflight = buildGalaxy(client).finally(() => {
-              galaxyInflight = null;
-            });
-          }
-          return galaxyInflight;
-        };
-
-        let galaxy: Galaxy;
-        try {
-          galaxy = await load();
-        } catch (error) {
-          if (contentCache && error instanceof ZhihuApiError) {
-            await contentCache.set(
-              errorKey,
-              { code: error.code, message: error.message },
-              GALAXY_ERROR_BACKOFF_SECONDS,
-            );
-          }
-          if (staleGalaxy) {
-            return jsonResponse(200, {
-              ok: true,
-              cached: true,
-              stale: true,
-              data: staleGalaxy,
-            });
-          }
-          throw error;
-        }
-        if (galaxy.source === "fallback" && contentCache) {
-          const previous = await contentCache.get<Galaxy>(cacheKey);
-          if (
-            previous &&
-            previous.value.source === "ai" &&
-            previous.ageMs <= GALAXY_TTL_SECONDS * 1000
-          ) {
-            return jsonResponse(200, { ok: true, cached: true, data: previous.value });
-          }
-        }
-        await contentCache?.set(
-          cacheKey,
-          galaxy,
-          galaxy.source === "ai" ? GALAXY_TTL_SECONDS : GALAXY_FALLBACK_TTL_SECONDS,
-        );
-        return jsonResponse(200, { ok: true, cached: false, data: galaxy });
-      }
-
       if (request.method === "GET" && url.pathname === "/api/zhihu/hot") {
         if (!client) {
           return jsonResponse(503, {
@@ -298,18 +203,6 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         }
         const limit = Number(url.searchParams.get("limit") ?? 30);
         return jsonResponse(200, { ok: true, data: await client.hotList(limit) });
-      }
-
-      if (request.method === "GET" && url.pathname === "/api/zhihu/search") {
-        if (!client) {
-          return jsonResponse(503, {
-            ok: false,
-            error: { code: "NOT_CONFIGURED", message: "未配置 ZHIHU_ACCESS_SECRET" },
-          });
-        }
-        const query = url.searchParams.get("q") ?? "";
-        const count = Number(url.searchParams.get("count") ?? 10);
-        return jsonResponse(200, { ok: true, data: await client.zhihuSearch(query, count) });
       }
 
       if (url.pathname.startsWith("/api/")) {

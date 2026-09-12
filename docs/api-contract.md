@@ -71,62 +71,6 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 }
 ```
 
-### GET `/api/galaxy`
-
-热榜 AI 聚合结果，用于离线准备新快照和内部检查。正式星云页面不得在访问时调用
-此接口。无需参数，不允许客户端强制刷新。
-
-缓存：
-
-- 热榜原始数据：10 分钟
-- AI 星图：24 小时
-- AI 失败后的规则降级：1 小时
-- 上游失败后 10 分钟内不再发起重建
-- Worker 内同一时刻的重建请求会合并
-- 上游失败时优先返回仍可读取的旧快照
-
-响应：
-
-```json
-{
-  "ok": true,
-  "cached": true,
-  "data": {
-    "generatedAt": 1789220000000,
-    "source": "ai",
-    "model": "zhida-fast-1p5",
-    "clusters": [
-      { "id": 0, "name": "科技" }
-    ],
-    "posts": [
-      {
-        "id": 1,
-        "title": "热榜标题",
-        "summary": "摘要",
-        "url": "https://www.zhihu.com/question/...",
-        "thumbnail": "https://...",
-        "heat": 1,
-        "cluster": 0,
-        "debate": 0.72,
-        "take": "AI 中立锐评",
-        "campA": "阵营 A 主张",
-        "campB": "阵营 B 主张"
-      }
-    ],
-    "warnings": []
-  }
-}
-```
-
-字段约束：
-
-- `source`: `ai | fallback`
-- `heat`: `0..1`，越大表示热榜排名越靠前
-- `cluster`: 对应 `clusters[].id`
-- `debate`: `0..1`，0 为冷静共识，1 为激烈撕裂
-- 降级结果中 `campA`、`campB` 可能为空；前端必须允许隐藏阵营模块
-- `warnings` 非空表示发生部分降级，不代表请求失败
-
 ### GET `/api/zhihu/hot`
 
 返回知乎热榜原始结构。
@@ -153,46 +97,11 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 }
 ```
 
-缓存：按参数缓存 10 分钟；上游失败时可返回 KV 中的旧数据。
+缓存：按参数缓存 10 分钟；上游失败时可返回 KV 中的旧数据。服务端在写入缓存前校验
+`Items` 并裁剪到请求上限，所有知乎上游响应的读取上限为 5 MiB。
 
-### GET `/api/zhihu/search`
-
-知乎站内搜索。
-
-参数：
-
-| 参数 | 类型 | 必填 | 默认值 | 服务端范围 |
-| --- | --- | --- | --- | --- |
-| `q` | string | 是 | - | 非空 |
-| `count` | number | 否 | 10 | 1–10 |
-
-响应 `data`：
-
-```json
-{
-  "HasMore": true,
-  "SearchHashId": "可选",
-  "Items": [
-    {
-      "Title": "标题",
-      "ContentType": "answer",
-      "ContentID": "内容 ID",
-      "ContentText": "正文摘要",
-      "Url": "https://...",
-      "CommentCount": 0,
-      "VoteUpCount": 0,
-      "AuthorName": "作者",
-      "AuthorAvatar": "https://...",
-      "AuthorBadge": "",
-      "AuthorBadgeText": "",
-      "EditTime": 0,
-      "AuthorityLevel": ""
-    }
-  ]
-}
-```
-
-缓存：按 `q + count` 缓存 5 分钟；上游失败时可返回 KV 中的旧数据。
+服务端不提供 `/api/zhihu/search` 搜索代理。站内搜索只查询已发布快照；任意关键词搜索
+通过前端生成的知乎搜索链接完成，避免匿名请求消耗共享配额。
 
 ## 4. OAuth 与个性化接口
 
@@ -298,6 +207,7 @@ https://soular.top/?oauth=success
 
 ## 6. 尚未开放的接口
 
+- 动态 AI 星图：不提供匿名 `/api/galaxy` 路由，候选内容只通过本地运营脚本生成。
 - 全网搜索：后端客户端已有适配，但尚未发布为公开路由。
 - 个性化推荐：尚未定义稳定的输入、排序依据和响应契约。
 
@@ -323,7 +233,7 @@ public/nebula-scene/presets.js
 
 每个快照包含：
 
-- `id`、盲盒序号 `serial`、问题 `question`、知乎搜索链接 `searchUrl`
+- `id`、不可变内容版本 `version`、盲盒序号 `serial`、问题 `question`、知乎搜索链接 `searchUrl`
 - 数据性质 `kind`：`mock | real`
 - 左中右光谱文案 `axis`
 - 可变数量讨论者 `people`：`[昵称, 立场(-1..1), 人格派别, 观点, 来源 URL, 来源标题, 赞同数]`
@@ -333,9 +243,53 @@ public/nebula-scene/presets.js
 - 小圈子 `circles`
 - 用户默认星位 `me`
 
-新快照必须离线生成、人工验收后随前端发布。页面运行时只读取本地静态模块，不调用
-`/api/galaxy`，也不直接调用知乎或直答。点赞记录按快照 id 隔离。用户可在银河盲盒
-的“讨论热点”选择器中切换快照。
+新快照必须离线生成、人工验收后随前端发布。页面运行时只读取本地静态模块，不提供或调用
+匿名 AI 星图生成接口，也不直接调用知乎或直答。点赞记录按快照 id 与 version 隔离。用户可在
+银河盲盒的“讨论热点”选择器中切换快照。
+
+同一个 `id` 下只要回答增删、重排或来源发生变化，就必须更新 `version`。点赞存储键使用
+`id + version`，避免旧索引在新版快照中错误指向其他回答。
+发布或更新快照时，还必须同步 `src/people.ts` 中的 `NEBULA_PRESET_VERSIONS`；导航检查会
+校验两侧目录一致。
+快照文案在运行时通过 DOM 文本节点渲染，来源链接只接受 HTTPS 知乎域名，不得把快照
+字段直接拼接进 `innerHTML`。
+
+### 离线批量生成
+
+回答采集和 AI 观点光谱只允许通过本地运营脚本执行，不暴露公网 API：
+
+```bash
+npm --prefix server run prepare:hot-spectrums -- --count=3 --answers=30
+```
+
+脚本最多扫描热榜前 30 项、处理其中 5 个合法问题，每个问题最多读取 50 条回答，并严格
+使用上游 `NextOffset` 分页。AI 输出覆盖不足或解析失败时保留原始摘要并标记降级，不伪造
+作者、头像或赞同数；模型调用、鉴权或配额错误会直接停止整批处理。后续分页的普通瞬时
+错误会保留已采集回答并记录警告，但鉴权或配额错误仍会终止；畸形条目会被有界跳过，
+跨页重复回答按内容类型和内容标识去重。任一候选生成失败后不会替换原输出文件。候选
+回答按 `stance` 升序输出，与前端从左到右的观点光谱一致。
+
+结果默认写入 `server/.staging/hot-spectrums.json`，不会自动进入前端。候选项必须人工检查
+立场、摘要和链接并补充作者信息后，才可复制为 `public/nebula-scene/preset-*.js` 并注册。
+禁止把回答采集或观点光谱生成重新开放为匿名 Worker 路由，以免外部请求消耗共享配额。
+
+### 人格卡生成
+
+- 离线阶段：直答模型为每条回答生成 `stance`、`claim` 和九派 `cast` 标签；九派标签只允许
+  `fox/bear/cat/owl/rabbit/penguin/redpanda/goat/frog`。
+- 运行阶段：不调用 AI。先计算用户点赞回答的平均立场，再按每个九派标签的点赞数量选人格；
+  同票时使用该派回答与用户平均立场的接近度破同票，最后按固定九派顺序保证结果稳定。
+- 没有点赞时使用快照的 `me.castKey` 默认人格；生成依据通过 Session Storage 带到卡片页，
+  自我人格卡分享链接只保留最终派别、快照及版本，不暴露点赞明细。
+- 人物与自我画像按随机导航上下文键暂存，避免历史记录和同标签页内不同卡片互相覆盖；
+  同页路由状态在 Session Storage 不可用时提供降级。公开分享 URL 不携带该上下文键，
+  也不会读取接收者已有的临时画像。
+- 临时导航上下文最多保留 24 份，键中携带创建时间并按时间清理最旧记录，不依赖浏览器的
+  Session Storage 枚举顺序。
+- 真实人物卡优先分享可核验的知乎原文；没有来源链接的示例人物回到对应观点星云，不生成
+  依赖本机 Session Storage 才能打开的人物卡链接。
+- 快照升版后旧自我卡分享链接仍展示最终人格；依赖人物索引的旧版本链接回到对应星云，
+  避免索引映射到新版中的其他人物。
 
 ## 8. 前端调用约定
 
@@ -344,7 +298,7 @@ const API_BASE_URL =
   location.origin === "https://soular.top" ? "" : "https://soular.top";
 
 const response = await fetch(
-  `${API_BASE_URL}/api/zhihu/search?q=${encodeURIComponent(query)}&count=10`,
+  `${API_BASE_URL}/api/zhihu/hot?limit=8`,
 );
 const payload = await response.json();
 if (!response.ok || !payload.ok) {
@@ -352,6 +306,12 @@ if (!response.ok || !payload.ok) {
 }
 ```
 
-产品前端仅在搜索、登录、画像等动态功能中调用后端。观点星云使用静态快照，不要在
+产品前端仅在热榜、登录、画像等动态功能中调用后端。观点星云使用静态快照，不要在
 浏览器中直接调用知乎开放平台，也不要持有 `ZHIHU_ACCESS_SECRET`、
 `ZHIHU_OAUTH_APP_KEY` 或 OAuth Token。
+
+观点星云内的搜索只查询本地快照目录；热榜使用上述只读接口并在当前探索面板中展示
+结果；推荐暂不请求上游，只显示开发状态和知乎首页入口。用户选择热榜条目时才打开知乎
+原文。服务端不公开回答采集或观点光谱生成接口，前端也不得绕过静态快照的人工验收
+流程。动态接口不可用时，前端显示功能开发状态，不暴露上游技术错误，并提供对应的
+知乎搜索、首页或热榜直达链接。

@@ -8,7 +8,8 @@
     name="description"
     content="银河的故事是观点人格书架：九种把问题写成一个人的方式。"
   >
-  <title>知乎九派 — 九本人格书</title>
+  <title>思想银河 — 九本人格书</title>
+  <link rel="icon" type="image/svg+xml" href="../brand/soular-favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -1610,7 +1611,7 @@
 
     <header class="editorial-header" aria-label="Collection" hidden>
       <div class="editorial-identity">
-        <strong>知乎九派</strong>
+        <strong>思想银河</strong>
         <span>九种回答问题的方式</span>
       </div>
       <div class="editorial-index">
@@ -1710,7 +1711,7 @@
     <section class="static-fallback" id="static-fallback" aria-labelledby="fallback-title" hidden>
       <div class="fallback__header">
         <div>
-          <p class="fallback__kicker">知乎九派 · 人格书目</p>
+          <p class="fallback__kicker">思想银河 · 人格书目</p>
           <h2 id="fallback-title">九派各有一本。</h2>
         </div>
         <p class="fallback__status" id="fallback-status">
@@ -2590,7 +2591,7 @@
       ctx.textBaseline = "middle";
       ctx.font = '500 18px Inter, "Helvetica Neue", Arial, sans-serif';
       ctx.letterSpacing = "4px";
-      ctx.fillText(`知乎九派  /  ${book.roman}`, canvasTexture.width / 2, 92);
+      ctx.fillText(`思想银河  /  ${book.roman}`, canvasTexture.width / 2, 92);
 
       const titleSize = book.title.length > 10 ? 72 : 88;
       ctx.font = `400 ${titleSize}px "Iowan Old Style", "Songti SC", "Noto Serif SC", Baskerville, Georgia, serif`;
@@ -2616,7 +2617,7 @@
 
       ctx.font = '500 15px Inter, "Helvetica Neue", Arial, sans-serif';
       ctx.letterSpacing = "2.8px";
-      ctx.fillText(`知乎九派  /  ${pad(index)}`, 58, 70);
+      ctx.fillText(`思想银河  /  ${pad(index)}`, 58, 70);
       ctx.globalAlpha = 0.7;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -2934,7 +2935,7 @@
         ctx.globalAlpha = 0.58;
         ctx.font = '500 10px Inter, "Helvetica Neue", Arial, sans-serif';
         ctx.letterSpacing = "1.8px";
-        ctx.fillText(`知乎九派  /  ${book.roman}`, 48, 48);
+        ctx.fillText(`思想银河  /  ${book.roman}`, 48, 48);
         ctx.textAlign = "right";
         ctx.fillText(pad(pageIndex + 1), logicalWidth - 48, 48);
         ctx.textAlign = "left";
@@ -3346,7 +3347,7 @@
 
       ctx.font = '500 16px Inter, "Helvetica Neue", Arial, sans-serif';
       ctx.letterSpacing = "3px";
-      ctx.fillText(`知乎九派  /  ${book.roman}`, 68, 82);
+      ctx.fillText(`思想银河  /  ${book.roman}`, 68, 82);
       ctx.globalAlpha = 0.72;
       ctx.fillRect(68, 108, 176, 2);
       ctx.globalAlpha = 1;
@@ -4586,7 +4587,7 @@
     }
 
     function populateDetail(book) {
-      detailEyebrow.textContent = `知乎九派 · ${book.theme}`;
+      detailEyebrow.textContent = `思想银河 · ${book.theme}`;
       detailTitle.textContent = book.title;
       detailDeck.textContent = book.deck;
       detailBinding.textContent = book.binding;

@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BrandMark } from "./BrandMark";
 import { asset, CASTS, type Cast } from "./cast";
-import { personAvatarFile, personByIndex, type Person } from "./people";
+import {
+  DEFAULT_NEBULA_PRESET,
+  personAvatarFile,
+  personByIndex,
+  type Person,
+  type SelfProfile,
+} from "./people";
 import { WarmStars } from "./WarmStars";
 
 export type CardSubject =
-  | { kind: "self" }
+  | { kind: "self"; preset: string; version?: string; profile?: SelfProfile }
   | { kind: "peek" }
-  | { kind: "person"; index: number; person?: Person };
+  | { kind: "person"; index: number; preset: string; version?: string; person?: Person };
 
 type DrawMode = "enter" | "revisit";
 type Phase = "shuffle" | "flip" | "reveal";
@@ -14,6 +21,23 @@ type Phase = "shuffle" | "flip" | "reveal";
 const SHUFFLE_MS = 1900;
 const FLIP_MS = 850;
 const ENTER_BOOK_MS = 950;
+
+function selfCardQuery(preset: string, version?: string) {
+  return `?self=1&preset=${encodeURIComponent(preset)}` +
+    (version ? `&version=${encodeURIComponent(version)}` : "");
+}
+
+function safeZhihuUrl(value?: string): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && /(^|\.)zhihu\.com$/.test(url.hostname)
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && typeof window.matchMedia === "function"
@@ -93,6 +117,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     ? subject.person ?? personByIndex(subject.index)
     : null;
   const isSelf = flavor === "self";
+  const selfProfile = flavor === "self" ? subject.profile : undefined;
   const isPeek = flavor === "peek";
   const W = 1080;
   const H = 1440;
@@ -128,10 +153,10 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   ctx.fillStyle = "rgba(243, 240, 233, 0.62)";
   ctx.font = `500 30px ${fontStack}`;
   const posterEyebrow = isSelf
-    ? "知乎九派 · 银河的故事"
+    ? "思想银河 · 银河的故事"
     : isPeek
-      ? "知乎九派 · 观点人格卡"
-      : "知乎九派 · 观点星云";
+      ? "思想银河 · 观点人格卡"
+      : "思想银河 · 观点星云";
   ctx.fillText(posterEyebrow, W / 2, 132);
 
   if (!person) {
@@ -167,13 +192,23 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     ctx.font = `400 40px ${fontStack}`;
     ctx.fillText(cast.role, W / 2, 1150);
 
+    if (selfProfile) {
+      ctx.fillStyle = "rgba(243, 240, 233, 0.72)";
+      ctx.font = `400 27px ${fontStack}`;
+      const [line1, line2] = wrapClaim(ctx, selfProfile.claim, 820);
+      ctx.fillText(line1, W / 2, 1210);
+      if (line2) ctx.fillText(line2, W / 2, 1248);
+    }
+
     ctx.fillStyle = "rgba(196, 165, 116, 0.9)";
     ctx.font = `600 30px ${fontStack}`;
-    ctx.fillText("✦ 每个发光头像，都是一种立场", W / 2, 1252);
+    ctx.fillText("✦ 每个发光头像，都是一种立场", W / 2, selfProfile ? 1302 : 1252);
 
     ctx.fillStyle = "rgba(243, 240, 233, 0.55)";
     ctx.font = `400 26px ${fontStack}`;
-    const posterQuery = isSelf ? "?self=1" : "?peek=1";
+    const posterQuery = isSelf
+      ? selfCardQuery(subject.preset, subject.version)
+      : "?peek=1";
     ctx.fillText(`${window.location.host}${import.meta.env.BASE_URL}shelf/${cast.key}${posterQuery}`, W / 2, 1342);
   } else {
     const subjectIndex = subject.kind === "person" ? subject.index : 0;
@@ -268,7 +303,10 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
 
     ctx.fillStyle = "rgba(243, 240, 233, 0.55)";
     ctx.font = `400 26px ${fontStack}`;
-    ctx.fillText(`${window.location.host}${import.meta.env.BASE_URL}shelf/${cast.key}?u=${subjectIndex}`, W / 2, 1384);
+    const galaxyQuery = subject.kind === "person"
+      ? `?preset=${encodeURIComponent(subject.preset)}`
+      : "";
+    ctx.fillText(`${window.location.host}${import.meta.env.BASE_URL}nebula${galaxyQuery}`, W / 2, 1384);
   }
 
   return canvas.toDataURL("image/jpeg", 0.92);
@@ -287,8 +325,12 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     ? subject.person ?? personByIndex(subject.index)
     : null;
   const isSelf = subject.kind === "self";
+  const selfPreset = isSelf ? subject.preset : undefined;
+  const selfVersion = isSelf ? subject.version : undefined;
+  const selfProfile = isSelf ? subject.profile : undefined;
   const isPeek = subject.kind === "peek";
   const personIndex = subject.kind === "person" ? subject.index : 0;
+  const personPreset = subject.kind === "person" ? subject.preset : undefined;
   const resultIndex = Math.max(0, CASTS.findIndex((item) => item.key === cast.key));
   const startsFlipped = !!person || isPeek;
   const initialPhase: Phase = mode === "revisit" || reduceMotion
@@ -305,16 +347,29 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   const personName = person ? `@${person.name}` : cast.name;
   const artSrc = asset(`personas/${cast.key}.jpg`);
   const personAvatarSrc = person ? asset(personAvatarFile(person, personIndex)) : null;
+  const personSourceUrl = safeZhihuUrl(person?.sourceUrl);
 
   const shareUrl = useMemo(() => {
     const base = import.meta.env.BASE_URL;
-    const suffix = person
-      ? `?u=${personIndex}`
-      : isSelf
-        ? "?self=1"
+    if (person) {
+      return personSourceUrl ??
+        `${window.location.origin}${base}nebula?preset=${encodeURIComponent(
+          personPreset ?? DEFAULT_NEBULA_PRESET,
+        )}`;
+    }
+    const suffix = isSelf
+        ? selfCardQuery(selfPreset ?? DEFAULT_NEBULA_PRESET, selfVersion)
         : "?peek=1";
     return `${window.location.origin}${base}shelf/${cast.key}${suffix}`;
-  }, [cast.key, person, personIndex, isSelf]);
+  }, [
+    cast.key,
+    person,
+    personSourceUrl,
+    personPreset,
+    isSelf,
+    selfPreset,
+    selfVersion,
+  ]);
   const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   useEffect(() => {
@@ -426,19 +481,19 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     try {
       const sharePayload = isSelf
         ? {
-            title: `我是${cast.name} · 知乎九派`,
-            text: `我在知乎九派抽到了「${cast.name} · ${cast.role}」，来看看你的观点人格`,
+            title: `我是${cast.name} · 思想银河`,
+            text: `我在思想银河抽到了「${cast.name} · ${cast.role}」，来看看你的观点人格`,
             url: shareUrl,
           }
         : person
           ? {
-              title: `${personName} 的观点人格 · 知乎九派`,
-              text: `${personName} 是「${cast.name} · ${cast.role}」，来观点星云看看你的人格`,
+              title: `${personName} 的观点 · 思想银河`,
+              text: `我在思想银河发现了 ${personName} 的观点，来看看这场讨论`,
               url: shareUrl,
             }
           : {
-              title: `${cast.name} · 知乎九派`,
-              text: `知乎九派「${cast.name} · ${cast.role}」，来观点星云找你的观点人格`,
+              title: `${cast.name} · 思想银河`,
+              text: `思想银河「${cast.name} · ${cast.role}」，来观点星云找你的观点人格`,
               url: shareUrl,
             };
       await navigator.share(sharePayload);
@@ -449,9 +504,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
 
   const revealed = phase === "reveal";
   const eyebrow = phase === "shuffle"
-    ? "知乎九派 · 银河的故事"
+    ? "思想银河 · 银河的故事"
     : phase === "flip"
-      ? person ? "知乎九派 · 观点星云" : "知乎九派 · 派别图鉴"
+      ? person ? "思想银河 · 观点星云" : "思想银河 · 派别图鉴"
       : mode === "enter" && isSelf
         ? "观点人格抽取结果"
         : "观点人格卡";
@@ -478,6 +533,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
           <span aria-hidden="true">×</span>
         </button>
       )}
+      <BrandMark className="brand-lockup--draw" />
       {mode === "revisit" && revealed && !sheet && (
         <button type="button" className="draw-skip" onClick={onClose} aria-label="关闭人格卡">×</button>
       )}
@@ -489,7 +545,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
           <div className="draw-card__inner">
             <div className="draw-face draw-face--back">
               <span className="draw-face__seal">九</span>
-              <span className="draw-face__word">知乎九派</span>
+              <span className="draw-face__word">思想银河</span>
               <span className="draw-face__sub">SPECTRUM</span>
             </div>
             <div
@@ -508,6 +564,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 <strong className="draw-face__name">{personName}</strong>
                 <span className="draw-face__role">{cast.role}</span>
                 {person && <span className="draw-face__claim">“{person.claim}”</span>}
+                {selfProfile && <span className="draw-face__claim">{selfProfile.claim}</span>}
               </div>
               <span className="draw-face__spark" aria-hidden="true">✦</span>
             </div>
@@ -524,7 +581,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   ? "你在知乎上的观点人格"
                   : person
                     ? `${personName} 的观点人格`
-                    : "知乎九派观点人格"
+                    : "思想银河观点人格"
               ) + ` · ${cast.name}`}
         </p>
 
@@ -557,7 +614,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   : isSelf
                     ? "分享人格卡"
                     : person
-                      ? "分享 TA 的人格卡"
+                      ? "分享这个观点"
                       : "分享这张人格卡"}
               </button>
             </>
@@ -567,7 +624,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 {isSelf
                   ? "把我的人格卡分享出去"
                   : person
-                    ? `把 ${personName} 的人格卡分享出去`
+                    ? `分享 ${personName} 的观点`
                     : "把这张人格卡分享出去"}
               </p>
               <div className="share-sheet__btns">
@@ -575,7 +632,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   {posterState === "working" ? "正在生成海报…" : posterState === "done" ? "海报已保存 ✓" : "保存人格卡海报"}
                 </button>
                 <button type="button" className="draw-btn draw-btn--ghost" onClick={copyLink}>
-                  {copied ? "链接已复制 ✓" : "复制人格卡链接"}
+                  {copied ? "链接已复制 ✓" : person ? "复制观点链接" : "复制人格卡链接"}
                 </button>
                 {canNativeShare && (
                   <button type="button" className="draw-btn draw-btn--ghost" onClick={nativeShare}>
@@ -591,7 +648,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 {isSelf
                   ? "朋友打开链接，会先抽到这张人格卡，再翻开你的书"
                   : person
-                    ? `朋友打开链接，会先抽到 ${personName} 的人格卡，再翻开 TA 的书`
+                    ? personSourceUrl
+                      ? `朋友打开链接，会前往知乎查看 ${personName} 的原文`
+                      : "朋友打开链接，会进入这个观点所在的星云"
                     : "朋友打开链接，会先看到这一派的人格卡，再翻开这本书"}
               </p>
             </div>

@@ -1,18 +1,36 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import { BrandMark } from "./BrandMark";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
 import {
   DEFAULT_NEBULA_PRESET,
+  nebulaPresetVersion,
   personByIndex,
+  personFromValue,
+  resolveNebulaPreset,
+  selfProfileFromValue,
   stagedPersonByIndex,
+  stagedSelfProfile,
 } from "./people";
 
 type ShelfPhase = "draw" | "book" | "card";
+type ShelfNavigationState = {
+  person?: unknown;
+  selfProfile?: unknown;
+};
 
 export function ShelfPage() {
   const { cast: castKey = "" } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ShelfPhase>("draw");
 
@@ -22,25 +40,91 @@ export function ShelfPage() {
   const cast = castByKey(castKey);
   const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
 
-  let subject: CardSubject = { kind: "self" };
-  const presetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
+  const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
+  const presetId = resolveNebulaPreset(requestedPresetId);
+  const currentPresetVersion = nebulaPresetVersion(presetId)!;
+  const requestedVersion = searchParams.get("version") ?? "";
+  const validRequestedVersion = /^[a-z0-9-]{1,15}$/.test(requestedVersion)
+    ? requestedVersion
+    : "";
+  const presetVersion = validRequestedVersion || currentPresetVersion;
+  const staleVersion = Boolean(
+    validRequestedVersion && validRequestedVersion !== currentPresetVersion,
+  );
+  const requestedProfileKey = searchParams.get("profile") ?? "";
+  const profileKey = /^[a-z0-9-]{1,64}$/.test(requestedProfileKey)
+    ? requestedProfileKey
+    : "";
+  const navigationState = location.state &&
+    typeof location.state === "object" &&
+    !Array.isArray(location.state)
+    ? location.state as ShelfNavigationState
+    : {};
+  let subject: CardSubject = {
+    kind: "self",
+    preset: presetId,
+    version: presetVersion || undefined,
+    profile: selfProfileFromValue(
+      navigationState.selfProfile,
+      presetId,
+      presetVersion,
+      cast.key,
+    ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey) ?? undefined,
+  };
+  let missingPerson = false;
   const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {
     const index = Number(uRaw);
-    const staged = stagedPersonByIndex(presetId, index);
-    const person = staged ??
-      (presetId === DEFAULT_NEBULA_PRESET ? personByIndex(index) : null);
+    const requestedPersonKey = searchParams.get("person") ?? "";
+    const personKey = /^[a-z0-9-]{1,64}$/.test(requestedPersonKey)
+      ? requestedPersonKey
+      : "";
+    const person = personFromValue(
+      navigationState.person,
+      presetId,
+      presetVersion,
+      index,
+    ) ??
+      stagedPersonByIndex(presetId, presetVersion, index, personKey) ??
+      (
+        presetId === DEFAULT_NEBULA_PRESET &&
+        presetVersion === currentPresetVersion
+          ? personByIndex(index)
+          : null
+      );
     if (person && person.cast === cast.key) {
-      subject = { kind: "person", index, person };
+      subject = {
+        kind: "person",
+        index,
+        preset: presetId,
+        version: presetVersion || undefined,
+        person,
+      };
+    } else {
+      missingPerson = true;
     }
   } else if (searchParams.get("peek") !== null) {
     subject = { kind: "peek" };
   }
 
-  const lobbyRaw = typeof window !== "undefined" ? window.sessionStorage.getItem("jiupai:lobby") : null;
-  const lobbyTarget = lobbyRaw === "/" || lobbyRaw === "/nebula" || lobbyRaw?.startsWith("/nebula?")
+  let lobbyRaw: string | null = null;
+  try {
+    lobbyRaw = typeof window !== "undefined"
+      ? window.sessionStorage.getItem("jiupai:lobby")
+      : null;
+  } catch {
+    // 存储不可用时返回首页。
+  }
+  const storedLobbyTarget = lobbyRaw === "/" || lobbyRaw === "/nebula" || lobbyRaw?.startsWith("/nebula?")
     ? lobbyRaw
     : "/";
+  const lobbyTarget = subject.kind === "peek"
+    ? storedLobbyTarget
+    : `/nebula?preset=${encodeURIComponent(subject.preset)}`;
+
+  if (missingPerson || (staleVersion && subject.kind === "person")) {
+    return <Navigate to={`/nebula?preset=${encodeURIComponent(presetId)}`} replace />;
+  }
 
   function handleExit() {
     navigate(lobbyTarget);
@@ -48,12 +132,13 @@ export function ShelfPage() {
 
   return (
     <div className="shelf-root">
-      <iframe className="landing-page-frame" src={src} title={`${cast.name} · 知乎九派`} />
+      <iframe className="landing-page-frame" src={src} title={`${cast.name} · 思想银河`} />
       <img src={asset("kanshan/wave.gif")} alt="" className="kanshan kanshan-shelf" />
       <nav className="shelf-nav" aria-label="书页">
+        <BrandMark className="brand-lockup--shelf" />
         <div className="shelf-nav__tags">
           <Link to={lobbyTarget} className="shelf-tag">
-            {lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回九派"}
+            {lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回首页"}
           </Link>
         </div>
         <p className="shelf-nav__cast">
@@ -61,7 +146,7 @@ export function ShelfPage() {
         </p>
         <div className="shelf-nav__share">
           <button type="button" className="shelf-tag shelf-tag--share" onClick={() => setPhase("card")}>
-            <span aria-hidden="true">✦</span> 分享人格卡
+            <span aria-hidden="true">✦</span> {subject.kind === "person" ? "分享这个观点" : "分享人格卡"}
           </button>
         </div>
       </nav>

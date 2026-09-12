@@ -10,7 +10,38 @@ export type Person = {
   votes?: number;
 };
 
+export type SelfProfile = {
+  preset: string;
+  version: string;
+  cast: Cast["key"];
+  stance: number;
+  likedCount: number;
+  claim: string;
+};
+
 export const DEFAULT_NEBULA_PRESET = "career-35";
+export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
+  "career-35": "1",
+  "ai-math": "20260912",
+};
+
+export function nebulaPresetVersion(preset: string): string | null {
+  return NEBULA_PRESET_VERSIONS[preset] ?? null;
+}
+
+export function resolveNebulaPreset(preset: string): string {
+  return nebulaPresetVersion(preset) ? preset : DEFAULT_NEBULA_PRESET;
+}
+
+export function clipProfileClaim(claim: string): string {
+  const graphemes = typeof Intl.Segmenter === "function"
+    ? Array.from(
+        new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(claim),
+        ({ segment }) => segment,
+      )
+    : Array.from(claim);
+  return graphemes.slice(0, 120).join("");
+}
 
 export const PEOPLE: Person[] = [
   { name: "等喝茶的老码农", stance: -0.98, cast: "goat", claim: "35 岁还不走，等着公司请你喝茶吗？管理岗就那么几个。" },
@@ -75,34 +106,95 @@ export function personByIndex(index: number): Person | null {
   return Number.isInteger(index) && index >= 0 && index < PEOPLE.length ? PEOPLE[index] : null;
 }
 
-export function stagedPersonByIndex(preset: string, index: number): Person | null {
-  if (typeof window === "undefined") return null;
+export function personFromValue(
+  value: unknown,
+  preset: string,
+  version: string,
+  index: number,
+): Person | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (
+    record.preset !== preset ||
+    record.version !== version ||
+    record.index !== index ||
+    typeof record.name !== "string" ||
+    typeof record.stance !== "number" ||
+    !Number.isFinite(record.stance) ||
+    typeof record.cast !== "string" ||
+    typeof record.claim !== "string"
+  ) {
+    return null;
+  }
+  return {
+    name: record.name,
+    stance: Math.max(-1, Math.min(1, record.stance)),
+    cast: record.cast as Person["cast"],
+    claim: record.claim,
+    avatar: typeof record.avatar === "string" ? record.avatar : undefined,
+    sourceUrl: typeof record.sourceUrl === "string" ? record.sourceUrl : undefined,
+    votes: typeof record.votes === "number" && Number.isFinite(record.votes)
+      ? record.votes
+      : undefined,
+  };
+}
+
+export function stagedPersonByIndex(
+  preset: string,
+  version: string,
+  index: number,
+  personKey: string,
+): Person | null {
+  if (typeof window === "undefined" || !personKey) return null;
   try {
-    const raw = window.sessionStorage.getItem("jiupai:nebula:subject");
-    const value = raw ? JSON.parse(raw) as Record<string, unknown> : null;
-    if (
-      !value ||
-      value.preset !== preset ||
-      value.index !== index ||
-      typeof value.name !== "string" ||
-      typeof value.stance !== "number" ||
-      !Number.isFinite(value.stance) ||
-      typeof value.cast !== "string" ||
-      typeof value.claim !== "string"
-    ) {
-      return null;
-    }
-    return {
-      name: value.name,
-      stance: Math.max(-1, Math.min(1, value.stance)),
-      cast: value.cast as Person["cast"],
-      claim: value.claim,
-      avatar: typeof value.avatar === "string" ? value.avatar : undefined,
-      sourceUrl: typeof value.sourceUrl === "string" ? value.sourceUrl : undefined,
-      votes: typeof value.votes === "number" && Number.isFinite(value.votes)
-        ? value.votes
-        : undefined,
-    };
+    const raw = window.sessionStorage.getItem(`jiupai:nebula:subject:${personKey}`);
+    return personFromValue(raw ? JSON.parse(raw) : null, preset, version, index);
+  } catch {
+    return null;
+  }
+}
+
+export function selfProfileFromValue(
+  value: unknown,
+  preset: string,
+  version: string,
+  cast: string,
+): SelfProfile | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (
+    record.preset !== preset ||
+    record.version !== version ||
+    record.cast !== cast ||
+    typeof record.stance !== "number" ||
+    !Number.isFinite(record.stance) ||
+    typeof record.likedCount !== "number" ||
+    !Number.isSafeInteger(record.likedCount) ||
+    record.likedCount < 0 ||
+    typeof record.claim !== "string"
+  ) {
+    return null;
+  }
+  return {
+    preset,
+    version,
+    cast,
+    stance: Math.max(-1, Math.min(1, record.stance)),
+    likedCount: record.likedCount,
+    claim: clipProfileClaim(record.claim),
+  };
+}
+
+export function stagedSelfProfile(
+  preset: string,
+  version: string,
+  cast: string,
+  profileKey: string,
+): SelfProfile | null {
+  if (typeof window === "undefined" || !profileKey) return null;
+  try {
+    const raw = window.sessionStorage.getItem(`jiupai:nebula:self:${profileKey}`);
+    return selfProfileFromValue(raw ? JSON.parse(raw) : null, preset, version, cast);
   } catch {
     return null;
   }

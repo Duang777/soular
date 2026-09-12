@@ -24,5 +24,8 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(dir, "src") },
   },
-  server: { port: 4325 },
+  server: {
+    port: 4325,
+    proxy: { "/api": "http://127.0.0.1:8787" },
+  },
 });

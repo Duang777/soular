@@ -1,47 +1,44 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import characterWaveSource from "./shaders/character-carousel/sources/character-wave.html?raw";
-
-function buildWaveDocument() {
-  const focusStyles = `<style data-character-wave-focus>
-:root { --character-carousel-scale: 1; }
-html, body, .stage { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-.stage { min-height: 0 !important; }
-.deck { transform-origin: 50% 50%; }
-</style>`;
-  return characterWaveSource
-    .replace(/<script[^>]+cloudflareinsights\.com[^>]*><\/script>/gi, "")
-    .replace("</head>", `${focusStyles}</head>`);
-}
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from "react";
+import characterWaveUrl from "./shaders/character-carousel/sources/character-wave.html?url";
 
 export function WaveStage({
   className = "",
   style,
+  iframeRef,
 }: {
   className?: string;
   style?: CSSProperties;
+  iframeRef?: RefObject<HTMLIFrameElement | null>;
 }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const localIframeRef = useRef<HTMLIFrameElement>(null);
+  const activeIframeRef = iframeRef ?? localIframeRef;
   const [hostVisible, setHostVisible] = useState(true);
-  const source = useMemo(() => buildWaveDocument(), []);
 
   useEffect(() => {
-    const iframe = iframeRef.current;
+    const iframe = activeIframeRef.current;
     if (!iframe || typeof IntersectionObserver === "undefined") return undefined;
     const observer = new IntersectionObserver(([entry]) => setHostVisible(entry?.isIntersecting ?? true));
     observer.observe(iframe);
     return () => observer.disconnect();
-  }, []);
+  }, [activeIframeRef]);
 
   const onLoad = useCallback(() => {
-    iframeRef.current?.style.setProperty("opacity", hostVisible ? "1" : "0.001");
-  }, [hostVisible]);
+    activeIframeRef.current?.style.setProperty("opacity", hostVisible ? "1" : "0.001");
+  }, [activeIframeRef, hostVisible]);
 
   return (
     <div className={`wave-stage${className ? ` ${className}` : ""}`} style={style}>
       <iframe
-        ref={iframeRef}
-        title="银河的故事 · 观点人格卡"
-        srcDoc={source}
+        ref={activeIframeRef}
+        title="思想银河 · 观点人格卡"
+        src={characterWaveUrl}
         sandbox="allow-scripts"
         onLoad={onLoad}
       />
