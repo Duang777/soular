@@ -619,78 +619,139 @@
       .modal-mask.show { display: grid; }
       .modal {
         position: relative;
-        width: min(448px, 92vw);
+        width: min(500px, 92vw);
         max-height: calc(100vh - 48px);
         overflow-y: auto;
-        padding: 28px;
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        background: var(--mid);
-        box-shadow: var(--shadow-pop), 0 0 0 1px rgba(0, 0, 0, 0.4);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        background: #11171d;
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
+      .modal::before {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        left: 24px;
+        right: 24px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(111, 204, 214, 0.78), rgba(230, 193, 127, 0.72), transparent);
+      }
+      .modal-head {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 13px;
+        padding: 24px 58px 19px 24px;
+      }
+      .modal-signal {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border: 1px solid rgba(119, 205, 214, 0.25);
+        border-radius: 10px;
+        background: #0b1116;
+        color: #9fd8db;
+      }
+      .ui-icon {
+        display: block;
+        width: 18px;
+        height: 18px;
+        overflow: visible;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .icon-sparkles .sparkle-main,
+      .icon-sparkles .sparkle-top,
+      .icon-sparkles .sparkle-bottom {
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.42s ease, opacity 0.42s ease;
+      }
+      .modal:hover .icon-sparkles .sparkle-main { transform: rotate(90deg) scale(1.08); }
+      .modal:hover .icon-sparkles .sparkle-top { transform: rotate(-35deg) scale(0.9); }
+      .modal:hover .icon-sparkles .sparkle-bottom { transform: rotate(35deg) scale(1.12); }
+      .icon-refresh { transition: transform 0.42s ease; }
+      .gbtn:hover .icon-refresh { transform: rotate(180deg); }
+      .icon-message .message-path {
+        stroke-dasharray: 48;
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 0.42s ease;
+      }
+      .gbtn:hover .icon-message .message-path { stroke-dashoffset: 48; }
+      .icon-x line {
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.2s ease;
+      }
+      .modal-x:hover .icon-x line:first-child { transform: rotate(12deg); }
+      .modal-x:hover .icon-x line:last-child { transform: rotate(-12deg); }
       .modal-kicker {
         display: flex;
         align-items: center;
-        gap: 9px;
         font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.2em;
-        color: var(--txt-faint);
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        color: #83b9bd;
       }
-      .modal-kicker::before {
-        content: "";
-        width: 18px;
-        height: 2px;
-        border-radius: 2px;
-        background: var(--lav);
-      }
-      .modal-title { margin-top: 12px; font-size: 24px; font-weight: 650; letter-spacing: 0; color: var(--hi); }
-      .modal-sub { margin: 8px 40px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--mute); }
+      .modal-title { margin-top: 7px; font-size: 22px; font-weight: 650; letter-spacing: 0; color: var(--hi); }
+      .modal-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: var(--mute); }
       .clash-card {
         position: relative;
-        margin-top: 22px;
-        padding: 20px 0 18px;
+        margin: 0;
+        padding: 20px 24px 21px;
         border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
+        background: rgba(5, 9, 13, 0.22);
       }
       .clash-head { display: flex; align-items: center; gap: 14px; }
       .clash-ava {
-        width: 58px; height: 58px; border-radius: 50%;
+        width: 54px; height: 54px; border-radius: 50%;
         object-fit: cover; flex: none;
-        border: 1px solid rgba(174, 182, 214, 0.45);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+        filter: saturate(0.78) contrast(1.08) brightness(0.94);
+        border: 3px solid #0a1015;
+        outline: 1px solid rgba(127, 202, 208, 0.6);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.48);
       }
-      .clash-name { font-size: 16px; font-weight: 650; color: var(--hi); }
+      .clash-name { font-size: 15px; font-weight: 650; color: var(--hi); }
       .clash-fac { margin-top: 5px; display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--faint); }
       .clash-fac i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.18); }
       .clash-fac b { color: var(--mute); font-weight: 600; }
       .clash-claim {
-        margin-top: 17px;
-        padding: 2px 0 2px 14px;
-        border-radius: 0;
-        background: transparent;
-        border-left: 2px solid rgba(174, 182, 214, 0.55);
-        font-size: 14px;
-        line-height: 1.75;
-        color: rgba(226, 229, 240, 0.84);
+        position: relative;
+        margin-top: 16px;
+        padding: 0 4px 0 20px;
+        font-size: 13.5px;
+        line-height: 1.72;
+        color: rgba(231, 235, 238, 0.88);
+      }
+      .clash-claim::before {
+        content: "“";
+        position: absolute;
+        left: 0;
+        top: -5px;
+        color: #83b9bd;
+        font-family: Georgia, serif;
+        font-size: 27px;
+        line-height: 1;
       }
       .clash-scale {
         margin-top: 19px;
-        padding: 14px 13px 11px;
-        border-radius: 10px;
-        background: var(--mid-deep);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
       }
       .clash-distance {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 13px;
+        margin-bottom: 14px;
         font-size: 10.5px;
         color: var(--txt-faint);
       }
       .clash-distance b {
-        color: var(--lav);
+        color: #e6c17f;
         font-family: var(--mono);
         font-size: 10px;
         font-weight: 500;
@@ -698,9 +759,9 @@
       }
       .clash-track {
         position: relative;
-        height: 4px;
+        height: 2px;
         border-radius: 999px;
-        background: linear-gradient(90deg, #5cb8ff, #b9a8ff 50%, #ffb866);
+        background: linear-gradient(90deg, #59c7d2, #d7e2d6 50%, #e5aa5c);
       }
       .clash-mk {
         position: absolute;
@@ -708,14 +769,16 @@
         transform: translate(-50%, -50%);
         display: grid;
         place-items: center;
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
+        border: 3px solid #11171d;
         font-size: 9px;
         font-weight: 700;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
       }
       .clash-mk--me { background: var(--cta); color: var(--cta-ink); }
-      .clash-mk--ta { background: var(--lav); color: #1e2130; }
+      .clash-mk--ta { background: #e6c17f; color: #252017; }
       .clash-labels {
         margin-top: 7px;
         display: flex;
@@ -726,14 +789,21 @@
         color: var(--faint);
       }
       .modal-actions {
-        margin-top: 18px;
+        margin: 0;
+        padding: 18px 24px 22px;
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 9px;
+        border-top: 1px solid var(--line);
       }
       .gbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
         padding: 12px 16px;
-        border-radius: 12px;
+        min-height: 44px;
+        border-radius: 10px;
         font-family: var(--font);
         font-size: 13px;
         font-weight: 600;
@@ -745,7 +815,7 @@
         border: 0;
         background: var(--cta);
         color: var(--cta-ink);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
       }
       .gbtn--primary:hover { transform: translateY(-1px); box-shadow: 0 11px 26px rgba(0, 0, 0, 0.48); }
       .gbtn--primary:disabled {
@@ -760,20 +830,31 @@
         color: rgba(232, 234, 245, 0.82);
       }
       .gbtn--ghost:hover { border-color: rgba(255, 255, 255, 0.32); color: var(--hi); background: rgba(255, 255, 255, 0.04); }
-      .gbtn--text { grid-column: 1 / -1; border: 0; background: transparent; color: var(--txt-faint); font-size: 12px; font-weight: 500; }
+      .gbtn--text {
+        grid-column: 1 / -1;
+        justify-self: start;
+        min-height: 30px;
+        padding: 3px 0;
+        border: 0;
+        background: transparent;
+        color: var(--txt-faint);
+        font-size: 11.5px;
+        font-weight: 500;
+      }
       .gbtn--text:hover { color: var(--hi); }
       .gbtn--sm { padding: 9px 18px; font-size: 12.5px; }
       .modal-x {
         position: absolute;
         top: 14px;
         right: 14px;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
         border: 1px solid var(--line);
         background: var(--mid-btn);
         color: var(--txt-dim);
-        font-size: 15px;
         cursor: pointer;
         transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
       }
@@ -898,7 +979,11 @@
         .legend { order: 4; flex-basis: 100%; padding-top: 7px; }
         .axis { bottom: 150px !important; }
         .hint { display: none; }
-        .circle-chip { right: 12px; width: calc(100vw - 24px); bottom: 140px; }
+        .circle-chip {
+          right: 12px;
+          width: calc(100vw - 24px);
+          bottom: var(--mobile-panel-clearance, 210px);
+        }
         .verdict, .focus-banner { top: max(76px, calc(env(safe-area-inset-top) + 68px)); }
         body.is-focusing .verdict { top: max(148px, calc(env(safe-area-inset-top) + 140px)); }
         .focus-banner {
@@ -913,12 +998,18 @@
         .verdict { font-size: 11.5px; padding: 8px 14px; }
         .cards-list { grid-template-columns: 1fr; padding: 18px 14px 26px; gap: 14px; }
         .cards-bar { padding: max(16px, env(safe-area-inset-top)) 16px 12px; flex-wrap: wrap; gap: 8px; }
-        .modal { width: min(420px, 94vw); padding: 22px 20px 20px; }
-        .modal-title { padding-right: 34px; font-size: 21px; }
+        .modal { width: min(420px, 94vw); }
+        .modal-head {
+          grid-template-columns: 34px minmax(0, 1fr);
+          gap: 11px;
+          padding: 20px 52px 17px 18px;
+        }
+        .modal-signal { width: 34px; height: 34px; border-radius: 9px; }
+        .modal-title { font-size: 20px; }
         .modal-sub { margin-right: 0; }
-        .clash-card { margin-top: 18px; padding: 17px 0 15px; }
-        .modal-actions { grid-template-columns: 1fr; }
-        .gbtn--text { grid-column: auto; }
+        .clash-card { margin: 0; padding: 18px; }
+        .modal-actions { grid-template-columns: 1fr; padding: 15px 18px 18px; }
+        .gbtn--text { grid-column: auto; justify-self: center; }
       }
       @media (prefers-reduced-motion: reduce) {
         .verdict, .circle-chip, .focus-banner, .toast, .pcard, .panel-btn, .seg-btn, .gbtn, .icon-btn { transition: none !important; }
@@ -1041,12 +1132,29 @@
       <div class="cards-list" id="cardsList"></div>
     </div>
 
+    <!-- Icons adapted from Its Hover (Apache-2.0): https://github.com/itshover/itshover -->
     <div class="modal-mask" id="clash">
       <div class="modal" role="dialog" aria-modal="true" aria-label="观点碰撞">
-        <button type="button" class="modal-x" id="clashX" aria-label="关闭">×</button>
-        <div class="modal-kicker">观点碰撞 · OPPOSITE MATCH</div>
-        <div class="modal-title">听听对立面怎么想</div>
-        <p class="modal-sub">AI 从回答者中，为你匹配了与你立场距离最远的声音。</p>
+        <button type="button" class="modal-x" id="clashX" aria-label="关闭">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon icon-sparkles" viewBox="0 0 24 24">
+              <path class="sparkle-bottom" d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-top" d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-main" d="M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6z"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">观点碰撞 · OPPOSITE MATCH</div>
+            <div class="modal-title">听听对立面怎么想</div>
+            <p class="modal-sub">已找到与你立场距离最远的一种声音。</p>
+          </div>
+        </div>
         <div class="clash-card">
           <div class="clash-head">
             <img class="clash-ava" id="clashAva" alt="" />
@@ -1069,9 +1177,26 @@
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="gbtn gbtn--primary" id="clashGo">翻开人格卡 →</button>
-          <button type="button" class="gbtn gbtn--ghost" id="clashAgain">换一位对立观点</button>
-          <button type="button" class="gbtn gbtn--text" id="clashAsk">在评论区 @TA 提问（演示）</button>
+          <button type="button" class="gbtn gbtn--primary" id="clashGo">
+            <span class="gbtn-label">翻开人格卡</span>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="M15 8l4 4-4 4"></path>
+            </svg>
+          </button>
+          <button type="button" class="gbtn gbtn--ghost" id="clashAgain">
+            <svg class="ui-icon icon-refresh" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
+              <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+            </svg>
+            <span>换一位</span>
+          </button>
+          <button type="button" class="gbtn gbtn--text" id="clashAsk">
+            <svg class="ui-icon icon-message" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="message-path" d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719"></path>
+            </svg>
+            <span>在评论区 @TA 提问（演示）</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1211,17 +1336,33 @@
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
       const loadingEl = document.getElementById("loading");
+      const panelEl = document.querySelector(".panel");
+      const captureMode = new URLSearchParams(location.search).has("capture");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+      const deviceMemory = navigator.deviceMemory || 8;
+      const hardwareConcurrency = navigator.hardwareConcurrency || 8;
+      const lowPower = reduceMotion || coarsePointer || deviceMemory <= 4 || hardwareConcurrency <= 4;
+      const quality = lowPower
+        ? { name: "compact", pixelRatio: 1.35, farStars: 2200, haloStars: 800, armDust: 5500, brightDust: 700 }
+        : { name: "full", pixelRatio: 1.8, farStars: 5500, haloStars: 2500, armDust: 16000, brightDust: 2600 };
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-      renderer.setClearColor(0x05060a, 1);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: !lowPower,
+        alpha: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: captureMode,
+      });
+      renderer.setClearColor(0x05090d, 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality.pixelRatio));
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x05060a, 0.028);
+      scene.fog = new THREE.FogExp2(0x05090d, 0.028);
 
       const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
       camera.position.set(0, 1.8, 11.8);
@@ -1235,7 +1376,6 @@
       controls.minPolarAngle = Math.PI * 0.32;
       controls.maxPolarAngle = Math.PI * 0.82;
       controls.rotateSpeed = 0.55;
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       controls.autoRotate = !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
@@ -1251,25 +1391,14 @@
 
       const composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.5, 0.74);
+      const bloom = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        lowPower ? 0.26 : 0.4,
+        lowPower ? 0.32 : 0.48,
+        lowPower ? 0.82 : 0.74
+      );
       composer.addPass(bloom);
       composer.addPass(new OutputPass());
-
-      function softDotTexture() {
-        const s = 128;
-        const c = document.createElement("canvas");
-        c.width = c.height = s;
-        const ctx = c.getContext("2d");
-        const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-        g.addColorStop(0, "rgba(255,255,255,1)");
-        g.addColorStop(0.35, "rgba(255,255,255,0.55)");
-        g.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, s, s);
-        const t = new THREE.CanvasTexture(c);
-        t.colorSpace = THREE.SRGBColorSpace;
-        return t;
-      }
 
       function nebulaTexture(hex) {
         const s = 256;
@@ -1403,39 +1532,113 @@
         return t;
       }
 
-      const dotTex = softDotTexture();
+      const galaxyMaterials = [];
+      const galaxyPointer = new THREE.Vector3(999, 999, 0);
+      let pointerEnergy = 0;
+
+      function galaxyPointMaterial(opacity, interaction) {
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: { value: 0 },
+            uOpacity: { value: opacity },
+            uPixelRatio: { value: renderer.getPixelRatio() },
+            uPointer: { value: galaxyPointer },
+            uPointerStrength: { value: 0 },
+            uInteraction: { value: interaction },
+          },
+          vertexShader: `
+            attribute float aSize;
+            attribute float aPhase;
+            attribute float aTwinkle;
+            varying vec3 vColor;
+            varying float vAlpha;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            uniform vec3 uPointer;
+            uniform float uPointerStrength;
+            uniform float uInteraction;
+
+            void main() {
+              vec3 transformed = position;
+              float pointerDistance = distance(transformed.xy, uPointer.xy);
+              float influence = exp(-pointerDistance * pointerDistance * 0.58)
+                * uPointerStrength * uInteraction;
+              float ripple = sin(uTime * 1.45 + aPhase + pointerDistance * 3.2);
+              transformed.z += ripple * influence * 0.2;
+              transformed.y += cos(uTime * 1.1 + aPhase) * influence * 0.055;
+
+              vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+              gl_Position = projectionMatrix * mvPosition;
+              gl_PointSize = clamp(
+                aSize * uPixelRatio * (520.0 / max(1.0, -mvPosition.z)),
+                1.0,
+                12.0
+              );
+
+              float pulse = 0.72 + 0.28 * sin(uTime * aTwinkle + aPhase);
+              vAlpha = mix(1.0, pulse, 0.7);
+              vColor = color;
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vColor;
+            varying float vAlpha;
+            uniform float uOpacity;
+
+            void main() {
+              vec2 p = gl_PointCoord - vec2(0.5);
+              float d = length(p) * 2.0;
+              float halo = smoothstep(1.0, 0.08, d);
+              float core = smoothstep(0.34, 0.0, d);
+              float alpha = halo * (0.54 + core * 0.72) * vAlpha * uOpacity;
+              if (alpha < 0.012) discard;
+              gl_FragColor = vec4(vColor * (0.72 + core * 0.58), alpha);
+            }
+          `,
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          vertexColors: true,
+        });
+        galaxyMaterials.push(material);
+        return material;
+      }
+
+      function addPointAttributes(geo, sizes, phases, twinkles) {
+        geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+        geo.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+        geo.setAttribute("aTwinkle", new THREE.BufferAttribute(twinkles, 1));
+      }
 
       function buildStarfield(count, spreadX, depth, size, opacity, palette) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const phases = new Float32Array(count);
+        const twinkles = new Float32Array(count);
         const tmp = new THREE.Color();
         for (let i = 0; i < count; i++) {
           const x = (Math.random() - 0.5) * spreadX;
           const envelope = 1 - Math.min(Math.abs(x) / (spreadX / 2), 1);
-          const radius = Math.pow(Math.random(), 0.6) * depth * (0.35 + 0.65 * envelope);
+          const radius = Math.pow(Math.random(), 0.72) * depth * (0.4 + 0.6 * envelope);
           const ang = Math.random() * Math.PI * 2;
           pos[i * 3] = x;
-          pos[i * 3 + 1] = Math.cos(ang) * radius * 0.6;
+          pos[i * 3 + 1] = Math.cos(ang) * radius * 0.52;
           pos[i * 3 + 2] = Math.sin(ang) * radius;
           tmp.set(palette[Math.floor(Math.random() * palette.length)]);
-          const v = 0.5 + Math.random() * 0.4;
+          const v = 0.4 + Math.pow(Math.random(), 0.55) * 0.58;
           col[i * 3] = tmp.r * v;
           col[i * 3 + 1] = tmp.g * v;
           col[i * 3 + 2] = tmp.b * v;
+          sizes[i] = size * (0.5 + Math.pow(Math.random(), 2.4) * 1.9);
+          phases[i] = Math.random() * Math.PI * 2;
+          twinkles[i] = 0.32 + Math.random() * 1.45;
         }
         geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-        const mat = new THREE.PointsMaterial({
-          size,
-          map: dotTex,
-          vertexColors: true,
-          transparent: true,
-          opacity,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          sizeAttenuation: true,
-        });
+        addPointAttributes(geo, sizes, phases, twinkles);
+        const mat = galaxyPointMaterial(opacity, 0.08);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 0;
         return points;
@@ -1444,20 +1647,20 @@
       const nebula = new THREE.Group();
       scene.add(nebula);
 
-      const starPalette = ["#cfe0ff", "#a9c4ff", "#d9c6ff", "#bfa9ff", "#9fe0ff", "#ffe9c8", "#ffffff"];
-      nebula.add(buildStarfield(3000, 30, 8.5, 0.072, 0.9, starPalette));
-      nebula.add(buildStarfield(1100, 46, 17, 0.052, 0.58, ["#ffffff", "#cfe0ff", "#ffe9c8"]));
+      const starPalette = ["#dff8ff", "#9ed8e4", "#b9d7e8", "#dbe9df", "#ffd9a0", "#fff4d6", "#ffffff"];
+      nebula.add(buildStarfield(quality.farStars, 30, 8.5, 0.066, 0.84, starPalette));
+      nebula.add(buildStarfield(quality.haloStars, 46, 17, 0.048, 0.5, ["#ffffff", "#c7e7ed", "#ffe7ba"]));
 
       const fogGroup = new THREE.Group();
       nebula.add(fogGroup);
       const fogBlobs = [
-        ["#2fb8ff", -6.4, 0.1, -0.6, 9.5, 0.075],
-        ["#5b7cff", -3.6, 0.5, 0.9, 8.5, 0.06],
-        ["#8a7bff", -1.3, -0.3, -0.8, 9, 0.055],
-        ["#caa0ff", 1.0, 0.4, 0.6, 9, 0.055],
-        ["#ff9ec4", 3.6, -0.5, -0.8, 8.5, 0.06],
-        ["#ffc36e", 6.4, 0.2, 0.6, 9.5, 0.075],
-        ["#6a7cff", 0, 0.2, -3.0, 13, 0.04],
+        ["#1f9fba", -6.4, 0.1, -0.6, 9.5, 0.072],
+        ["#337f9c", -3.6, 0.5, 0.9, 8.5, 0.058],
+        ["#6ca6a2", -1.3, -0.3, -0.8, 9, 0.046],
+        ["#d5dfcd", 1.0, 0.4, 0.6, 8.5, 0.038],
+        ["#d98b58", 3.6, -0.5, -0.8, 8.5, 0.055],
+        ["#e3aa5d", 6.4, 0.2, 0.6, 9.5, 0.07],
+        ["#24576a", 0, 0.2, -3.0, 13, 0.038],
       ];
       fogBlobs.forEach(([color, x, y, z, scale, opacity]) => {
         const m = new THREE.SpriteMaterial({
@@ -1486,16 +1689,23 @@
         c.width = c.height = s;
         const ctx = c.getContext("2d");
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 118, 0, Math.PI * 2);
-        ctx.fillStyle = "#11141d";
+        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.fillStyle = "#05090d";
         ctx.fill();
-        ctx.lineWidth = 5;
-        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
+        ctx.fillStyle = "#121b22";
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.9;
         ctx.strokeStyle = hex;
+        ctx.shadowColor = hex;
+        ctx.shadowBlur = 6;
         ctx.stroke();
+        ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
-        ctx.fillStyle = "rgba(243,240,233,0.85)";
-        ctx.font = "600 88px 'Noto Sans SC', sans-serif";
+        ctx.fillStyle = "rgba(235,241,238,0.78)";
+        ctx.font = "500 82px 'Noto Sans SC', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(name[0], s / 2, s / 2 + 6);
@@ -1533,31 +1743,49 @@
       function paintAvatar(ctx, img, hex) {
         const s = 256;
         ctx.clearRect(0, 0, s, s);
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.fillStyle = "#05090d";
+        ctx.fill();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 116, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         const iw = img.width, ih = img.height;
-        const scale = Math.max(232 / iw, 232 / ih);
+        const scale = Math.max(222 / iw, 222 / ih);
         const w = iw * scale, h = ih * scale;
+        ctx.filter = "saturate(0.78) contrast(1.08) brightness(0.94)";
         ctx.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
+        ctx.filter = "none";
+        const vignette = ctx.createRadialGradient(s / 2, s / 2 - 8, 45, s / 2, s / 2, 126);
+        vignette.addColorStop(0.55, "rgba(5,9,13,0)");
+        vignette.addColorStop(1, "rgba(5,9,13,0.5)");
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, s, s);
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 116, 0, Math.PI * 2);
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.arc(s / 2, s / 2, 113, 0, Math.PI * 2);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(5,9,13,0.88)";
         ctx.stroke();
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 120, 0, Math.PI * 2);
-        ctx.lineWidth = 4;
-        ctx.globalAlpha = 1;
+        ctx.arc(s / 2, s / 2, 119, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.92;
         ctx.strokeStyle = hex;
         ctx.shadowColor = hex;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s / 2, s / 2, 116.5, Math.PI * 1.12, Math.PI * 1.72);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "rgba(255,255,255,0.36)";
         ctx.stroke();
         ctx.restore();
       }
@@ -1570,11 +1798,11 @@
         return Math.max(-2.2, Math.min(2.2, g));
       }
 
-      // 立场渐变色：左极“必须转行”冷青蓝 → 中间紫白 → 右极“深耕不转”暖金
+      // 立场渐变色：左极冰青 → 中间月白 → 右极琥珀，避免大面积紫色雾感。
       function stanceColor(s) {
-        const left = [0.36, 0.72, 1.0];
-        const mid = [0.88, 0.85, 1.0];
-        const right = [1.0, 0.7, 0.36];
+        const left = [0.3, 0.77, 0.86];
+        const mid = [0.86, 0.91, 0.86];
+        const right = [1.0, 0.66, 0.31];
         const a = s < 0 ? left : mid;
         const b = s < 0 ? mid : right;
         const t = s < 0 ? s + 1 : s;
@@ -1611,13 +1839,13 @@
       const positions = PEOPLE.map((p, i) => armPoint(Math.max(-1, Math.min(1, axis[i]))));
 
       // 最小间距松弛：x 只做极轻修正以保住左右立场，主要在纵深方向推开，避免头像叠压
-      for (let iter = 0; iter < 10; iter++) {
+      for (let iter = 0; iter < 12; iter++) {
         for (let a = 0; a < positions.length; a++) {
           for (let b = a + 1; b < positions.length; b++) {
             const pa = positions[a], pb = positions[b];
             const dx = pb.x - pa.x, dy = pb.y - pa.y, dz = pb.z - pa.z;
             const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
-            const min = 0.74;
+            const min = 0.82;
             if (dist < min) {
               const push = (min - dist) / 2;
               const nx = dx / dist, ny = dy / dist, nz = dz / dist;
@@ -1641,30 +1869,34 @@
         const group = new THREE.Group();
         const p = positions[i];
         const x = p.x, y = p.y, z = p.z;
+        const depthScale = THREE.MathUtils.clamp(0.94 + z * 0.035, 0.88, 1.04);
+        const baseAvatar = (lowPower ? 0.57 : 0.61) * depthScale;
+        const baseGlow = baseAvatar * 1.34;
         group.position.set(x, y, z);
 
         const glowMat = new THREE.SpriteMaterial({
           map: getGlow(glowColor),
           transparent: true,
-          opacity: 0.26,
+          opacity: 0.18,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
         });
         const glow = new THREE.Sprite(glowMat);
-        glow.scale.setScalar(0.88);
+        glow.scale.setScalar(baseGlow);
         glow.renderOrder = 1;
         group.add(glow);
 
-        const holder = placeholderTexture(name, castColor);
+        const holder = placeholderTexture(name, glowColor);
         const avatarTex = new THREE.CanvasTexture(holder.canvas);
         avatarTex.colorSpace = THREE.SRGBColorSpace;
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
-        avatar.scale.setScalar(0.66);
+        avatar.scale.setScalar(baseAvatar);
         avatar.renderOrder = 2;
         const user = {
           name, stance, castKey, castName, castRole, castColor, claim,
           followed: FOLLOWED.has(i), index: i, isMe: false, group, avatar, glow,
+          ringColor: glowColor, baseAvatar, baseGlow,
           baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
           scale: 1,
         };
@@ -1676,8 +1908,8 @@
             map: starTexture(), transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending,
           });
           const star = new THREE.Sprite(starMat);
-          star.position.set(0.24, 0.3, 0);
-          star.scale.setScalar(0.34);
+          star.position.set(0.22, 0.27, 0);
+          star.scale.setScalar(0.28);
           star.renderOrder = 3;
           group.add(star);
           user.star = star;
@@ -1702,16 +1934,16 @@
           blending: THREE.AdditiveBlending,
         });
         const glow = new THREE.Sprite(glowMat);
-        glow.scale.setScalar(1.12);
+        glow.scale.setScalar(1.04);
         glow.renderOrder = 1;
         group.add(glow);
 
-        const holder = placeholderTexture("我", castColor);
+        const holder = placeholderTexture("我", "#e7c98c");
         const avatarTex = new THREE.CanvasTexture(holder.canvas);
         avatarTex.colorSpace = THREE.SRGBColorSpace;
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
-        avatar.scale.setScalar(0.86);
+        avatar.scale.setScalar(0.8);
         avatar.renderOrder = 2;
         group.add(avatar);
 
@@ -1727,6 +1959,7 @@
           name: ME.name, stance: 0, castKey: ME.castKey, castName, castRole, castColor,
           claim: ME.claim, followed: false, index: -1, isMe: true,
           group, avatar, glow, badge,
+          ringColor: "#e7c98c", baseAvatar: 0.8, baseGlow: 1.04,
           baseY: 1.95, phase: 0, speed: 0.6, scale: 1,
         };
         avatar.userData.user = meUser;
@@ -1827,37 +2060,52 @@
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const phases = new Float32Array(count);
+        const twinkles = new Float32Array(count);
         for (let i = 0; i < count; i++) {
           let x, y, z, v, cr, cg, cb;
           const r = Math.random();
-          if (r < 0.72) {
-            // 旋臂丝缕：立场沿整条轴铺开（中心加密），收紧贴着双臂中线，颜色随立场左冷右暖
+          if (r < 0.76) {
+            // 对数感双旋臂：中心加密，叠加两段频率形成团簇与自然断续，不再均匀撒点。
             let s = Math.random() * 2 - 1;
-            if (Math.random() < 0.45) s = gaussian() * 0.52;
+            if (Math.random() < 0.48) s = gaussian() * 0.5;
             s = Math.max(-1, Math.min(1, s));
-            const p = armPoint(s, true);
-            x = p.x; y = p.y; z = p.z;
+            const ab = Math.abs(s);
+            const arm = Math.random() < 0.5 ? 0 : Math.PI;
+            const cluster =
+              Math.sin(s * 17.0 + arm * 0.7) * 0.14 +
+              Math.sin(s * 41.0 - arm * 0.35) * 0.045;
+            const angle = s * ARM_TWIST + arm + cluster;
+            const armRadius = 0.26 + 1.18 * Math.sin(ab * Math.PI);
+            const thickness = 0.1 + 0.2 * (1 - Math.min(ab * 1.45, 1));
+            const radial = Math.max(0.08, armRadius + gaussian() * thickness);
+            x = s * XSPAN + gaussian() * (0.09 + ab * 0.08);
+            y = Math.sin(angle) * radial * 0.8 + gaussian() * thickness * 0.34;
+            z = Math.cos(angle) * radial + gaussian() * thickness * 0.62;
             const c = stanceColor(s);
             cr = c[0]; cg = c[1]; cb = c[2];
-            v = 0.55 + Math.random() * 0.4;
-          } else if (r < 0.9) {
-            // 暖亮核球
-            x = gaussian() * 0.95;
-            y = gaussian() * 0.62;
-            z = gaussian() * 0.8;
+            const lane = 0.78 + 0.22 * Math.sin(s * 23 + arm);
+            v = (0.46 + Math.random() * 0.5) * lane;
+          } else if (r < 0.92) {
+            // 暖亮核球：压扁的密集椭球，让中央像有质量而不是一团平面雾。
+            const coreScale = Math.pow(Math.random(), 1.8);
+            x = gaussian() * (0.32 + coreScale * 0.72);
+            y = gaussian() * (0.22 + coreScale * 0.38);
+            z = gaussian() * (0.28 + coreScale * 0.55);
             cr = 1; cg = 0.94; cb = 0.8;
-            v = 0.7 + Math.random() * 0.35;
+            v = 0.64 + Math.random() * 0.36;
           } else {
-            // 贴着真实头像的尘
+            // 贴近真实头像的小型恒星团，把人物节点嵌进星系结构。
             const a = positions[Math.floor(Math.random() * positions.length)];
             const s = Math.max(-1, Math.min(1, a.x / XSPAN));
-            const sg = 0.35 + Math.random() * 0.5;
+            const sg = 0.18 + Math.random() * 0.34;
             x = a.x + gaussian() * sg;
             y = a.y + gaussian() * sg * 0.85;
             z = a.z + gaussian() * sg;
             const c = stanceColor(s);
             cr = c[0]; cg = c[1]; cb = c[2];
-            v = 0.45 + Math.random() * 0.4;
+            v = 0.5 + Math.random() * 0.42;
           }
           pos[i * 3] = x;
           pos[i * 3 + 1] = y;
@@ -1865,25 +2113,20 @@
           col[i * 3] = cr * v;
           col[i * 3 + 1] = cg * v;
           col[i * 3 + 2] = cb * v;
+          sizes[i] = size * (0.52 + Math.pow(Math.random(), 2.2) * 2.25);
+          phases[i] = Math.random() * Math.PI * 2;
+          twinkles[i] = 0.45 + Math.random() * 1.9;
         }
         geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-        const mat = new THREE.PointsMaterial({
-          size,
-          map: dotTex,
-          vertexColors: true,
-          transparent: true,
-          opacity,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          sizeAttenuation: true,
-        });
+        addPointAttributes(geo, sizes, phases, twinkles);
+        const mat = galaxyPointMaterial(opacity, 1);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 1;
         return points;
       }
-      dustGroup.add(buildCoreDust(2300, 0.034, 0.9));
-      dustGroup.add(buildCoreDust(600, 0.058, 0.8));
+      dustGroup.add(buildCoreDust(quality.armDust, 0.036, 0.8));
+      dustGroup.add(buildCoreDust(quality.brightDust, 0.064, 0.72));
 
       let loaded = 0;
       users.forEach((u) => {
@@ -1894,8 +2137,8 @@
           file,
           (tex) => {
             const img = tex.image;
-            const holder = placeholderTexture(u.name, u.castColor);
-            const ringColor = u.isMe ? "#e7c98c" : (u.followed ? "#e7c98c" : u.castColor);
+            const ringColor = u.followed ? "#e7c98c" : u.ringColor;
+            const holder = placeholderTexture(u.name, ringColor);
             paintAvatar(holder.ctx, img, ringColor);
             u.avatar.material.map.dispose();
             u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
@@ -2011,8 +2254,22 @@
 
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
+      const interactionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+      const interactionPoint = new THREE.Vector3();
+      let pointerTarget = 0;
       let hovered = null;
       let hideTipTimer = 0;
+
+      function updateGalaxyPointer(clientX, clientY) {
+        if (reduceMotion) return;
+        pointer.x = (clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        if (raycaster.ray.intersectPlane(interactionPlane, interactionPoint)) {
+          galaxyPointer.copy(interactionPoint);
+          pointerTarget = coarsePointer ? 0.35 : 1;
+        }
+      }
 
       let hostReady = false;
       const openAcks = new Set();
@@ -2153,9 +2410,13 @@
       tip.addEventListener("pointerleave", () => scheduleHideTip(140));
 
       canvas.addEventListener("pointermove", (e) => {
+        updateGalaxyPointer(e.clientX, e.clientY);
         setHovered(pick(e.clientX, e.clientY));
       });
-      canvas.addEventListener("pointerleave", (e) => scheduleHideTip(e.pointerType === "touch" ? 4200 : 240));
+      canvas.addEventListener("pointerleave", (e) => {
+        pointerTarget = 0;
+        scheduleHideTip(e.pointerType === "touch" ? 4200 : 240);
+      });
 
       let downX = 0, downY = 0;
       canvas.addEventListener("pointerdown", (e) => {
@@ -2202,12 +2463,28 @@
         tip.style.top = below ? `${y + 26}px` : `${y - 40}px`;
       }
 
+      function syncResponsiveOffsets() {
+        if (window.innerWidth <= 720 && panelEl) {
+          const panelTop = panelEl.getBoundingClientRect().top;
+          const clearance = Math.ceil(window.innerHeight - panelTop + 12);
+          document.documentElement.style.setProperty("--mobile-panel-clearance", `${clearance}px`);
+        } else {
+          document.documentElement.style.removeProperty("--mobile-panel-clearance");
+        }
+      }
+
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality.pixelRatio));
         renderer.setSize(window.innerWidth, window.innerHeight);
         composer.setSize(window.innerWidth, window.innerHeight);
+        galaxyMaterials.forEach((material) => {
+          material.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+        });
+        syncResponsiveOffsets();
       });
+      syncResponsiveOffsets();
 
       const clock = new THREE.Clock();
       let running = true;
@@ -2220,7 +2497,7 @@
       function animateNode(u, t, baseAva, baseGlow) {
         const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
         u.group.position.y = u.baseY + floatY;
-        const hoverBoost = hovered === u ? 1.4 : 1;
+        const hoverBoost = hovered === u ? 1.3 : 1;
         u.scale += (hoverBoost - u.scale) * 0.14;
         u.avatar.scale.setScalar(baseAva * u.scale);
         u.glow.scale.setScalar(baseGlow * u.scale);
@@ -2230,7 +2507,7 @@
         u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * 0.12;
         const glowTarget = dimmed
           ? 0.03
-          : (hovered === u ? 0.88 : (u.isMe ? 0.52 : 0.26) * breathe);
+          : (hovered === u ? 0.68 : (u.isMe ? 0.44 : 0.18) * breathe);
         u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * 0.12;
         if (u.star) u.star.material.opacity = dimmed ? 0.04 : 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
         if (u.heart && u.heart.visible) {
@@ -2252,7 +2529,13 @@
         if (!running) return;
         const t = clock.getElapsedTime();
 
-        users.forEach((u) => animateNode(u, t, u.isMe ? 0.86 : 0.66, u.isMe ? 1.12 : 0.88));
+        pointerEnergy += (pointerTarget - pointerEnergy) * 0.075;
+        galaxyMaterials.forEach((material) => {
+          material.uniforms.uTime.value = t;
+          material.uniforms.uPointerStrength.value = pointerEnergy;
+        });
+
+        users.forEach((u) => animateNode(u, t, u.baseAvatar, u.baseGlow));
         cusers.forEach((u) => animateNode(u, t, 0.48, 0.62));
 
         // 「我」沿光谱漂移到由点赞计算出的立场，并拖出一道金色尾迹
@@ -2397,6 +2680,10 @@
       const clashEl = $("clash");
       const clashGoBtn = $("clashGo");
       let clashCurrent = -1;
+      function setClashButtonLabel(label) {
+        const slot = clashGoBtn.querySelector(".gbtn-label");
+        if (slot) slot.textContent = label;
+      }
       function pickClash(exclude) {
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
         const ranked = PEOPLE
@@ -2408,7 +2695,7 @@
       }
       function openClash() {
         clashGoBtn.disabled = false;
-        clashGoBtn.textContent = "翻开人格卡 →";
+        setClashButtonLabel("翻开人格卡");
         clashCurrent = pickClash(-1);
         renderClash();
         clashEl.classList.add("show");
@@ -2423,7 +2710,7 @@
         $("clashName").textContent = `@${name}`;
         $("clashDot").style.background = castColor;
         $("clashFac").innerHTML = `<b>${castName}</b> · ${castRole}`;
-        $("clashClaim").textContent = `“${claim}”`;
+        $("clashClaim").textContent = claim;
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
         const pct = (v) => `${Math.max(5, Math.min(95, v * 50 + 50))}%`;
         const meMk = $("clashMeMk");
@@ -2446,7 +2733,7 @@
       clashGoBtn.addEventListener("click", () => {
         if (clashGoBtn.disabled) return;
         clashGoBtn.disabled = true;
-        clashGoBtn.textContent = "正在翻开…";
+        setClashButtonLabel("正在翻开…");
         openPerson(clashCurrent);
       });
       $("clashAsk").addEventListener("click", () => {
@@ -2561,6 +2848,9 @@
         likeCount: () => liked.size,
         liked: () => [...liked],
         myStance: () => myStanceVal,
+        quality: () => quality.name,
+        particleCount: () => quality.farStars + quality.haloStars + quality.armDust + quality.brightDust,
+        pointerEnergy: () => pointerEnergy,
         focusSize: () => (focusSet ? focusSet.size : 0),
         clashIndex: () => clashCurrent,
         matchIndex: () => matchIndex,
