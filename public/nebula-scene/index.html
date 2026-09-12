@@ -272,7 +272,7 @@
         z-index: 15;
         left: 20px;
         bottom: max(52px, calc(env(safe-area-inset-bottom) + 44px));
-        width: 58px;
+        width: 252px;
         height: 58px;
         pointer-events: auto;
       }
@@ -317,6 +317,54 @@
         border-color: rgba(231, 193, 127, 0.86);
         color: #e7c17f;
         box-shadow: 3px 4px 0 #05090d, 0 14px 36px rgba(0, 0, 0, 0.5);
+      }
+      .self-draw-entry {
+        position: absolute;
+        left: 70px;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) 18px;
+        align-items: center;
+        gap: 8px;
+        width: 182px;
+        height: 58px;
+        padding: 0 12px;
+        border: 1px solid rgba(231, 193, 127, 0.62);
+        border-radius: 8px;
+        background: #171a20;
+        color: #f4f0df;
+        box-shadow: 4px 5px 0 #05090d, 0 14px 32px rgba(0, 0, 0, 0.46);
+        cursor: pointer;
+        text-align: left;
+      }
+      .self-draw-entry:hover {
+        border-color: #e7c17f;
+        background: #202329;
+        transform: translateY(-2px);
+      }
+      .self-draw-entry > i {
+        color: #e7c17f;
+        font-style: normal;
+        font-size: 16px;
+      }
+      .self-draw-entry-copy {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+      .self-draw-entry-copy b {
+        font-size: 11px;
+        letter-spacing: 0;
+      }
+      .self-draw-entry-copy small {
+        color: rgba(196, 207, 211, 0.58);
+        font-size: 8px;
+        letter-spacing: 0;
+      }
+      .self-draw-entry > span:last-child {
+        color: #e7c17f;
+        font-size: 14px;
+        text-align: right;
       }
       .blindbox-lid {
         position: absolute;
@@ -1697,10 +1745,15 @@
         .explore-shell {
           left: 14px;
           bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
-          width: 54px;
+          width: min(242px, calc(100vw - 28px));
           height: 54px;
         }
         .explore-toggle { width: 54px; height: 54px; }
+        .self-draw-entry {
+          left: 64px;
+          width: min(178px, calc(100vw - 92px));
+          height: 54px;
+        }
         .blindbox-lid { left: 8px; width: 38px; }
         .zh-orbit-ring { left: 7px; width: 38px; }
         .explore-nudge { left: 64px; bottom: 13px; font-size: 9px; }
@@ -1868,10 +1921,10 @@
     </div>
 
     <div class="explore-shell" id="exploreShell">
-      <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河盲盒与星云工具">
+      <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河故事与星云工具">
         <div class="explore-head">
           <div>
-            <span class="explore-series" id="presetSeries">GALAXY BLIND BOX · 01</span>
+            <span class="explore-series" id="presetSeries">GALAXY STORIES · 01</span>
             <b>开启一条新问题线</b>
             <p>知乎发现 × 观点星云</p>
           </div>
@@ -1966,20 +2019,20 @@
           </div>
         </div>
       </div>
-      <button type="button" class="explore-toggle" id="exploreToggle" aria-expanded="false" aria-controls="exploreMenu" aria-label="打开银河盲盒">
+      <button type="button" class="explore-toggle" id="exploreToggle" aria-expanded="false" aria-controls="exploreMenu" aria-label="打开银河故事">
         <span class="blindbox-lid" aria-hidden="true"></span>
         <span class="zh-orbit-ring" aria-hidden="true"></span>
         <span class="zh-mark">知</span>
         <span class="zh-mini" id="presetOpenLabel" aria-hidden="true">OPEN · 01</span>
       </button>
-      <span class="explore-nudge" id="exploreNudge" aria-hidden="true">
-        <span class="explore-nudge-line"></span>
-        <svg class="ui-icon" viewBox="0 0 24 24">
-          <path d="m4 4 7.1 17 2.5-7.4 7.4-2.5Z"></path>
-          <path d="m13.6 13.6 4.2 4.2"></path>
-        </svg>
-        <span>点我开启</span>
-      </span>
+      <button type="button" class="self-draw-entry" id="selfDrawEntry">
+        <i aria-hidden="true">✦</i>
+        <span class="self-draw-entry-copy">
+          <b>抽我的人格卡</b>
+          <small>点赞后更贴近你的立场</small>
+        </span>
+        <span aria-hidden="true">→</span>
+      </button>
     </div>
 
     <div class="verdict" id="verdict">
@@ -2252,7 +2305,7 @@
       document.getElementById("presetQuestion").textContent = PRESET.question;
       document.getElementById("presetLeftPole").textContent = PRESET.axis.left;
       document.getElementById("presetRightPole").textContent = PRESET.axis.right;
-      document.getElementById("presetSeries").textContent = `GALAXY BLIND BOX · ${PRESET.serial}`;
+      document.getElementById("presetSeries").textContent = `GALAXY STORIES · ${PRESET.serial}`;
       document.getElementById("presetOpenLabel").textContent = `OPEN · ${PRESET.serial}`;
       document.getElementById("presetSearchLink").href = PRESET.searchUrl;
       document.getElementById("presetCardsQuestion").textContent = PRESET.question;
@@ -3292,6 +3345,7 @@
           ME.castKey + "?self=1&preset=" + encodeURIComponent(PRESET.id)
         );
       }
+      document.getElementById("selfDrawEntry").addEventListener("click", openSelf);
       function activateHovered(u) {
         if (!u || u.kind === "comment") return;
         if (u.isMe) openSelf();
@@ -3560,7 +3614,7 @@
       function setExploreOpen(open) {
         exploreShellEl.classList.toggle("is-open", open);
         exploreToggleEl.setAttribute("aria-expanded", String(open));
-        exploreToggleEl.setAttribute("aria-label", open ? "收起银河盲盒" : "打开银河盲盒");
+        exploreToggleEl.setAttribute("aria-label", open ? "收起银河故事" : "打开银河故事");
         exploreMenuEl.setAttribute("aria-hidden", String(!open));
         if (open) $("circleChip").classList.remove("show");
         syncResponsiveOffsets();

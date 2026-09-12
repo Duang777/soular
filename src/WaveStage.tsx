@@ -40,7 +40,7 @@ export function WaveStage({
     <div className={`wave-stage${className ? ` ${className}` : ""}`} style={style}>
       <iframe
         ref={iframeRef}
-        title="知乎九派人物卡"
+        title="银河的故事 · 观点人格卡"
         srcDoc={source}
         sandbox="allow-scripts"
         onLoad={onLoad}

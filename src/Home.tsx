@@ -21,9 +21,13 @@ export function Home() {
   return (
     <>
       <WaveStage />
-      <Link to="/nebula" className="nebula-entry" aria-label="进入观点星云">
+      <Link to="/nebula" className="nebula-entry" aria-label="进入观点星云，抽取我的人格卡">
         <span className="nebula-entry__star" aria-hidden="true">✦</span>
-        观点星云
+        <span className="nebula-entry__copy">
+          <b>进入观点星云</b>
+          <small>点赞形成星位 · 抽我的人格卡</small>
+        </span>
+        <span className="nebula-entry__arrow" aria-hidden="true">→</span>
       </Link>
     </>
   );

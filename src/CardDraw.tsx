@@ -128,7 +128,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   ctx.fillStyle = "rgba(243, 240, 233, 0.62)";
   ctx.font = `500 30px ${fontStack}`;
   const posterEyebrow = isSelf
-    ? "知乎九派 · 灵魂问答盲盒"
+    ? "知乎九派 · 银河的故事"
     : isPeek
       ? "知乎九派 · 观点人格卡"
       : "知乎九派 · 观点星云";
@@ -449,7 +449,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
 
   const revealed = phase === "reveal";
   const eyebrow = phase === "shuffle"
-    ? "知乎九派 · 灵魂问答盲盒"
+    ? "知乎九派 · 银河的故事"
     : phase === "flip"
       ? person ? "知乎九派 · 观点星云" : "知乎九派 · 派别图鉴"
       : mode === "enter" && isSelf

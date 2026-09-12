@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#121212">
-  <title>Zhihu · 灵魂问答盲盒</title>
+  <title>知乎 · 银河的故事</title>
   <style>
     :root {
       color-scheme: dark;
@@ -311,7 +311,7 @@
       }
 
       .questions {
-        max-width: min(92vw, 22rem);
+        display: none;
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -322,22 +322,21 @@
   </style>
 </head>
 <body>
-  <main class="stage" id="stage" aria-label="知乎知识人格卡波浪抽卡">
-    <h1 class="sr-only">灵魂问答盲盒 · 知识人格卡</h1>
+  <main class="stage" id="stage" aria-label="知乎银河故事与观点人格卡">
+    <h1 class="sr-only">银河的故事 · 观点人格卡</h1>
     <p class="sr-only">
       移动指针或用方向键浏览人格卡。空格键切换横向 / 纵向波浪。
     </p>
     <div class="deck" id="deck" data-testid="deck"></div>
     <aside class="hud">
-      <p class="kicker">Zhihu · Blind Box</p>
-      <p class="title">灵魂问答盲盒</p>
-      <p class="lede">用问答定义一个人，而不是用照片定义一个人。点一张人物卡，看这一派怎么把问题写成一本书。</p>
+      <p class="kicker">Zhihu · Galaxy Stories</p>
+      <p class="title">银河的故事</p>
+      <p class="lede">每个回答都是一颗星。进入观点星云，在真实讨论中留下你的选择，看看你的观点会落在哪片星域。</p>
       <p class="hud-actions"><button type="button" class="orient-btn" id="orient-btn">竖过来</button></p>
     </aside>
     <aside class="questions" aria-hidden="true">
-      <p class="q">一个人的品味是怎么形成的？</p>
-      <p class="q">你最后悔的一次「正确」是什么？</p>
-      <p class="q">什么样的沉默其实是一种回答？</p>
+      <p class="q">从一条问题出发，穿过不同立场</p>
+      <p class="q">点赞形成你的星位，抽取观点人格</p>
     </aside>
   </main>
 
