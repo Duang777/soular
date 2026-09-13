@@ -22,7 +22,8 @@
 
 - 保留 `?preset=` 选题和传入 `v` 参数的模块缓存更新机制。
 - 搜索只查询本地快照目录。用户主动打开热榜时可调用已记录的只读接口；推荐接口正式确立前保持本地开发状态。页面初始化不得发起发现请求，发现结果不得修改当前快照。
-- 保留父子页消息协议：`nebula-scene-ready`、`nebula-host-ready`、`nebula-view-change`、`nebula-preset-change`、`nebula-open` 和 `nebula-open-ack`。
+- 保留父子页消息协议：`nebula-scene-ready`、`nebula-host-ready`、`nebula-user-profile`、`nebula-view-change`、`nebula-preset-change`、`nebula-open` 和 `nebula-open-ack`。
+- `nebula-user-profile` 只接收经过 React 外壳筛选的公开昵称和 HTTPS 知乎图片域名头像；不得传递 OAuth Token、Session 或其他账号字段。
 - 快照或接口字符串必须通过 `textContent` 和显式属性渲染，不得拼接进 `innerHTML`；来源链接只接受 HTTPS 知乎域名。
 - 点赞保存在本地并按快照版本隔离；切换视图或点赞不得意外重置搜索、筛选和滚动位置。
 - 保持加载/错误降级、减少动态效果、键盘导航、Escape 操作和移动端无溢出。

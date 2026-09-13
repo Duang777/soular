@@ -327,6 +327,11 @@ if (!response.ok || !payload.ok) {
 浏览器中直接调用知乎开放平台，也不要持有 `ZHIHU_ACCESS_SECRET`、
 `ZHIHU_OAUTH_APP_KEY` 或 OAuth Token。
 
+正式站的 React 外壳从 `/api/oauth/status` 读取已登录用户的公开昵称和头像，并通过
+`nebula-user-profile` 消息传给观点星云 iframe。父子页都必须校验消息来源；头像仅接受
+HTTPS `zhimg.com` 子域名。消息不得包含 OAuth Token、Session ID 或其他账号字段。
+未登录、资料读取失败、GitHub Pages 镜像和本地预览继续使用本地“我”占位头像。
+
 观点星云内的搜索只查询本地快照目录；热榜使用上述只读接口并在当前探索面板中展示
 结果；推荐暂不请求上游，只显示开发状态和知乎首页入口。用户选择热榜条目时才打开知乎
 原文。服务端不公开回答采集或观点光谱生成接口，前端也不得绕过静态快照的人工验收

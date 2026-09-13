@@ -8,6 +8,7 @@ import {
 } from "../public/nebula-scene/presets.js";
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
+const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
 const reactCatalogSource = readFileSync(new URL("../src/people.ts", import.meta.url), "utf8");
 const reactSourceFile = ts.createSourceFile(
   "src/people.ts",
@@ -60,6 +61,26 @@ assert.doesNotMatch(
   source,
   /new AbortController\(|discoveryController/,
   "发现面板不得取消可能仍由服务端共享的上游请求",
+);
+assert.match(
+  nebulaHostSource,
+  /type:\s*"nebula-user-profile"/,
+  "React 外壳必须把已校验的登录头像发送给星云",
+);
+assert.match(
+  source,
+  /e\.data\.type === "nebula-user-profile"/,
+  "星云必须接收登录头像消息",
+);
+assert.match(
+  source,
+  /safeUserAvatarUrl/,
+  "星云必须在使用登录头像前校验 URL",
+);
+assert.doesNotMatch(
+  source,
+  /trailMat|ME_LANE_[YZ]/,
+  "“我”节点不得保留穿过头像的立场尾迹",
 );
 
 const path = "goat?self=1&preset=ai-math&version=20260912";

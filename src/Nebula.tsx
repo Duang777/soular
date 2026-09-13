@@ -10,6 +10,26 @@ import {
 
 const NAVIGATION_CONTEXT_PREFIX = "jiupai:nebula:";
 const MAX_NAVIGATION_CONTEXTS = 24;
+const OFFICIAL_ORIGIN = "https://soular.top";
+const OAUTH_STATUS_TIMEOUT_MS = 8_000;
+
+interface NebulaUserProfile {
+  name: string | null;
+  avatarUrl: string;
+}
+
+function safeZhihuAvatarUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      /(^|\.)zhimg\.com$/i.test(url.hostname)
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function navigationContextTimestamp(storageKey: string): number {
   const token = storageKey.slice(storageKey.lastIndexOf(":") + 1);
@@ -50,10 +70,53 @@ function storeNavigationContext(kind: "self" | "subject", value: unknown): strin
 export function Nebula() {
   const navigate = useNavigate();
   const nebulaFrameRef = useRef<HTMLIFrameElement>(null);
+  const userProfileRef = useRef<NebulaUserProfile | null>(null);
   const [searchParams] = useSearchParams();
   const [isCardsView, setIsCardsView] = useState(false);
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
+
+  useEffect(() => {
+    if (window.location.origin !== OFFICIAL_ORIGIN) return undefined;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      OAUTH_STATUS_TIMEOUT_MS,
+    );
+
+    void (async () => {
+      const response = await fetch("/api/oauth/status", {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok || !payload || typeof payload !== "object") return;
+      const status = payload as Record<string, unknown>;
+      const profile = status.profile && typeof status.profile === "object"
+        ? status.profile as Record<string, unknown>
+        : null;
+      const avatarUrl = safeZhihuAvatarUrl(profile?.avatarUrl);
+      if (status.authorized !== true || !avatarUrl) return;
+
+      const userProfile = {
+        name: typeof profile?.name === "string" ? profile.name : null,
+        avatarUrl,
+      };
+      userProfileRef.current = userProfile;
+      nebulaFrameRef.current?.contentWindow?.postMessage(
+        { type: "nebula-user-profile", profile: userProfile },
+        window.location.origin,
+      );
+    })().catch(() => undefined).finally(() => {
+      window.clearTimeout(timeout);
+    });
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     const lobby = `/nebula?preset=${encodeURIComponent(presetId)}`;
@@ -78,6 +141,15 @@ export function Nebula() {
       if (data?.type === "nebula-scene-ready") {
         const source = event.source as Window | null;
         source?.postMessage({ type: "nebula-host-ready" }, event.origin);
+        if (userProfileRef.current) {
+          source?.postMessage(
+            {
+              type: "nebula-user-profile",
+              profile: userProfileRef.current,
+            },
+            event.origin,
+          );
+        }
         return;
       }
       if (

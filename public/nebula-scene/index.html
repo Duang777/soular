@@ -3279,6 +3279,7 @@
       }
 
       const loader = new THREE.TextureLoader();
+      let meAvatarSource = "avatars/me.jpg";
       const avatarTargets = [];
       const users = PEOPLE.map(([name, stance, castKey, claim], i) => {
         const [castName, castRole, castColor] = CASTS[castKey];
@@ -3437,28 +3438,6 @@
 
       const meUser = users[users.length - 1];
 
-      // 「我」的立场漂移尾迹：从光谱中点连到我的星位
-      const ME_LANE_Y = 1.95;
-      const ME_LANE_Z = 2.7;
-      const trailMat = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const trailGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0, ME_LANE_Y, ME_LANE_Z),
-        new THREE.Vector3(0, ME_LANE_Y, ME_LANE_Z),
-      ]);
-      trailGeo.setAttribute("color", new THREE.Float32BufferAttribute([
-        0.0, 0.0, 0.0,
-        0.91, 0.79, 0.55,
-      ], 3));
-      const trail = new THREE.Line(trailGeo, trailMat);
-      trail.renderOrder = 4;
-      nebula.add(trail);
       const heartTex = heartTexture();
       const ringTex = focusRingTexture();
       function ensureRing(u) {
@@ -3550,28 +3529,59 @@
       dustGroup.add(buildCoreDust(quality.brightDust, 0.064, 0.72));
 
       let loaded = 0;
-      users.forEach((u) => {
-        const file = u.isMe
-          ? "avatars/me.jpg"
-          : personAvatarPath(u.index);
+      function loadUserAvatar(u, file, onSettled, onApplied) {
+        const requestVersion = (u.avatarLoadVersion || 0) + 1;
+        u.avatarLoadVersion = requestVersion;
         loader.load(
           file,
           (tex) => {
-            const img = tex.image;
-            const ringColor = u.followed ? "#e7c98c" : u.ringColor;
-            const holder = placeholderTexture(u.name, ringColor);
-            paintAvatar(holder.ctx, img, ringColor);
-            u.avatar.material.map.dispose();
-            u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
-            u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
-            u.avatar.material.needsUpdate = true;
-            tex.dispose();
-            finishOne();
+            try {
+              if (u.avatarLoadVersion !== requestVersion) return;
+              const ringColor = u.followed ? "#e7c98c" : u.ringColor;
+              const holder = placeholderTexture(u.name, ringColor);
+              paintAvatar(holder.ctx, tex.image, ringColor);
+              u.avatar.material.map.dispose();
+              u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
+              u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
+              u.avatar.material.needsUpdate = true;
+              if (onApplied) onApplied();
+            } finally {
+              tex.dispose();
+              if (onSettled) onSettled();
+            }
           },
           undefined,
-          () => finishOne()
+          () => {
+            if (onSettled) onSettled();
+          }
+        );
+      }
+      users.forEach((u) => {
+        loadUserAvatar(
+          u,
+          u.isMe ? meAvatarSource : personAvatarPath(u.index),
+          finishOne,
         );
       });
+      function safeUserAvatarUrl(value) {
+        if (typeof value !== "string" || !value) return "";
+        try {
+          const url = new URL(value);
+          return url.protocol === "https:" && /(^|\.)zhimg\.com$/i.test(url.hostname)
+            ? url.href
+            : "";
+        } catch (e) {
+          return "";
+        }
+      }
+      function setMeAvatar(value) {
+        const avatarUrl = safeUserAvatarUrl(value);
+        if (!avatarUrl || avatarUrl === meAvatarSource) return;
+        loadUserAvatar(meUser, avatarUrl, null, () => {
+          meAvatarSource = avatarUrl;
+          renderCardsIfOpen();
+        });
+      }
       function finishOne() {
         loaded += 1;
         if (loaded >= users.length) {
@@ -3766,6 +3776,9 @@
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
+        if (e.data && e.data.type === "nebula-user-profile") {
+          setMeAvatar(e.data.profile && e.data.profile.avatarUrl);
+        }
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
         }
@@ -4205,14 +4218,8 @@
         users.forEach((u) => animateNode(u, t, u.baseAvatar, u.baseGlow));
         cusers.forEach((u) => animateNode(u, t, 0.48, 0.62));
 
-        // 「我」沿光谱漂移到由点赞计算出的立场，并拖出一道金色尾迹
+        // 「我」沿光谱漂移到由点赞计算出的立场。
         meUser.group.position.x += (meUser.baseX - meUser.group.position.x) * 0.08;
-        const tp = trailGeo.attributes.position;
-        const meX = meUser.group.position.x;
-        tp.setXYZ(0, 0, ME_LANE_Y, ME_LANE_Z);
-        tp.setXYZ(1, meX, ME_LANE_Y, ME_LANE_Z);
-        tp.needsUpdate = true;
-        trailMat.opacity += ((liked.size ? 0.32 : 0) - trailMat.opacity) * 0.08;
 
         fogGroup.rotation.z = t * 0.008;
         fogGroup.rotation.y = Math.sin(t * 0.03) * 0.08;
@@ -4728,7 +4735,7 @@
         head.style.setProperty("--cast", "#e7c17f");
         head.style.setProperty("--stance", `${stancePercent(my)}%`);
         const meAvatar = uiNode("img", "pcard-ava pcard-ava--me");
-        meAvatar.src = "avatars/me.jpg";
+        meAvatar.src = meAvatarSource;
         meAvatar.alt = "我";
         const meCopy = uiNode("div", "me-strip-copy");
         const meTitle = uiNode("div", "me-strip-title", "我的立场坐标 ");
@@ -5056,7 +5063,7 @@
         answerCount: () => N,
         meX: () => meUser.group.position.x,
         meBaseX: () => meUser.baseX,
-        trailOpacity: () => trailMat.opacity,
+        meAvatarSource: () => meAvatarSource,
         commentsVisible: () => commentGroup.visible,
         commentCount: () => cusers.length,
         likeCount: () => liked.size,
