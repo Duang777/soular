@@ -763,6 +763,11 @@
         background: var(--cta);
         color: var(--cta-ink);
       }
+      .tip-resource-status {
+        color: var(--txt-faint);
+        font-size: 10px;
+        line-height: 1.4;
+      }
       .tip-tag {
         flex: none;
         display: inline-flex;
@@ -2504,6 +2509,13 @@
       }
       .pcard--comment { cursor: default; }
       .pcard--comment .pcard-side { grid-template-columns: 1fr; }
+      .pcard-avatar-frame {
+        position: relative;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+      }
       .pcard-ava {
         flex: none;
         width: 42px;
@@ -2515,6 +2527,26 @@
         border: 2px solid #090d12;
         outline: 1px solid color-mix(in srgb, var(--cast, #9fd8db) 60%, transparent);
         background: #0c1319;
+      }
+      .pcard-avatar-retry {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        place-items: center;
+        border: 1px solid rgba(231, 193, 127, 0.52);
+        border-radius: 50%;
+        background: rgba(5, 9, 13, 0.56);
+        color: #f0d89e;
+        font: 20px/1 var(--font);
+        cursor: pointer;
+      }
+      .pcard-avatar-retry[hidden] { display: none; }
+      .pcard-avatar-retry:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
       }
       .pcard-ava--ring {
         display: grid;
@@ -3737,14 +3769,14 @@
           max-width: calc(100vw - 24px);
         }
         .me-strip {
-          grid-template-columns: 42px minmax(0, 1fr);
+          grid-template-columns: 44px minmax(0, 1fr);
           gap: 11px;
           padding: 13px 10px;
         }
         .me-strip-position { grid-column: 1 / -1; padding: 0 2px; }
         .pcard-me-btn { grid-column: 1 / -1; width: 100%; }
         .pcard {
-          grid-template-columns: 40px minmax(0, 1fr);
+          grid-template-columns: 44px minmax(0, 1fr);
           gap: 10px;
           padding: 15px 4px;
         }
@@ -3855,6 +3887,10 @@
           }
         };
         window.addEventListener("error", function (e) {
+          if (e && e.target instanceof HTMLImageElement) {
+            console.warn("resource", e.target.currentSrc || e.target.src || "资源加载失败");
+            return;
+          }
           fail("error", e && e.message ? e.message : "脚本执行出错");
         }, true);
         window.addEventListener("unhandledrejection", function (e) {
@@ -4535,6 +4571,14 @@
         `./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
       const {
+        getNebulaLodProfile,
+        NEBULA_PARTICLE_LAYER_SCHEMA,
+        resolveDistanceLod,
+        visibleParticleBudget,
+      } = await import(
+        `./lod.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const {
         buildPersonaCatalog,
         cyclePersonaIndex,
       } = await import(
@@ -4645,6 +4689,11 @@
       const personAvatarPath = (index) => PRESET.avatarBase
         ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
         : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
+      function avatarRetrySource(source) {
+        const next = new URL(source, location.href);
+        next.searchParams.set("avatar-retry", String(Date.now()));
+        return next.href;
+      }
       const personaQuickEntryEl = document.getElementById("personaQuickEntry");
       const personaQuickPreviewIndexes = [
         0,
@@ -4665,7 +4714,14 @@
       const cardsQuickEntryEl = document.getElementById("cardsQuickEntry");
       const cardsQuickPreviewIndexes = [0, Math.floor(PEOPLE.length / 2), PEOPLE.length - 1];
       document.querySelectorAll("[data-cards-quick-avatar]").forEach((avatar, index) => {
-        avatar.src = personAvatarPath(cardsQuickPreviewIndexes[index]);
+        const personIndex = cardsQuickPreviewIndexes[index];
+        const [name, , castKey] = PEOPLE[personIndex];
+        setDomAvatarSource(
+          avatar,
+          personAvatarPath(personIndex),
+          name,
+          CASTS[castKey][2],
+        );
       });
       document.getElementById("cardsQuickCount").textContent = PEOPLE.length;
       cardsQuickEntryEl.setAttribute("aria-label", `阅读 ${PEOPLE.length} 张观点卡片`);
@@ -5100,6 +5156,7 @@
       }
 
       const galaxyMaterials = [];
+      const particleLayers = [];
       const galaxyPointer = new THREE.Vector3(999, 999, 0);
       let pointerEnergy = 0;
 
@@ -5181,7 +5238,15 @@
         geo.setAttribute("aTwinkle", new THREE.BufferAttribute(twinkles, 1));
       }
 
-      function buildStarfield(count, spreadX, depth, size, opacity, palette) {
+      function registerParticleLayer(points, budgetKey, count) {
+        if (!Object.hasOwn(NEBULA_PARTICLE_LAYER_SCHEMA, budgetKey)) {
+          throw new Error(`Unknown nebula particle layer: ${budgetKey}`);
+        }
+        particleLayers.push({ points, budgetKey, count });
+        return points;
+      }
+
+      function buildStarfield(count, spreadX, depth, size, opacity, palette, budgetKey) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
@@ -5212,7 +5277,7 @@
         const mat = galaxyPointMaterial(opacity, 0.08);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 0;
-        return points;
+        return registerParticleLayer(points, budgetKey, count);
       }
 
       const nebula = new THREE.Group();
@@ -5221,8 +5286,24 @@
       nebula.add(spectrumGroup);
 
       const starPalette = ["#dff8ff", "#9ed8e4", "#b9d7e8", "#dbe9df", "#ffd9a0", "#fff4d6", "#ffffff"];
-      nebula.add(buildStarfield(quality.farStars, 30, 8.5, 0.066, 0.84, starPalette));
-      nebula.add(buildStarfield(quality.haloStars, 46, 17, 0.048, 0.5, ["#ffffff", "#c7e7ed", "#ffe7ba"]));
+      nebula.add(buildStarfield(
+        quality.farStars,
+        30,
+        8.5,
+        0.066,
+        0.84,
+        starPalette,
+        NEBULA_PARTICLE_LAYER_SCHEMA.farStars,
+      ));
+      nebula.add(buildStarfield(
+        quality.haloStars,
+        46,
+        17,
+        0.048,
+        0.5,
+        ["#ffffff", "#c7e7ed", "#ffe7ba"],
+        NEBULA_PARTICLE_LAYER_SCHEMA.haloStars,
+      ));
 
       const fogGroup = new THREE.Group();
       nebula.add(fogGroup);
@@ -5257,35 +5338,72 @@
         return glowCache[hex];
       }
 
-      function placeholderTexture(name, hex) {
-        const s = 256;
-        const c = document.createElement("canvas");
-        c.width = c.height = s;
-        const ctx = c.getContext("2d");
+      function paintAvatarPlaceholder(ctx, name, hex) {
+        const s = ctx.canvas.width;
+        const scale = s / 256;
+        ctx.clearRect(0, 0, s, s);
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 123 * scale, 0, Math.PI * 2);
         ctx.fillStyle = "#05090d";
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 111 * scale, 0, Math.PI * 2);
         ctx.fillStyle = "#121b22";
         ctx.fill();
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2.5 * scale;
         ctx.globalAlpha = 0.9;
         ctx.strokeStyle = hex;
         ctx.shadowColor = hex;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 6 * scale;
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
         ctx.fillStyle = "rgba(235,241,238,0.78)";
-        ctx.font = "500 82px 'Noto Sans SC', sans-serif";
+        ctx.font = `500 ${82 * scale}px 'Noto Sans SC', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(name[0], s / 2, s / 2 + 6);
-        const t = new THREE.CanvasTexture(c);
-        t.colorSpace = THREE.SRGBColorSpace;
+        ctx.fillText(name[0], s / 2, s / 2 + 6 * scale);
+      }
+
+      function placeholderTexture(name, hex, size = 256) {
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const ctx = c.getContext("2d");
+        paintAvatarPlaceholder(ctx, name, hex);
         return { canvas: c, ctx };
+      }
+
+      function setDomAvatarSource(image, source, name, ringColor) {
+        image.dataset.avatarName = name || "知";
+        image.dataset.avatarRing = ringColor || "#9fd8db";
+        if (image.dataset.avatarFallbackBound !== "true") {
+          image.dataset.avatarFallbackBound = "true";
+          image.addEventListener("load", () => {
+            if (!image.src.startsWith("data:image/")) {
+              image.dataset.avatarFallbackApplied = "false";
+            }
+          });
+          image.addEventListener("error", () => {
+            if (image.dataset.avatarFallbackApplied === "true") return;
+            image.dataset.avatarFallbackApplied = "true";
+            image.src = placeholderTexture(
+              image.dataset.avatarName,
+              image.dataset.avatarRing,
+              128,
+            ).canvas.toDataURL("image/png");
+          });
+        }
+        image.dataset.avatarFallbackApplied = "false";
+        image.src = source;
+      }
+
+      function canvasAvatarTexture(canvas) {
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.generateMipmaps = false;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        return texture;
       }
 
       function meBadgeTexture() {
@@ -5315,24 +5433,32 @@
       }
 
       function paintAvatar(ctx, img, hex) {
-        const s = 256;
+        const s = ctx.canvas.width;
+        const scaleFactor = s / 256;
         ctx.clearRect(0, 0, s, s);
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 123 * scaleFactor, 0, Math.PI * 2);
         ctx.fillStyle = "#05090d";
         ctx.fill();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 111 * scaleFactor, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         const iw = img.width, ih = img.height;
-        const scale = Math.max(222 / iw, 222 / ih);
-        const w = iw * scale, h = ih * scale;
+        const imageScale = Math.max((222 * scaleFactor) / iw, (222 * scaleFactor) / ih);
+        const w = iw * imageScale, h = ih * imageScale;
         ctx.filter = "saturate(0.78) contrast(1.08) brightness(0.94)";
         ctx.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
         ctx.filter = "none";
-        const vignette = ctx.createRadialGradient(s / 2, s / 2 - 8, 45, s / 2, s / 2, 126);
+        const vignette = ctx.createRadialGradient(
+          s / 2,
+          s / 2 - 8 * scaleFactor,
+          45 * scaleFactor,
+          s / 2,
+          s / 2,
+          126 * scaleFactor,
+        );
         vignette.addColorStop(0.55, "rgba(5,9,13,0)");
         vignette.addColorStop(1, "rgba(5,9,13,0.5)");
         ctx.fillStyle = vignette;
@@ -5340,25 +5466,25 @@
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 113, 0, Math.PI * 2);
-        ctx.lineWidth = 5;
+        ctx.arc(s / 2, s / 2, 113 * scaleFactor, 0, Math.PI * 2);
+        ctx.lineWidth = 5 * scaleFactor;
         ctx.strokeStyle = "rgba(5,9,13,0.88)";
         ctx.stroke();
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 119, 0, Math.PI * 2);
-        ctx.lineWidth = 2.5;
+        ctx.arc(s / 2, s / 2, 119 * scaleFactor, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5 * scaleFactor;
         ctx.globalAlpha = 0.92;
         ctx.strokeStyle = hex;
         ctx.shadowColor = hex;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 6 * scaleFactor;
         ctx.stroke();
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 116.5, Math.PI * 1.12, Math.PI * 1.72);
-        ctx.lineWidth = 1.2;
+        ctx.arc(s / 2, s / 2, 116.5 * scaleFactor, Math.PI * 1.12, Math.PI * 1.72);
+        ctx.lineWidth = 1.2 * scaleFactor;
         ctx.strokeStyle = "rgba(255,255,255,0.36)";
         ctx.stroke();
         ctx.restore();
@@ -5468,8 +5594,7 @@
         group.add(glow);
 
         const holder = placeholderTexture(name, glowColor);
-        const avatarTex = new THREE.CanvasTexture(holder.canvas);
-        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarTex = canvasAvatarTexture(holder.canvas);
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
         avatar.scale.setScalar(baseAvatar);
@@ -5478,6 +5603,7 @@
           name, stance, castKey, castName, castRole, castColor, claim,
           followed: FOLLOWED.has(i), index: i, isMe: false, group, avatar, glow,
           ringColor: glowColor, baseAvatar, baseGlow,
+          avatarCanvas: holder.canvas, avatarState: "loading", avatarPaintSignature: "",
           baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
           scale: 1,
         };
@@ -5520,8 +5646,7 @@
         group.add(glow);
 
         const holder = placeholderTexture("我", "#e7c98c");
-        const avatarTex = new THREE.CanvasTexture(holder.canvas);
-        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarTex = canvasAvatarTexture(holder.canvas);
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
         avatar.scale.setScalar(0.8);
@@ -5541,6 +5666,7 @@
           claim: ME.claim, followed: false, index: -1, isMe: true,
           group, avatar, glow, badge,
           ringColor: "#e7c98c", baseAvatar: 0.8, baseGlow: 1.04,
+          avatarCanvas: holder.canvas, avatarState: "loading", avatarPaintSignature: "",
           baseY: 1.95, phase: 0, speed: 0.6, scale: 1,
         };
         avatar.userData.user = meUser;
@@ -5615,7 +5741,7 @@
       // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
       const dustGroup = new THREE.Group();
       spectrumGroup.add(dustGroup);
-      function buildCoreDust(count, size, opacity) {
+      function buildCoreDust(count, size, opacity, budgetKey) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
@@ -5682,10 +5808,67 @@
         const mat = galaxyPointMaterial(opacity, 1);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 1;
-        return points;
+        return registerParticleLayer(points, budgetKey, count);
       }
-      dustGroup.add(buildCoreDust(quality.armDust, 0.03, 0.68));
-      dustGroup.add(buildCoreDust(quality.brightDust, 0.048, 0.58));
+      dustGroup.add(buildCoreDust(
+        quality.armDust,
+        0.03,
+        0.68,
+        NEBULA_PARTICLE_LAYER_SCHEMA.armDust,
+      ));
+      dustGroup.add(buildCoreDust(
+        quality.brightDust,
+        0.048,
+        0.58,
+        NEBULA_PARTICLE_LAYER_SCHEMA.brightDust,
+      ));
+
+      let distanceLod = null;
+      let visibleParticleCount = 0;
+      function applyAvatarTextureForLod(user, profile) {
+        const size = profile.avatarSize;
+        const signature = `${user.avatarState}:${user.avatarLoadVersion || 0}:${size}`;
+        if (user.avatarPaintSignature === signature) return;
+        const ringColor = user.followed ? "#e7c98c" : user.ringColor;
+        const holder = placeholderTexture(user.name, ringColor, size);
+        if (user.avatarState === "ready" && user.avatarImage) {
+          paintAvatar(holder.ctx, user.avatarImage, ringColor);
+        }
+        const previousTexture = user.avatar.material.map;
+        user.avatarCanvas = holder.canvas;
+        user.avatar.material.map = canvasAvatarTexture(holder.canvas);
+        user.avatar.material.needsUpdate = true;
+        user.avatarPaintSignature = signature;
+        previousTexture.dispose();
+      }
+      function applyLodBloom(profile) {
+        bloom.enabled = profile.bloomEnabled;
+        bloom.strength = bloomDefaults.strength * profile.bloomRatio;
+        bloom.radius = bloomDefaults.radius * (0.8 + profile.bloomRatio * 0.2);
+        bloom.threshold = Math.min(
+          0.96,
+          bloomDefaults.threshold + (1 - profile.bloomRatio) * 0.05,
+        );
+      }
+      function applyDistanceLod(tier) {
+        const profile = getNebulaLodProfile(tier);
+        const budget = visibleParticleBudget(quality, tier);
+        particleLayers.forEach(({ points, budgetKey, count }) => {
+          points.geometry.setDrawRange(0, Math.min(count, budget[budgetKey]));
+        });
+        users.forEach((user) => applyAvatarTextureForLod(user, profile));
+        applyLodBloom(profile);
+        distanceLod = tier;
+        visibleParticleCount = budget.total;
+      }
+      function updateDistanceLod() {
+        const nextTier = resolveDistanceLod(
+          camera.position.distanceTo(controls.target),
+          distanceLod || "medium",
+        );
+        if (nextTier !== distanceLod) applyDistanceLod(nextTier);
+      }
+      updateDistanceLod();
 
       const entryAnswerUsers = users.filter((user) => !user.isMe);
       entryAnswerUsers.forEach((user, index) => {
@@ -5722,6 +5905,7 @@
         bloom.strength = bloomDefaults.strength;
         bloom.radius = bloomDefaults.radius;
         bloom.threshold = bloomDefaults.threshold;
+        applyLodBloom(getNebulaLodProfile(distanceLod));
         galaxyMaterials.forEach((material) => {
           material.uniforms.uOpacity.value = material.userData.entryBaseOpacity;
           material.uniforms.uPointScale.value = 1;
@@ -5846,6 +6030,7 @@
         entryProgressEl.style.transform = "scaleX(0)";
         entryGenerationPercentEl.textContent = "00%";
         entryGenerationStepEls.forEach((step) => step.classList.remove("is-active"));
+        bloom.enabled = true;
         bloom.strength = lowPower ? 0.08 : 0.12;
         bloom.radius = 0.12;
         bloom.threshold = 0.9;
@@ -5919,31 +6104,56 @@
         document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
       }
 
+      const AVATAR_LOAD_TIMEOUT_MS = 8000;
       let loaded = 0;
-      function loadUserAvatar(u, file, onSettled, onApplied) {
+      function loadUserAvatar(u, file, onSettled, onApplied, canonicalSource = file) {
         const requestVersion = (u.avatarLoadVersion || 0) + 1;
+        let settled = false;
+        let timeoutId = 0;
+        const settleOnce = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timeoutId);
+          if (onSettled) onSettled();
+        };
+        const markAvatarError = (invalidateRequest = false) => {
+          if (u.avatarLoadVersion !== requestVersion) return;
+          if (invalidateRequest) u.avatarLoadVersion = requestVersion + 1;
+          u.avatarImage = null;
+          u.avatarState = "error";
+          u.avatarRetrying = false;
+          u.avatarPaintSignature = "";
+          applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
+          if (hovered === u) renderTip(u);
+        };
         u.avatarLoadVersion = requestVersion;
+        u.avatarSource = canonicalSource;
+        u.avatarState = "loading";
+        timeoutId = window.setTimeout(() => {
+          markAvatarError(true);
+          settleOnce();
+        }, AVATAR_LOAD_TIMEOUT_MS);
         loader.load(
           file,
           (tex) => {
             try {
               if (u.avatarLoadVersion !== requestVersion) return;
-              const ringColor = u.followed ? "#e7c98c" : u.ringColor;
-              const holder = placeholderTexture(u.name, ringColor);
-              paintAvatar(holder.ctx, tex.image, ringColor);
-              u.avatar.material.map.dispose();
-              u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
-              u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
-              u.avatar.material.needsUpdate = true;
+              u.avatarImage = tex.image;
+              u.avatarState = "ready";
+              u.avatarRetrying = false;
+              u.avatarPaintSignature = "";
+              applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
               if (onApplied) onApplied();
+              if (hovered === u) renderTip(u);
             } finally {
               tex.dispose();
-              if (onSettled) onSettled();
+              settleOnce();
             }
           },
           undefined,
           () => {
-            if (onSettled) onSettled();
+            markAvatarError();
+            settleOnce();
           }
         );
       }
@@ -5966,12 +6176,26 @@
         }
       }
       function replaceUserAvatarWithPlaceholder(u) {
-        const ringColor = u.followed ? "#e7c98c" : u.ringColor;
-        const holder = placeholderTexture(u.name, ringColor);
-        u.avatar.material.map.dispose();
-        u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
-        u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
-        u.avatar.material.needsUpdate = true;
+        u.avatarImage = null;
+        u.avatarState = "loading";
+        u.avatarPaintSignature = "";
+        applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
+      }
+      function retryUserAvatar(u) {
+        if (!u || u.avatarState !== "error") return;
+        u.avatarRetrying = true;
+        loadUserAvatar(
+          u,
+          avatarRetrySource(
+            u.avatarSource || (u.isMe ? meAvatarSource : personAvatarPath(u.index)),
+          ),
+          null,
+          () => {
+            if (u.isMe) renderCardsIfOpen();
+          },
+          u.avatarSource,
+        );
+        if (hovered === u) renderTip(u);
       }
       function setMeAvatar(value) {
         const avatarUrl = safeUserAvatarUrl(value) || DEFAULT_ME_AVATAR;
@@ -6568,6 +6792,7 @@
           button.dataset.go = "self";
           button.disabled = !personaUnlocked();
           actions.appendChild(button);
+          appendAvatarRecovery(actions, u);
           tip.replaceChildren(row, claim, actions);
         } else if (u.kind === "comment") {
           row.append(
@@ -6609,9 +6834,21 @@
           button.type = "button";
           button.dataset.like = String(u.index);
           actions.appendChild(button);
+          appendAvatarRecovery(actions, u);
           tip.replaceChildren(row, claim, persona, actions);
         }
         updateTipPosition();
+      }
+
+      function appendAvatarRecovery(actions, u) {
+        if (u.avatarState === "error") {
+          const retry = uiNode("button", "tip-like", "重试头像");
+          retry.type = "button";
+          retry.dataset.retryAvatar = "";
+          actions.appendChild(retry);
+        } else if (u.avatarRetrying) {
+          actions.appendChild(uiNode("span", "tip-resource-status", "正在重试头像…"));
+        }
       }
 
       function setHovered(u) {
@@ -6637,6 +6874,12 @@
       }
 
       tip.addEventListener("click", (e) => {
+        const retryBtn = e.target.closest("[data-retry-avatar]");
+        if (retryBtn) {
+          e.stopPropagation();
+          retryUserAvatar(hovered);
+          return;
+        }
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
@@ -6857,6 +7100,7 @@
           updateCameraTransition(performance.now());
           controls.update();
         }
+        updateDistanceLod();
         updateAxisLabels();
         updateTipPosition();
         composer.render();
@@ -7013,7 +7257,13 @@
         button.addEventListener("click", onClick);
         if (Number.isInteger(avatarIndex)) {
           marker.className = "discovery-result-avatar";
-          marker.src = personAvatarPath(avatarIndex);
+          const [avatarName, , avatarCast] = PEOPLE[avatarIndex];
+          setDomAvatarSource(
+            marker,
+            personAvatarPath(avatarIndex),
+            avatarName,
+            CASTS[avatarCast][2],
+          );
           marker.alt = "";
         } else {
           marker.className = "discovery-rank";
@@ -7314,6 +7564,9 @@
       let cardsFilter = "all";
       let cardsQuery = "";
       let cardsTransitioning = false;
+      const failedCardAvatarSources = new Set();
+      const cardAvatarFallbacks = new Map();
+      const resolvedCardAvatarSources = new Map();
       let cardsReturnFocus = null;
       let personaFilter = null;
       let personaDeckOpen = false;
@@ -7468,6 +7721,61 @@
         return section;
       }
 
+      function cardAvatar(name, source, className, ringColor) {
+        const frame = uiNode("span", "pcard-avatar-frame");
+        const avatar = uiNode("img", className);
+        const retry = uiNode("button", "pcard-avatar-retry", "↻");
+        const fallbackKey = `${source}\u0000${name}\u0000${ringColor}`;
+        const fallbackSource = () => {
+          if (!cardAvatarFallbacks.has(fallbackKey)) {
+            cardAvatarFallbacks.set(
+              fallbackKey,
+              placeholderTexture(name, ringColor, 128).canvas.toDataURL("image/png"),
+            );
+          }
+          return cardAvatarFallbacks.get(fallbackKey);
+        };
+        let showingFallback = failedCardAvatarSources.has(source);
+        retry.type = "button";
+        retry.hidden = !showingFallback;
+        retry.title = "重试头像";
+        retry.setAttribute("aria-label", `重试 ${name} 的头像`);
+        retry.dataset.avatarRetry = "";
+        avatar.alt = name;
+        avatar.width = 42;
+        avatar.height = 42;
+        avatar.addEventListener("load", () => {
+          if (!showingFallback) {
+            failedCardAvatarSources.delete(source);
+            resolvedCardAvatarSources.set(source, avatar.src);
+            retry.hidden = true;
+          }
+        });
+        avatar.addEventListener("error", () => {
+          if (showingFallback) return;
+          failedCardAvatarSources.add(source);
+          resolvedCardAvatarSources.delete(source);
+          showingFallback = true;
+          avatar.src = fallbackSource();
+          retry.hidden = false;
+        });
+        retry.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          failedCardAvatarSources.delete(source);
+          showingFallback = false;
+          retry.hidden = true;
+          const next = avatarRetrySource(source);
+          resolvedCardAvatarSources.set(source, next);
+          avatar.src = next;
+        });
+        avatar.src = showingFallback
+          ? fallbackSource()
+          : resolvedCardAvatarSources.get(source) || source;
+        frame.append(avatar, retry);
+        return frame;
+      }
+
       function personCard(i) {
         const [name, stance, castKey, claim, sourceUrl, , votes] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
@@ -7482,9 +7790,12 @@
         article.setAttribute("role", "link");
         article.setAttribute("aria-label", `查看 ${name} 的人格卡`);
 
-        const avatar = uiNode("img", "pcard-ava");
-        avatar.src = personAvatarPath(i);
-        avatar.alt = name;
+        const avatar = cardAvatar(
+          name,
+          personAvatarPath(i),
+          "pcard-ava",
+          castColor,
+        );
 
         const body = uiNode("div", "pcard-body");
         const row = uiNode("div", "pcard-row");
@@ -7619,9 +7930,12 @@
         const head = uiNode("section", "me-strip");
         head.style.setProperty("--cast", "#e7c17f");
         head.style.setProperty("--stance", `${stancePercent(my)}%`);
-        const meAvatar = uiNode("img", "pcard-ava pcard-ava--me");
-        meAvatar.src = meAvatarSource;
-        meAvatar.alt = "我";
+        const meAvatar = cardAvatar(
+          "我",
+          meAvatarSource,
+          "pcard-ava pcard-ava--me",
+          "#e7c98c",
+        );
         const meCopy = uiNode("div", "me-strip-copy");
         const meTitle = uiNode("div", "me-strip-title", "我的立场坐标 ");
         meTitle.appendChild(uiNode(
@@ -8625,7 +8939,12 @@
               `选择${name}，综合排序 ${Math.round(candidate.score * 100)}`,
             );
             const avatar = uiNode("img", "");
-            avatar.src = personAvatarPath(candidate.i);
+            setDomAvatarSource(
+              avatar,
+              personAvatarPath(candidate.i),
+              name,
+              CASTS[PEOPLE[candidate.i][2]][2],
+            );
             avatar.alt = "";
             const copy = uiNode("span", "");
             copy.append(
@@ -8696,7 +9015,12 @@
         ensureRing(users[i]);
         const [name, stance, castKey, claim] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
-        $("clashAva").src = personAvatarPath(i);
+        setDomAvatarSource(
+          $("clashAva"),
+          personAvatarPath(i),
+          name,
+          castColor,
+        );
         $("clashAva").alt = `${name}的头像`;
         $("clashName").textContent = `@${name}`;
         $("clashDot").style.background = castColor;
@@ -9358,6 +9682,35 @@
         selfProfile: () => inferSelfProfile(),
         quality: () => quality.name,
         particleCount: () => quality.farStars + quality.haloStars + quality.armDust + quality.brightDust,
+        lodTier: () => distanceLod,
+        visibleParticleCount: () => visibleParticleCount,
+        bloomEnabled: () => bloom.enabled,
+        avatarTextureSize: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatar.material.map?.image?.width || 0;
+        },
+        avatarTextureId: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatar.material.map?.uuid || "";
+        },
+        avatarStatus: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatarState || "missing";
+        },
+        retryAvatar: (i) => retryUserAvatar(i === -1 ? meUser : users[i]),
+        setCameraDistance: (distance) => {
+          const nextDistance = THREE.MathUtils.clamp(
+            Number(distance) || controls.minDistance,
+            controls.minDistance,
+            controls.maxDistance,
+          );
+          const direction = camera.position.clone().sub(controls.target).normalize();
+          camera.position.copy(controls.target).addScaledVector(direction, nextDistance);
+          camera.lookAt(controls.target);
+          controls.update();
+          updateDistanceLod();
+          composer.render();
+        },
         pointerEnergy: () => pointerEnergy,
         spectrumChildrenAligned: () =>
           userGroup.parent === spectrumGroup &&
