@@ -12,6 +12,7 @@ import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
 import {
   clearSelfProfileContexts,
+  countMatchingNebulaLikes,
   DEFAULT_NEBULA_PRESET,
   nebulaPresetVersion,
   personByIndex,
@@ -37,6 +38,23 @@ type ShelfNavigationState = {
   selfProfile?: unknown;
 };
 const OFFICIAL_ORIGIN = "https://soular.top";
+
+function currentNebulaLikeCount(
+  preset: string,
+  version: string,
+  expectedIndexes: readonly number[] | undefined,
+): number | null {
+  try {
+    const raw = window.localStorage.getItem(
+      `jiupai:nebula:likes:v2:${preset}:${version}`,
+    );
+    if (raw === null) return 0;
+    const parsed = JSON.parse(raw);
+    return countMatchingNebulaLikes(parsed, expectedIndexes, preset);
+  } catch {
+    return null;
+  }
+}
 
 export function ShelfPage() {
   const { cast: castKey = "" } = useParams();
@@ -256,6 +274,22 @@ export function ShelfPage() {
     navigate(lobbyTarget);
   }
 
+  function handleDiscoverPeers() {
+    navigate(`/nebula?preset=${encodeURIComponent(presetId)}&peers=1`);
+  }
+
+  const activeLikeCount = currentNebulaLikeCount(
+    presetId,
+    presetVersion,
+    subject.kind === "self" ? subject.profile?.likedIndexes : undefined,
+  );
+  const canDiscoverPeers =
+    !staleVersion &&
+    subject.kind === "self" &&
+    Boolean(subject.profile && subject.profile.likedCount >= 3) &&
+    activeLikeCount !== null &&
+    activeLikeCount >= 3;
+
   return (
     <div className="shelf-root">
       <iframe className="landing-page-frame" src={src} title={`${cast.name} · 思想银河`} />
@@ -285,6 +319,7 @@ export function ShelfPage() {
           onEnter={() => setPhase("book")}
           onClose={() => setPhase("book")}
           onExit={handleExit}
+          onDiscoverPeers={canDiscoverPeers ? handleDiscoverPeers : undefined}
         />
       )}
     </div>

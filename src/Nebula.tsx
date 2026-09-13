@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -6,6 +6,10 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { CASTS } from "./cast";
+import {
+  resolveIdentityRevision,
+  type IdentityRevisionStorage,
+} from "./identityRevision";
 import { NebulaStage } from "./NebulaStage";
 import {
   clearSelfProfileContexts,
@@ -23,9 +27,13 @@ import {
 } from "./zhihuPortrait";
 
 const NAVIGATION_CONTEXT_PREFIX = "jiupai:nebula:";
+const NAVIGATION_CONTEXT_KINDS = ["self", "subject"] as const;
 const MAX_NAVIGATION_CONTEXTS = 24;
 const OFFICIAL_ORIGIN = "https://soular.top";
 const OAUTH_STATUS_TIMEOUT_MS = 8_000;
+const IDENTITY_REVISIONS_KEY = "jiupai:nebula:identity-revisions:v1";
+const MAX_IDENTITY_REVISIONS = 8;
+const volatileIdentityRevisions = new Map<string, number>();
 
 interface NebulaUserProfile {
   name: string | null;
@@ -36,6 +44,22 @@ interface NebulaUserContext {
   profile: NebulaUserProfile;
   portrait: NebulaPortraitSignal | null;
   accountVersion: string | null;
+}
+
+function identityRevisionFor(accountVersion: string | null): number {
+  let storage: IdentityRevisionStorage | null = null;
+  try {
+    storage = window.sessionStorage;
+  } catch {
+    // Storage access can be disabled; the resolver keeps a page-local map.
+  }
+  return resolveIdentityRevision(
+    accountVersion,
+    storage,
+    volatileIdentityRevisions,
+    IDENTITY_REVISIONS_KEY,
+    MAX_IDENTITY_REVISIONS,
+  );
 }
 
 function safeZhihuAvatarUrl(value: unknown): string | null {
@@ -92,7 +116,12 @@ function storeNavigationContext(
     const existing: string[] = [];
     for (let index = 0; index < window.sessionStorage.length; index += 1) {
       const key = window.sessionStorage.key(index);
-      if (key?.startsWith(NAVIGATION_CONTEXT_PREFIX) && key !== "jiupai:nebula:lobby") {
+      if (
+        key &&
+        NAVIGATION_CONTEXT_KINDS.some((kind) =>
+          key.startsWith(`${NAVIGATION_CONTEXT_PREFIX}${kind}:`)
+        )
+      ) {
         existing.push(key);
       }
     }
@@ -132,6 +161,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     location.state.fromPersonaHome === true;
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
+  const openPeerDiscovery = !entryMode && searchParams.get("peers") === "1";
   const entryState = entryMode
     ? searchParams.get("confirm") === "1"
       ? "confirm"
@@ -139,6 +169,24 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         ? "explore"
         : "discover"
     : null;
+
+  const requestOpenPeerDiscovery = useCallback(() => {
+    if (!openPeerDiscovery) return;
+    nebulaFrameRef.current?.contentWindow?.postMessage(
+      { type: "nebula-open-peer-discovery" },
+      window.location.origin,
+    );
+  }, [openPeerDiscovery]);
+
+  useEffect(() => {
+    if (!openPeerDiscovery) return undefined;
+    const timer = window.setTimeout(requestOpenPeerDiscovery, 0);
+    window.addEventListener("pageshow", requestOpenPeerDiscovery);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pageshow", requestOpenPeerDiscovery);
+    };
+  }, [openPeerDiscovery, presetId, requestOpenPeerDiscovery]);
 
   useEffect(() => {
     if (window.location.origin !== OFFICIAL_ORIGIN) return undefined;
@@ -150,8 +198,13 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     function publishUserContext(userContext: NebulaUserContext) {
       const previousAccountVersion =
         userContextRef.current?.accountVersion ?? null;
-      if (previousAccountVersion !== userContext.accountVersion) {
-        identityRevisionRef.current += 1;
+      if (
+        userContextRef.current === null ||
+        previousAccountVersion !== userContext.accountVersion
+      ) {
+        identityRevisionRef.current = identityRevisionFor(
+          userContext.accountVersion,
+        );
       }
       userContextRef.current = userContext;
       nebulaFrameRef.current?.contentWindow?.postMessage(
@@ -328,6 +381,12 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
             event.origin,
           );
         }
+        if (openPeerDiscovery) {
+          source?.postMessage(
+            { type: "nebula-open-peer-discovery" },
+            event.origin,
+          );
+        }
         return;
       }
       if (data?.type === "nebula-entry-back" && entryMode) {
@@ -453,11 +512,24 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [entryMode, entryState, fromPersonaHome, navigate, presetId]);
+  }, [
+    entryMode,
+    entryState,
+    fromPersonaHome,
+    navigate,
+    openPeerDiscovery,
+    presetId,
+  ]);
 
   return (
     <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>
-      <NebulaStage entryState={entryState} presetId={presetId} iframeRef={nebulaFrameRef} />
+      <NebulaStage
+        entryState={entryState}
+        presetId={presetId}
+        openPeerDiscovery={openPeerDiscovery}
+        onLoad={requestOpenPeerDiscovery}
+        iframeRef={nebulaFrameRef}
+      />
       {!entryMode && !isCardsView && (
         <nav className="shelf-nav shelf-nav--nebula" aria-label="星云导航">
           <div className="shelf-nav__tags">

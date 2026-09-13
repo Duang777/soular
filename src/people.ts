@@ -17,6 +17,7 @@ export type SelfProfile = {
   cast: Cast["key"];
   stance: number;
   likedCount: number;
+  likedIndexes?: number[];
   claim: string;
   accountVersion?: string;
   interest?: NebulaPortraitSignal;
@@ -26,6 +27,10 @@ export const DEFAULT_NEBULA_PRESET = "career-35";
 export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
   "career-35": "1",
   "ai-math": "20260912",
+};
+export const NEBULA_PRESET_ANSWER_COUNTS: Readonly<Record<string, number>> = {
+  "career-35": 48,
+  "ai-math": 31,
 };
 const MAX_TRANSIENT_SELF_PROFILES = 24;
 const transientSelfProfiles = new Map<string, unknown>();
@@ -74,6 +79,24 @@ export function clipProfileClaim(claim: string): string {
       )
     : Array.from(claim);
   return graphemes.slice(0, 120).join("");
+}
+
+export function countMatchingNebulaLikes(
+  value: unknown,
+  expectedIndexes: readonly number[] | undefined,
+  preset: string,
+): number {
+  if (!Array.isArray(value) || !expectedIndexes) return 0;
+  const answerCount = NEBULA_PRESET_ANSWER_COUNTS[preset] ?? 0;
+  const expected = new Set(expectedIndexes);
+  return new Set(
+    value.filter((index) =>
+      Number.isSafeInteger(index) &&
+      index >= 0 &&
+      index < answerCount &&
+      expected.has(index)
+    ),
+  ).size;
 }
 
 export const PEOPLE: Person[] = [
@@ -238,12 +261,21 @@ export function selfProfileFromValue(
       };
     }
   }
+  const likedIndexes = Array.isArray(record.likedIndexes)
+    ? [...new Set(record.likedIndexes.filter((index) =>
+        Number.isSafeInteger(index) &&
+        index >= 0 &&
+        index < (NEBULA_PRESET_ANSWER_COUNTS[preset] ?? 0)
+      ))]
+    : undefined;
+  if (likedIndexes && likedIndexes.length !== record.likedCount) return null;
   return {
     preset,
     version,
     cast,
     stance: Math.max(-1, Math.min(1, record.stance)),
     likedCount: record.likedCount,
+    likedIndexes,
     claim: clipProfileClaim(record.claim),
     accountVersion:
       typeof record.accountVersion === "string" &&

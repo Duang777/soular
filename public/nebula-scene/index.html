@@ -2344,7 +2344,7 @@
       .modal-mask {
         position: fixed;
         inset: 0;
-        z-index: 15;
+        z-index: 21;
         display: none;
         place-items: center;
         padding: 24px;
@@ -2752,6 +2752,178 @@
       }
       .modal-x:hover { background: var(--cta); color: var(--cta-ink); border-color: transparent; }
 
+      .peer-modal {
+        width: min(760px, 94vw);
+      }
+      .peer-context {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 24px 16px;
+      }
+      .peer-persona {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid rgba(231, 193, 127, 0.24);
+        border-radius: 8px;
+        background: rgba(231, 193, 127, 0.06);
+        color: #e6c17f;
+        font-size: 10.5px;
+        font-weight: 600;
+      }
+      .peer-portrait-note {
+        margin: 0;
+        color: var(--txt-faint);
+        font-size: 10.5px;
+        line-height: 1.55;
+        text-align: right;
+      }
+      .peer-list {
+        max-height: min(56vh, 560px);
+        margin: 0;
+        padding: 0 24px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+      .peer-item {
+        display: grid;
+        grid-template-columns: 50px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: start;
+        padding: 17px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .peer-avatar-wrap {
+        position: relative;
+        width: 48px;
+        height: 48px;
+      }
+      .peer-avatar,
+      .peer-avatar-fallback {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+      }
+      .peer-avatar {
+        display: block;
+        object-fit: cover;
+        filter: saturate(0.78) contrast(1.06);
+        outline: 1px solid rgba(143, 216, 220, 0.34);
+        outline-offset: -1px;
+      }
+      .peer-avatar-fallback {
+        display: none;
+        place-items: center;
+        background: #202731;
+        color: #c6d8dc;
+        font-size: 17px;
+        font-weight: 650;
+      }
+      .peer-avatar-wrap.is-fallback .peer-avatar { display: none; }
+      .peer-avatar-wrap.is-fallback .peer-avatar-fallback { display: grid; }
+      .peer-main { min-width: 0; }
+      .peer-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .peer-name {
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--hi);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+        text-align: left;
+        cursor: pointer;
+      }
+      .peer-name:hover { color: #9fd8db; }
+      .peer-cast {
+        flex: none;
+        padding: 3px 6px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--txt-faint);
+        font-size: 9px;
+      }
+      .peer-claim {
+        display: -webkit-box;
+        margin: 7px 0 0;
+        overflow: hidden;
+        color: rgba(231, 235, 238, 0.86);
+        font-size: 12px;
+        line-height: 1.55;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .peer-reasons {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 7px 14px;
+        margin-top: 9px;
+      }
+      .peer-reason {
+        color: var(--txt-faint);
+        font-size: 9.5px;
+        line-height: 1.5;
+      }
+      .peer-reason b {
+        margin-right: 5px;
+        color: #83b9bd;
+        font-weight: 600;
+      }
+      .peer-reason--different b { color: rgba(231, 193, 127, 0.82); }
+      .peer-item-actions {
+        display: grid;
+        gap: 7px;
+        justify-items: stretch;
+        min-width: 96px;
+      }
+      .peer-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 11px;
+        border: 1px solid var(--line-2);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--txt-dim);
+        font: inherit;
+        font-size: 10px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+      }
+      .peer-action:hover {
+        border-color: rgba(143, 216, 220, 0.4);
+        background: rgba(143, 216, 220, 0.06);
+        color: var(--hi);
+      }
+      .peer-action:active { transform: scale(0.96); }
+      .peer-action--missing {
+        cursor: default;
+        opacity: 0.5;
+      }
+      .peer-status {
+        align-self: center;
+        color: var(--txt-faint);
+        font-size: 10.5px;
+        line-height: 1.5;
+      }
+      .peer-actions {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
       .circle-chip {
         position: fixed;
         z-index: 11;
@@ -3088,12 +3260,47 @@
         .clash-card { margin: 0; padding: 18px; }
         .modal-actions { grid-template-columns: 1fr; padding: 15px 18px 18px; }
         .gbtn--text { grid-column: auto; justify-self: center; }
+        .modal-mask { padding: 10px; }
+        .peer-modal {
+          width: 100%;
+          max-height: calc(100vh - 20px);
+        }
+        .peer-context {
+          align-items: flex-start;
+          padding: 0 18px 14px;
+          flex-direction: column;
+          gap: 7px;
+        }
+        .peer-portrait-note { text-align: left; }
+        .peer-list {
+          max-height: min(58vh, 520px);
+          padding: 0 18px;
+        }
+        .peer-item {
+          grid-template-columns: 44px minmax(0, 1fr);
+          gap: 11px;
+          padding: 15px 0;
+        }
+        .peer-avatar-wrap,
+        .peer-avatar,
+        .peer-avatar-fallback {
+          width: 42px;
+          height: 42px;
+        }
+        .peer-reasons { grid-template-columns: 1fr; gap: 5px; }
+        .peer-item-actions {
+          grid-column: 2;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          min-width: 0;
+        }
+        .peer-action { min-height: 44px; }
+        .peer-actions { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .observatory-controls, .observatory-control, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -3384,6 +3591,21 @@
           </span>
           <span class="dock-arrow" aria-hidden="true">›</span>
         </button>
+        <button type="button" class="dock-action" id="peerDiscoveryBtn">
+          <span class="dock-action-icon" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <circle cx="8" cy="8" r="3"></circle>
+              <circle cx="16" cy="8" r="3"></circle>
+              <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
+              <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
+            </svg>
+          </span>
+          <span class="dock-action-copy">
+            <b>同频发现</b>
+            <span id="peerDiscoveryHint">一次遇见 5 位相近回答者</span>
+          </span>
+          <span class="dock-arrow" aria-hidden="true">›</span>
+        </button>
         <button type="button" class="dock-action" id="clashBtn">
           <span class="dock-action-icon" aria-hidden="true">
             <svg class="ui-icon" viewBox="0 0 24 24">
@@ -3622,6 +3844,48 @@
       </div>
     </div>
 
+    <div class="modal-mask" id="peerDiscovery" aria-hidden="true">
+      <div class="modal peer-modal" role="dialog" aria-modal="true" aria-labelledby="peerDiscoveryTitle">
+        <button type="button" class="modal-x" id="peerDiscoveryX" aria-label="关闭同频发现">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <circle cx="8" cy="8" r="3"></circle>
+              <circle cx="16" cy="8" r="3"></circle>
+              <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
+              <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">同频发现 · PEER SIGNALS</div>
+            <div class="modal-title" id="peerDiscoveryTitle">和你站在附近的人</div>
+            <p class="modal-sub">先看本题立场，再用兴趣信号细排；每轮候选看完前不会重复。</p>
+          </div>
+        </div>
+        <div class="peer-context">
+          <span class="peer-persona" id="peerPersona"></span>
+          <p class="peer-portrait-note" id="peerPortraitNote"></p>
+        </div>
+        <ol class="peer-list" id="peerList"></ol>
+        <div class="modal-actions peer-actions">
+          <button type="button" class="gbtn gbtn--primary" id="peerAgain">
+            <svg class="ui-icon icon-refresh" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
+              <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+            </svg>
+            <span>换一批</span>
+          </button>
+          <button type="button" class="gbtn gbtn--ghost" id="peerDiscoveryClose">返回星云</button>
+          <div class="peer-status" id="peerStatus" role="status"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="circle-chip" id="circleChip" aria-hidden="true">
       <div class="cc-title"><span class="cc-spark">✦</span> 发现一个小圈子</div>
       <div class="cc-text" id="circleText"></div>
@@ -3672,6 +3936,13 @@
         listNebulaPresets,
       } = await import(
         `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const {
+        describePeerMatch,
+        rankPeerCandidates,
+        takePeerBatch,
+      } = await import(
+        `./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
 
       const CASTS = {
@@ -3824,6 +4095,7 @@
       const entryQueryEl = document.getElementById("entryQuery");
       const entrySearchStatusEl = document.getElementById("entrySearchStatus");
       const entryMode = sceneParams.get("entry");
+      const peerDiscoveryRequested = sceneParams.get("peers") === "1";
       const entryEnabled =
         entryMode === "discover" ||
         entryMode === "confirm" ||
@@ -5205,6 +5477,7 @@
             cast: ME.castKey,
             stance: 0,
             likedCount: 0,
+            likedIndexes: [],
             claim: `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`,
             interest: portraitInterest(),
           };
@@ -5235,6 +5508,7 @@
           cast,
           stance: Number(stance.avg.toFixed(4)),
           likedCount: stance.n,
+          likedIndexes: [...liked],
           claim: `本题 ${stance.n} 次表态中，${matched} 次呈现「${castName}」特征：${castRole}。`,
           interest: portraitInterest(),
         };
@@ -5282,10 +5556,16 @@
           : `再表态 ${remaining} 次解锁人格`;
         const clashButton = document.getElementById("clashBtn");
         const circleButton = document.getElementById("circleBtn");
+        const peerButton = document.getElementById("peerDiscoveryBtn");
+        peerButton.classList.toggle("is-locked", !unlocked);
         clashButton.classList.toggle("is-locked", !unlocked);
         circleButton.classList.toggle("is-locked", !unlocked);
+        peerButton.setAttribute("aria-disabled", String(!unlocked));
         clashButton.setAttribute("aria-disabled", String(!unlocked));
         circleButton.setAttribute("aria-disabled", String(!unlocked));
+        document.getElementById("peerDiscoveryHint").textContent = unlocked
+          ? "一次遇见 5 位相近回答者"
+          : `再表态 ${remaining} 次解锁同频发现`;
         document.getElementById("clashHint").textContent = unlocked
           ? "发现同频或互补的回答者"
           : `再表态 ${remaining} 次解锁匹配`;
@@ -5312,8 +5592,13 @@
           if (CLUSTERS.length) queueNextChip(4200);
         }
         if (wasUnlocked && !personaUnlocked()) {
+          closePeerDiscovery();
+          resetPeerDiscoveryState();
           hideChip();
           if (focusSet) exitFocus();
+        } else if (wasUnlocked) {
+          closePeerDiscovery();
+          clearPeerBatchState();
         }
         return liked.has(i);
       }
@@ -5324,6 +5609,8 @@
           localStorage.removeItem(LEGACY_LIKE_KEY);
         } catch { /* ignore */ }
         users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
+        closePeerDiscovery();
+        resetPeerDiscoveryState();
         hideChip();
         if (focusSet) exitFocus();
         applyStance(true);
@@ -5364,10 +5651,16 @@
           const identityChanged =
             userIdentityRevision !== null &&
             userIdentityRevision !== identityRevision;
+          const peerScopeChanged = userIdentityRevision !== identityRevision;
           userIdentityRevision = identityRevision;
           setMeAvatar(e.data.profile && e.data.profile.avatarUrl);
           userPortrait = normalizeUserPortrait(e.data.portrait);
+          if (peerScopeChanged) {
+            peerSeenIndexes = loadPeerSeenIndexes();
+            peerBatch = [];
+          }
           if (identityChanged) {
+            closePeerDiscovery();
             hideChip();
             chipCluster = null;
             chipQueue = rankedCircles();
@@ -5376,7 +5669,13 @@
             if (focusSet) exitFocus();
           }
           applyStance(false);
+          if (!identityChanged && peerDiscoveryEl.classList.contains("show")) {
+            refreshPeerDiscoveryBatch();
+          }
           renderCardsIfOpen();
+        }
+        if (e.data && e.data.type === "nebula-open-peer-discovery") {
+          openPeerDiscovery();
         }
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
@@ -5472,10 +5771,16 @@
         if (window.parent !== window.self) return "";
         try {
           const prefix = "jiupai:nebula:";
+          const contextPrefixes = [`${prefix}self:`, `${prefix}subject:`];
           const existing = [];
           for (let index = 0; index < sessionStorage.length; index += 1) {
             const storageKey = sessionStorage.key(index);
-            if (storageKey?.startsWith(prefix)) existing.push(storageKey);
+            if (
+              storageKey &&
+              contextPrefixes.some((contextPrefix) =>
+                storageKey.startsWith(contextPrefix)
+              )
+            ) existing.push(storageKey);
           }
           const timestamp = (storageKey) => {
             const token = storageKey.slice(storageKey.lastIndexOf(":") + 1);
@@ -5910,8 +6215,10 @@
         }
 
         updateKeyboardCamera(delta);
-        updateCameraTransition(performance.now());
-        controls.update();
+        if (sceneControlsAvailable()) {
+          updateCameraTransition(performance.now());
+          controls.update();
+        }
         updateAxisLabels();
         updateTipPosition();
         composer.render();
@@ -6674,6 +6981,365 @@
         if (card) openPerson(Number(card.getAttribute("data-u")));
       });
 
+      // ---- 同频发现 ----
+      const peerDiscoveryEl = $("peerDiscovery");
+      const peerListEl = $("peerList");
+      const peerAgainBtn = $("peerAgain");
+      const PEER_SEEN_KEY_PREFIX =
+        `jiupai:nebula:peer-seen:v1:${PRESET.id}:${PRESET.version || "1"}`;
+      const PEER_BATCH_KEY_PREFIX =
+        `jiupai:nebula:peer-batch:v1:${PRESET.id}:${PRESET.version || "1"}`;
+      const peerSeenMemory = new Map();
+      const peerBatchMemory = new Map();
+      const peerSeenMemoryPreferred = new Set();
+      const peerBatchMemoryPreferred = new Set();
+      function peerSeenStorageKey() {
+        return `${PEER_SEEN_KEY_PREFIX}:${userIdentityRevision ?? "anonymous"}`;
+      }
+      function peerBatchStorageKey() {
+        return `${PEER_BATCH_KEY_PREFIX}:${userIdentityRevision ?? "anonymous"}`;
+      }
+      function normalizePeerSeenIndexes(value) {
+        return Array.isArray(value)
+          ? [...new Set(value.filter((index) =>
+              Number.isSafeInteger(index) && index >= 0 && index < N
+            ))]
+          : [];
+      }
+      function loadPeerSeenIndexes() {
+        const storageKey = peerSeenStorageKey();
+        if (peerSeenMemoryPreferred.has(storageKey)) {
+          return [...(peerSeenMemory.get(storageKey) || [])];
+        }
+        try {
+          const stored = sessionStorage.getItem(storageKey);
+          if (stored === null && peerSeenMemory.has(storageKey)) {
+            return [...peerSeenMemory.get(storageKey)];
+          }
+          const parsed = normalizePeerSeenIndexes(
+            JSON.parse(stored || "[]")
+          );
+          peerSeenMemory.set(storageKey, parsed);
+          return parsed;
+        } catch {
+          return [...(peerSeenMemory.get(storageKey) || [])];
+        }
+      }
+      function savePeerSeenIndexes() {
+        const storageKey = peerSeenStorageKey();
+        peerSeenMemory.set(storageKey, [...peerSeenIndexes]);
+        try {
+          sessionStorage.setItem(
+            storageKey,
+            JSON.stringify(peerSeenIndexes)
+          );
+          peerSeenMemoryPreferred.delete(storageKey);
+        } catch {
+          peerSeenMemoryPreferred.add(storageKey);
+        }
+      }
+      function loadPeerBatchIndexes() {
+        const storageKey = peerBatchStorageKey();
+        if (peerBatchMemoryPreferred.has(storageKey)) {
+          return [...(peerBatchMemory.get(storageKey) || [])];
+        }
+        try {
+          const stored = sessionStorage.getItem(storageKey);
+          if (stored === null && peerBatchMemory.has(storageKey)) {
+            return [...peerBatchMemory.get(storageKey)];
+          }
+          const parsed = normalizePeerSeenIndexes(
+            JSON.parse(stored || "[]")
+          );
+          peerBatchMemory.set(storageKey, parsed);
+          return parsed;
+        } catch {
+          return [...(peerBatchMemory.get(storageKey) || [])];
+        }
+      }
+      function savePeerBatchIndexes() {
+        const storageKey = peerBatchStorageKey();
+        const indexes = peerBatch.map(({ index }) => index);
+        peerBatchMemory.set(storageKey, indexes);
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(indexes));
+          peerBatchMemoryPreferred.delete(storageKey);
+        } catch {
+          peerBatchMemoryPreferred.add(storageKey);
+        }
+      }
+      function clearPeerBatchState() {
+        const storageKey = peerBatchStorageKey();
+        peerBatch = [];
+        peerBatchMemory.set(storageKey, []);
+        try {
+          sessionStorage.removeItem(storageKey);
+          peerBatchMemory.delete(storageKey);
+          peerBatchMemoryPreferred.delete(storageKey);
+        } catch {
+          peerBatchMemoryPreferred.add(storageKey);
+        }
+      }
+      let peerSeenIndexes = loadPeerSeenIndexes();
+      let peerBatch = [];
+      let peerReturnFocus = null;
+
+      function peerRanking() {
+        const profile = inferSelfProfile();
+        return rankPeerCandidates({
+          people: PEOPLE,
+          myStance: profile.stance,
+          myCast: profile.cast,
+          likedIndexes: [...liked],
+          interestForIndex: interestMatchForPerson,
+        });
+      }
+
+      function restorePeerBatch() {
+        const indexes = loadPeerBatchIndexes();
+        if (!indexes.length) return false;
+        const rankedByIndex = new Map(
+          peerRanking().map((candidate) => [candidate.index, candidate]),
+        );
+        const restored = indexes
+          .map((index) => rankedByIndex.get(index))
+          .filter(Boolean);
+        if (restored.length !== indexes.length) {
+          clearPeerBatchState();
+          return false;
+        }
+        peerBatch = restored;
+        renderPeerBatchContent();
+        renderPeerBatchStatus();
+        return true;
+      }
+
+      function resetPeerDiscoveryState() {
+        const storageKey = peerSeenStorageKey();
+        peerSeenIndexes = [];
+        peerSeenMemory.set(storageKey, []);
+        try {
+          sessionStorage.removeItem(storageKey);
+          peerSeenMemory.delete(storageKey);
+          peerSeenMemoryPreferred.delete(storageKey);
+        } catch {
+          peerSeenMemoryPreferred.add(storageKey);
+        }
+        clearPeerBatchState();
+      }
+
+      function peerAvatar(name, index) {
+        const wrap = uiNode("span", "peer-avatar-wrap");
+        const avatar = uiNode("img", "peer-avatar");
+        avatar.src = personAvatarPath(index);
+        avatar.alt = `${name}的头像`;
+        avatar.width = 48;
+        avatar.height = 48;
+        avatar.addEventListener("error", () => wrap.classList.add("is-fallback"), { once: true });
+        const fallback = uiNode("span", "peer-avatar-fallback", Array.from(name)[0] || "知");
+        fallback.setAttribute("aria-hidden", "true");
+        wrap.append(avatar, fallback);
+        return wrap;
+      }
+
+      function renderPeerItem(candidate) {
+        const index = candidate.index;
+        const [name, , castKey, claim, sourceUrl] = PEOPLE[index];
+        const [castName, , castColor] = CASTS[castKey];
+        const profile = inferSelfProfile();
+        const explanation = describePeerMatch({
+          candidate,
+          myStance: profile.stance,
+          myCast: profile.cast,
+          castName: CASTS[profile.cast][0],
+          candidateCastName: castName,
+          leftChoice: PRESET.axis.leftChoice,
+          rightChoice: PRESET.axis.rightChoice,
+        });
+        const item = uiNode("li", "peer-item");
+        const main = uiNode("div", "peer-main");
+        const nameRow = uiNode("div", "peer-name-row");
+        const nameButton = uiNode("button", "peer-name", `@${name}`);
+        nameButton.type = "button";
+        nameButton.addEventListener("click", () => {
+          openPerson(index);
+        });
+        const cast = uiNode("span", "peer-cast", castName);
+        cast.style.color = castColor;
+        nameRow.append(nameButton, cast);
+        const reasons = uiNode("div", "peer-reasons");
+        const similar = uiNode("span", "peer-reason");
+        similar.append(uiNode("b", "", "相似点"), document.createTextNode(explanation.similarity));
+        const different = uiNode("span", "peer-reason peer-reason--different");
+        different.append(uiNode("b", "", "不同点"), document.createTextNode(explanation.difference));
+        reasons.append(similar, different);
+        main.append(nameRow, uiNode("p", "peer-claim", `“${claim}”`), reasons);
+
+        const actions = uiNode("div", "peer-item-actions");
+        const cardButton = uiNode("button", "peer-action", "看人格卡");
+        cardButton.type = "button";
+        cardButton.addEventListener("click", () => {
+          openPerson(index);
+        });
+        actions.append(cardButton);
+        const verifiedSource = safeZhihuUrl(sourceUrl);
+        if (verifiedSource) {
+          const source = uiNode("a", "peer-action", "原回答");
+          source.href = verifiedSource;
+          source.target = "_blank";
+          source.rel = "noopener noreferrer";
+          actions.append(source);
+        } else {
+          const missing = uiNode("span", "peer-action peer-action--missing", "暂无原回答");
+          missing.setAttribute("aria-disabled", "true");
+          actions.append(missing);
+        }
+        item.append(peerAvatar(name, index), main, actions);
+        return item;
+      }
+
+      function renderPeerBatchContent() {
+        const shouldRestoreFocus = peerListEl.contains(document.activeElement);
+        peerListEl.replaceChildren(...peerBatch.map(renderPeerItem));
+        peerListEl.scrollTop = 0;
+        if (shouldRestoreFocus) $("peerDiscoveryX").focus();
+        const profile = inferSelfProfile();
+        const sameCastCount = peerBatch.filter(({ sameCast }) => sameCast).length;
+        $("peerPersona").textContent =
+          `${CASTS[profile.cast][0]} · 本批 ${sameCastCount}/${peerBatch.length} 位同人格`;
+        $("peerPortraitNote").textContent = userPortrait
+          ? "知乎兴趣仅参与次级排序，原始画像不会进入名单。"
+          : "画像不可用，当前仅按本题人格与立场推荐。";
+      }
+
+      function renderPeerBatchStatus(restarted = false) {
+        const rankedIndexes = new Set(
+          peerRanking().map(({ index }) => index),
+        );
+        const seenCount = new Set(
+          peerSeenIndexes.filter((index) => rankedIndexes.has(index)),
+        ).size;
+        const remaining = Math.max(0, rankedIndexes.size - seenCount);
+        if (!peerBatch.length) {
+          $("peerStatus").textContent = "当前快照没有可推荐的回答者。";
+          peerAgainBtn.disabled = true;
+        } else if (restarted) {
+          $("peerStatus").textContent =
+            `已开始新一轮，本批 ${peerBatch.length} 位。`;
+          peerAgainBtn.disabled = false;
+        } else if (remaining === 0) {
+          $("peerStatus").textContent = peerBatch.length < 5
+            ? `最后 ${peerBatch.length} 位候选；再换一批将开始新一轮。`
+            : "本轮候选已看完；再换一批将开始新一轮。";
+          peerAgainBtn.disabled = false;
+        } else {
+          $("peerStatus").textContent =
+            `本批 ${peerBatch.length} 位，还有 ${remaining} 位未看。`;
+          peerAgainBtn.disabled = false;
+        }
+      }
+
+      function refreshPeerDiscoveryBatch() {
+        const ranked = peerRanking();
+        const rankedByIndex = new Map(
+          ranked.map((candidate) => [candidate.index, candidate]),
+        );
+        const rankPosition = new Map(
+          ranked.map(({ index }, position) => [index, position]),
+        );
+        peerBatch = peerBatch
+          .map(({ index }) => rankedByIndex.get(index))
+          .filter(Boolean)
+          .sort((left, right) =>
+            rankPosition.get(left.index) - rankPosition.get(right.index)
+          );
+        if (peerBatch.length) {
+          savePeerBatchIndexes();
+          renderPeerBatchContent();
+          renderPeerBatchStatus();
+        } else if (!restorePeerBatch()) {
+          renderNextPeerBatch();
+        }
+      }
+
+      function renderNextPeerBatch() {
+        const ranked = peerRanking();
+        const batch = takePeerBatch(ranked, peerSeenIndexes, 5);
+        peerSeenIndexes = batch.seenIndexes;
+        savePeerSeenIndexes();
+        peerBatch = batch.items;
+        savePeerBatchIndexes();
+        renderPeerBatchContent();
+        renderPeerBatchStatus(batch.restarted);
+      }
+
+      function openPeerDiscovery() {
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁同频发现`);
+          return;
+        }
+        if (peerDiscoveryEl.classList.contains("show")) return;
+        const activeElement = document.activeElement;
+        const canRestoreActiveFocus =
+          activeElement instanceof HTMLElement &&
+          activeElement !== document.body &&
+          activeElement.getClientRects().length > 0;
+        peerReturnFocus =
+          activeElement === $("peerDiscoveryBtn") || !canRestoreActiveFocus
+            ? exploreToggleEl
+            : activeElement;
+        setExploreOpen(false);
+        deferCirclePrompt();
+        if (!peerBatch.length && !restorePeerBatch()) renderNextPeerBatch();
+        peerDiscoveryEl.classList.add("show");
+        peerDiscoveryEl.setAttribute("aria-hidden", "false");
+        $("peerDiscoveryX").focus();
+      }
+
+      function closePeerDiscovery() {
+        if (!peerDiscoveryEl.classList.contains("show")) return;
+        peerDiscoveryEl.classList.remove("show");
+        peerDiscoveryEl.setAttribute("aria-hidden", "true");
+        if (
+          peerReturnFocus &&
+          peerReturnFocus.isConnected &&
+          typeof peerReturnFocus.focus === "function"
+        ) {
+          peerReturnFocus.focus();
+        }
+        peerReturnFocus = null;
+        if (personaUnlocked() && chipQueue.length) queueNextChip(5200);
+      }
+
+      function trapPeerFocus(event) {
+        if (event.key !== "Tab" || !peerDiscoveryEl.classList.contains("show")) return false;
+        const focusable = [...peerDiscoveryEl.querySelectorAll(
+          'button:not(:disabled), a[href]',
+        )].filter((node) => node.getClientRects().length > 0);
+        if (!focusable.length) return false;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!peerDiscoveryEl.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return true;
+      }
+
+      $("peerDiscoveryBtn").addEventListener("click", openPeerDiscovery);
+      $("peerDiscoveryX").addEventListener("click", closePeerDiscovery);
+      $("peerDiscoveryClose").addEventListener("click", closePeerDiscovery);
+      peerAgainBtn.addEventListener("click", renderNextPeerBatch);
+      peerDiscoveryEl.addEventListener("click", (event) => {
+        if (event.target === peerDiscoveryEl) closePeerDiscovery();
+      });
+
       // ---- 评论区开关 ----
       $("commentToggle").addEventListener("change", (e) => {
         includeComments = e.target.checked;
@@ -7233,6 +7899,7 @@
           cardsEl.classList.contains("show") ||
           guideEl.classList.contains("show") ||
           clashEl.classList.contains("show") ||
+          peerDiscoveryEl.classList.contains("show") ||
           Boolean(focusSet) ||
           Boolean(hovered) ||
           Boolean(cameraTransition) ||
@@ -7444,6 +8111,19 @@
         if (wasActive && resumeAutoRotate) scheduleAutoRotate();
       }
 
+      function discardOrbitMomentum() {
+        const position = camera.position.clone();
+        const quaternion = camera.quaternion.clone();
+        const target = controls.target.clone();
+        const dampingEnabled = controls.enableDamping;
+        controls.enableDamping = false;
+        controls.update();
+        controls.enableDamping = dampingEnabled;
+        controls.target.copy(target);
+        camera.position.copy(position);
+        camera.quaternion.copy(quaternion);
+      }
+
       function updateKeyboardCamera(delta) {
         const controlsAvailable = sceneControlsAvailable();
         if (!controlsAvailable) {
@@ -7454,6 +8134,7 @@
             cancelCameraTransition();
             controls.autoRotate = false;
             clearTimeout(rotateIdleTimer);
+            discardOrbitMomentum();
           }
           return;
         }
@@ -7541,6 +8222,7 @@
           !cardsEl.classList.contains("show") &&
           !guideEl.classList.contains("show") &&
           !clashEl.classList.contains("show") &&
+          !peerDiscoveryEl.classList.contains("show") &&
           !exploreShellEl.classList.contains("is-open");
       }
 
@@ -7609,9 +8291,11 @@
       });
 
       document.addEventListener("keydown", (e) => {
+        if (trapPeerFocus(e)) return;
         if (e.key === "Escape") {
           if (e.isComposing || e.repeat) return;
-          if (guideEl.classList.contains("show")) closeGuide();
+          if (peerDiscoveryEl.classList.contains("show")) closePeerDiscovery();
+          else if (guideEl.classList.contains("show")) closeGuide();
           else if (clashEl.classList.contains("show")) closeClash();
           else if (cardsEl.classList.contains("show")) closeCards();
           else if (focusSet) exitFocus();
@@ -7678,6 +8362,8 @@
         clashIndex: () => clashCurrent,
         matchIndex: () => matchIndex,
         matchMode: () => matchMode,
+        peerIndexes: () => peerBatch.map(({ index }) => index),
+        peerSeenIndexes: () => [...peerSeenIndexes],
         portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
         play: () => { running = true; clock.getDelta(); scheduleFrame(); },
         randomDiscover: (animate = false) => randomDiscover(animate),
@@ -7694,6 +8380,7 @@
           window.parent.postMessage({ type: "nebula-scene-ready" }, location.origin);
         }
       } catch (e) {}
+      if (peerDiscoveryRequested && !entryEnabled) queueMicrotask(openPeerDiscovery);
       loop();
       window.__stage && window.__stage("looping");
     </script>
