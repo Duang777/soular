@@ -20,6 +20,7 @@
 - 鉴权 Session 不得使用 Worker isolate 内的正向缓存，避免退出或换号后继续读取旧 Token。
 - 未携带有效 Session 的 OAuth 状态查询必须保持只读；缺少 `state` 的回调仅可在同一 Session 已发起授权时降级接受，并向前端保留未验证状态。
 - 用户画像缓存必须绑定 OAuth Token 指纹；公开接口不提供缓存绕过参数，避免换号、Session 轮换导致串数据或放大知乎用户接口调用。
+- 知乎 `/user` 没有稳定响应 schema；公开资料解析需兼容已观测的顶层/嵌套对象与头像字段。已有 Session 补取资料时按 Token 指纹缓存，不用普通 Session 覆盖写。
 - 除非任务明确修改契约，否则保持缓存 TTL、旧数据降级、请求合并和失败退避。
 - 静态资源由 Worker binding 处理；后端路由限制为 `/api/*`、`/login` 和 `/auth/callback`。
 

@@ -158,7 +158,10 @@ https://soular.top/?oauth=success
 ```
 
 首页根据该接口展示“知乎登录”、已连接账号或重试状态。`profile` 获取失败时仍保留
-已授权状态，不伪造昵称或头像。
+已授权状态，不伪造昵称或头像。知乎 `/user` 没有稳定响应 schema，服务端兼容嵌套或
+顶层用户对象以及 `avatar_url`、`avatar_path` 等已观测字段。已有 Session 的
+`profile` 为空或缺少头像时，状态接口会按 OAuth Token 指纹补取并缓存 10 分钟，
+不改写 Session，也不要求用户重新授权。
 
 ### POST `/api/oauth/logout`
 

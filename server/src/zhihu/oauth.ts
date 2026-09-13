@@ -142,9 +142,13 @@ export async function fetchProfile(
   });
 
   const payload: unknown = await response.json().catch(() => null);
-  const source =
-    asRecord(payload)?.data ?? asRecord(payload)?.Data ?? asRecord(payload)?.user ?? null;
-  const record = asRecord(source);
+  const root = asRecord(payload);
+  const data = asRecord(root?.data) ?? asRecord(root?.Data);
+  const record =
+    asRecord(data?.user) ??
+    data ??
+    asRecord(root?.user) ??
+    root;
   if (!record) return null;
 
   const profile: ZhihuProfile = {
@@ -155,7 +159,10 @@ export async function fetchProfile(
       asString(record.Name),
     avatarUrl:
       asString(record.avatar_url) ??
+      asString(record.avatar_path) ??
       asString(record.AvatarUrl) ??
+      asString(record.AvatarPath) ??
+      asString(record.avatarPath) ??
       asString(record.avatarUrl),
     headline:
       asString(record.headline) ??
@@ -163,5 +170,5 @@ export async function fetchProfile(
       asString(record.headline2),
     url: asString(record.url) ?? asString(record.Url) ?? asString(record.profileUrl),
   };
-  return profile.name || profile.url ? profile : null;
+  return profile.name || profile.avatarUrl || profile.url ? profile : null;
 }

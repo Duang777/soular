@@ -16,8 +16,10 @@ import {
   fetchProfile,
   ZhihuOAuthError,
 } from "../zhihu/oauth.js";
+import type { ZhihuProfile } from "../types.js";
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const OAUTH_PROFILE_TTL_SECONDS = 10 * 60;
 
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest(
@@ -63,6 +65,46 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
     ? new ZhihuClient(config.accessSecret, contentCache)
     : null;
   const portraitInflight = new Map<string, Promise<Portrait>>();
+  const profileInflight = new Map<string, Promise<ZhihuProfile | null>>();
+
+  async function resolveOAuthProfile(
+    oauthToken: string,
+    storedProfile: ZhihuProfile | null,
+  ): Promise<ZhihuProfile | null> {
+    if (storedProfile?.avatarUrl || !config.dataApiConfigured) {
+      return storedProfile;
+    }
+
+    const accountFingerprint = await sha256Hex(oauthToken);
+    const cacheKey = `oauth-profile:${accountFingerprint}`;
+    if (contentCache) {
+      try {
+        const cached = await contentCache.get<ZhihuProfile>(cacheKey);
+        if (cached && cached.ageMs <= OAUTH_PROFILE_TTL_SECONDS * 1000) {
+          return cached.value;
+        }
+      } catch {
+        // Profile cache outages must not hide an otherwise valid login.
+      }
+    }
+
+    let request = profileInflight.get(cacheKey);
+    if (!request) {
+      request = fetchProfile(config.accessSecret, oauthToken)
+        .catch(() => null)
+        .finally(() => profileInflight.delete(cacheKey));
+      profileInflight.set(cacheKey, request);
+    }
+    const profile = await request;
+    if (profile && contentCache) {
+      await contentCache.set(
+        cacheKey,
+        profile,
+        OAUTH_PROFILE_TTL_SECONDS,
+      ).catch(() => undefined);
+    }
+    return profile ?? storedProfile;
+  }
 
   return async function handler(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -85,11 +127,14 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
             error: null,
           });
         }
+        const profile = session.token
+          ? await resolveOAuthProfile(session.token, session.profile)
+          : session.profile;
         return jsonResponse(200, {
           ok: true,
           ...publicStatus(config),
           authorized: Boolean(session.token),
-          profile: session.profile,
+          profile,
           stateVerified: session.stateVerified,
           expiresAt: session.expiresAt ? new Date(session.expiresAt).toISOString() : null,
           error: session.error,

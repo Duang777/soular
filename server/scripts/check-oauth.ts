@@ -61,12 +61,10 @@ try {
     if (url.endsWith("/user")) {
       return Response.json({
         code: 20000,
-        data: {
-          fullname: "测试用户",
-          avatar_url: "https://picx.zhimg.com/test-avatar.png",
-          headline: "测试简介",
-          url: "https://www.zhihu.com/people/test-user",
-        },
+        fullname: "测试用户",
+        avatar_path: "https://picx.zhimg.com/test-avatar.png",
+        headline: "测试简介",
+        url: "https://www.zhihu.com/people/test-user",
       });
     }
 
@@ -85,6 +83,10 @@ try {
 
   const profile = await fetchProfile(config.accessSecret, token.accessToken);
   assert.equal(profile?.name, "测试用户");
+  assert.equal(
+    profile?.avatarUrl,
+    "https://picx.zhimg.com/test-avatar.png",
+  );
   assert.equal(
     requests[1]?.headers.get("Authorization"),
     "Bearer test-access-secret",
@@ -183,6 +185,55 @@ try {
   assert.equal(status.authorized, true);
   assert.equal(status.stateVerified, true);
   assert.equal(status.profile?.name, "测试用户");
+
+  const sessionWithoutProfile = await sessions.load(
+    new Request("https://soular.top/", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  if (!sessionWithoutProfile) {
+    throw new Error("Expected an OAuth session for profile recovery");
+  }
+  sessionWithoutProfile.profile = null;
+  await sessions.save(sessionWithoutProfile);
+  requests.length = 0;
+
+  const recoveredStatusResponse = await handler(
+    new Request("https://soular.top/api/oauth/status", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  const recoveredStatus = await recoveredStatusResponse.json() as {
+    profile: { name: string; avatarUrl: string } | null;
+  };
+  assert.equal(recoveredStatus.profile?.name, "测试用户");
+  assert.equal(
+    recoveredStatus.profile?.avatarUrl,
+    "https://picx.zhimg.com/test-avatar.png",
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    1,
+  );
+  requests.length = 0;
+
+  const cachedRecoveredStatusResponse = await handler(
+    new Request("https://soular.top/api/oauth/status", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  assert.equal(
+    (
+      (await cachedRecoveredStatusResponse.json()) as {
+        profile: { avatarUrl: string } | null;
+      }
+    ).profile?.avatarUrl,
+    "https://picx.zhimg.com/test-avatar.png",
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    0,
+  );
 
   const failedReloginStart = await handler(
     new Request("https://soular.top/api/oauth/start", {
