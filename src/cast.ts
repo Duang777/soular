@@ -17,6 +17,11 @@ export type Cast = {
   role: string;
   color: string;
   volume: string;
+  portrait?: string;
+  description?: string;
+  personaId?: string;
+  themeId?: string;
+  themeName?: string;
   idle: CastIdle;
 };
 
@@ -51,6 +56,6 @@ export function castCardVars(cast: Cast): Record<string, string> {
   };
 }
 
-export function castByKey(key: string): Cast {
-  return CASTS.find((item) => item.key === key) ?? CASTS[0];
+export function castByKey(key: string, casts: readonly Cast[] = CASTS): Cast {
+  return casts.find((item) => item.key === key) ?? casts[0] ?? CASTS[0];
 }

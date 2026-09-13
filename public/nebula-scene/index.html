@@ -2332,8 +2332,15 @@
         color: rgba(204, 212, 214, 0.52);
         font-size: 10px;
       }
+      .persona-deck-description {
+        margin-top: 8px;
+        color: rgba(238, 232, 218, 0.84);
+        font-size: 11px;
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
       .persona-deck-claim {
-        margin-top: 10px;
+        margin-top: 7px;
         color: rgba(226, 231, 232, 0.74);
         font-size: 11.5px;
         line-height: 1.65;
@@ -4584,8 +4591,33 @@
       } = await import(
         `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
+      const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
+      async function importOptionalPersonaLibrary(url) {
+        let timeoutId = 0;
+        try {
+          return await Promise.race([
+            import(url),
+            new Promise((_, reject) => {
+              timeoutId = window.setTimeout(
+                () => reject(new Error("persona library load timed out")),
+                OPTIONAL_PERSONA_TIMEOUT_MS
+              );
+            })
+          ]);
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+      let resolvePersonaCastMap = null;
+      try {
+        ({ resolvePersonaCastMap } = await importOptionalPersonaLibrary(
+          `../persona-library.js?v=${encodeURIComponent(presetModuleVersion)}`
+        ));
+      } catch {
+        // The existing nine casts remain usable when the optional theme library fails.
+      }
 
-      const CASTS = {
+      const LEGACY_CASTS = {
         fox: ["长答派", "万字长答", "#aeb6d6"],
         bear: ["拆题派", "先重述问题", "#9fd2d6"],
         cat: ["盐选派", "精选长文", "#e3b27e"],
@@ -4676,6 +4708,15 @@
       const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
       const PRESET = getNebulaPreset(sceneParams.get("preset"));
+      const CASTS = typeof resolvePersonaCastMap === "function"
+        ? resolvePersonaCastMap(PRESET.personaTheme)
+        : LEGACY_CASTS;
+      const personaArtPath = (castKey) => {
+        const portrait = CASTS[castKey]?.[3];
+        return typeof portrait === "string" && /^personas\/[a-z0-9-]+\.jpg$/.test(portrait)
+          ? `../${portrait}`
+          : `../personas/${encodeURIComponent(castKey)}.jpg`;
+      };
       const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length >= 2
         ? PRESET.people
         : DEFAULT_PEOPLE;
@@ -4703,7 +4744,7 @@
       document.querySelectorAll("[data-persona-quick-art]").forEach((image, index) => {
         const persona = PERSONA_CATALOG[personaQuickPreviewIndexes[index]];
         image.closest(".persona-quick-portrait").hidden = !persona;
-        if (persona) image.src = `../personas/${encodeURIComponent(persona.key)}.jpg`;
+        if (persona) image.src = personaArtPath(persona.key);
       });
       document.getElementById("personaQuickCount").textContent = PERSONA_CATALOG.length;
       personaQuickEntryEl.hidden = PERSONA_CATALOG.length === 0;
@@ -7677,7 +7718,7 @@
         previous.title = "上一种人格";
 
         const art = uiNode("img", "persona-deck-art");
-        art.src = `../personas/${encodeURIComponent(persona.key)}.jpg`;
+        art.src = personaArtPath(persona.key);
         art.alt = `${persona.name}人格形象`;
         art.width = 78;
         art.height = 96;
@@ -7691,6 +7732,13 @@
           ),
           uiNode("h2", "persona-deck-name", persona.name),
           uiNode("div", "persona-deck-role", persona.role),
+        );
+        if (persona.description) {
+          copy.append(
+            uiNode("p", "persona-deck-description", persona.description),
+          );
+        }
+        copy.append(
           uiNode("p", "persona-deck-claim", `“${representative.claim}”`),
           uiNode(
             "div",

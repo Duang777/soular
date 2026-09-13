@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Link,
   Navigate,
@@ -10,6 +10,7 @@ import {
 import { BrandMark } from "./BrandMark";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
+import { usePersonaCasts } from "./personaTheme";
 import {
   clearSelfProfileContexts,
   countMatchingNebulaLikes,
@@ -36,6 +37,10 @@ type ShelfPhase = "draw" | "book" | "card";
 type ShelfNavigationState = {
   person?: unknown;
   selfProfile?: unknown;
+};
+type ShelfPersonaResult = {
+  key: string;
+  status: "ready" | "fallback";
 };
 const OFFICIAL_ORIGIN = "https://soular.top";
 
@@ -66,12 +71,30 @@ export function ShelfPage() {
   const [verifiedAccountVersion, setVerifiedAccountVersion] = useState<
     string | null | undefined
   >(undefined);
+  const shelfFrameRef = useRef<HTMLIFrameElement>(null);
+  const [shelfPersonaResult, setShelfPersonaResult] =
+    useState<ShelfPersonaResult | null>(null);
   const requestedSelf = searchParams.get("self") === "1";
   const requestedProfileKey = searchParams.get("profile") ?? "";
-  const validCast = CASTS.some((item) => item.key === castKey);
-  const cast = castByKey(castKey);
+  const uRaw = searchParams.get("u");
   const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const presetId = resolveNebulaPreset(requestedPresetId);
+  const usesSnapshotPersona = requestedSelf || (uRaw !== null && /^\d+$/.test(uRaw));
+  const personaState = usePersonaCasts(usesSnapshotPersona ? presetId : null);
+  const expectedShelfPersonaKey = usesSnapshotPersona &&
+      personaState.status === "ready"
+    ? `${presetId}:${personaState.loadAttempt}`
+    : null;
+  const shelfPersonaResultMatches =
+    shelfPersonaResult?.key === expectedShelfPersonaKey;
+  const shelfPersonaFailed =
+    shelfPersonaResultMatches && shelfPersonaResult.status === "fallback";
+  const casts = shelfPersonaFailed ? CASTS : personaState.casts;
+  const reactPersonaLoading = personaState.status === "loading";
+  const personaLoading = reactPersonaLoading ||
+    Boolean(expectedShelfPersonaKey && !shelfPersonaResultMatches);
+  const validCast = CASTS.some((item) => item.key === castKey);
+  const cast = castByKey(castKey, casts);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;
   const requestedVersion = searchParams.get("version") ?? "";
   const validRequestedVersion = /^[a-z0-9-]{1,15}$/.test(requestedVersion)
@@ -183,10 +206,57 @@ export function ShelfPage() {
     validCast,
   ]);
 
+  useEffect(() => {
+    setShelfPersonaResult(null);
+  }, [expectedShelfPersonaKey]);
+
+  useEffect(() => {
+    const handleShelfPersonaStatus = (event: MessageEvent) => {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== shelfFrameRef.current?.contentWindow ||
+        !event.data ||
+        typeof event.data !== "object" ||
+        Array.isArray(event.data)
+      ) return;
+
+      const payload = event.data as {
+        type?: unknown;
+        preset?: unknown;
+        loadAttempt?: unknown;
+        status?: unknown;
+      };
+      if (
+        payload.type !== "persona-shelf-status" ||
+        payload.preset !== presetId ||
+        payload.loadAttempt !== personaState.loadAttempt ||
+        (payload.status !== "ready" && payload.status !== "fallback")
+      ) return;
+
+      const key = `${payload.preset}:${payload.loadAttempt}`;
+      if (key !== expectedShelfPersonaKey) return;
+      setShelfPersonaResult({ key, status: payload.status });
+    };
+
+    window.addEventListener("message", handleShelfPersonaStatus);
+    return () => window.removeEventListener("message", handleShelfPersonaStatus);
+  }, [expectedShelfPersonaKey, personaState.loadAttempt, presetId]);
+
   if (!validCast) {
     return <Navigate to="/" replace />;
   }
-  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
+  const shelfParams = new URLSearchParams({ cast: cast.key });
+  if (
+    usesSnapshotPersona &&
+    personaState.status === "ready" &&
+    !shelfPersonaFailed
+  ) {
+    shelfParams.set("preset", presetId);
+    if (personaState.loadAttempt > 0) {
+      shelfParams.set("personaRetry", String(personaState.loadAttempt));
+    }
+  }
+  const src = withVersion(`${asset("books/shelf.html")}?${shelfParams}`);
 
   const verifiedSelfProfile = storedSelfProfile
     ? {
@@ -216,7 +286,6 @@ export function ShelfPage() {
     };
   }
   let missingPerson = false;
-  const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {
     const index = Number(uRaw);
     const requestedPersonKey = searchParams.get("person") ?? "";
@@ -292,7 +361,14 @@ export function ShelfPage() {
 
   return (
     <div className="shelf-root">
-      <iframe className="landing-page-frame" src={src} title={`${cast.name} · 思想银河`} />
+      {!reactPersonaLoading && (
+        <iframe
+          ref={shelfFrameRef}
+          className="landing-page-frame"
+          src={src}
+          title={`${cast.name} · 思想银河`}
+        />
+      )}
       <img src={asset("kanshan/wave.gif")} alt="" className="kanshan kanshan-shelf" />
       <nav className="shelf-nav" aria-label="书页">
         <BrandMark className="brand-lockup--shelf" />
@@ -302,18 +378,29 @@ export function ShelfPage() {
           </Link>
         </div>
         <p className="shelf-nav__cast">
-          {cast.volume} · {cast.name}
+          {personaLoading ? "人格载入中" : `${cast.volume} · ${cast.name}`}
         </p>
         <div className="shelf-nav__share">
-          <button type="button" className="shelf-tag shelf-tag--share" onClick={() => setPhase("card")}>
-            <span aria-hidden="true">✦</span> {subject.kind === "person" ? "分享这个观点" : "分享人格卡"}
+          <button
+            type="button"
+            className="shelf-tag shelf-tag--share"
+            disabled={personaLoading}
+            onClick={() => setPhase("card")}
+          >
+            <span aria-hidden="true">✦</span>{" "}
+            {personaLoading
+              ? "人格载入中"
+              : subject.kind === "person"
+                ? "分享这个观点"
+                : "分享人格卡"}
           </button>
         </div>
       </nav>
 
-      {phase !== "book" && (
+      {!personaLoading && phase !== "book" && (
         <CardDraw
           cast={cast}
+          casts={casts}
           subject={subject}
           mode={phase === "draw" ? "enter" : "revisit"}
           onEnter={() => setPhase("book")}
