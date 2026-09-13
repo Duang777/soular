@@ -110,6 +110,19 @@ try {
     false,
   );
 
+  const failingSessions = new SessionStore(new InMemorySessionBackend(), true);
+  failingSessions.load = async () => {
+    throw new Error("sensitive storage detail");
+  };
+  const internalErrorResponse = await createHandler({
+    config,
+    sessions: failingSessions,
+  })(new Request("https://soular.top/api/oauth/status"));
+  assert.deepEqual(await internalErrorResponse.json(), {
+    ok: false,
+    error: { code: "INTERNAL", message: "服务器内部错误" },
+  });
+
   const unsolicitedCallback = await handler(
     new Request(
       "https://soular.top/auth/callback?authorization_code=unsolicited-code",

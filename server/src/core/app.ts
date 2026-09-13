@@ -360,7 +360,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         ok: false,
         error: {
           code: "INTERNAL",
-          message: error instanceof Error ? error.message : "服务器内部错误",
+          message: "服务器内部错误",
         },
       });
     }
