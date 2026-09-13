@@ -2575,6 +2575,212 @@ textarea.field:focus-visible,
   }
 }
 
+.match-nav {
+  position: sticky;
+  top: 12px;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.match-page {
+  position: relative;
+  min-height: 100dvh;
+  overflow: auto;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(89, 199, 210, 0.12), transparent),
+    var(--void);
+}
+
+.match-main {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: calc(var(--chrome-height) + 1.25rem) 1.25rem 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .match-main {
+    max-width: 36rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.match-hero {
+  margin-bottom: 1.25rem;
+}
+
+.match-eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--ice);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.match-title {
+  margin: 0;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.match-lead {
+  margin: 0.75rem 0 0;
+  color: var(--mute);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.match-panel {
+  padding: 1.1rem 1rem 1.25rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 1rem;
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+}
+
+.match-copy {
+  margin: 0 0 0.85rem;
+  color: rgba(243, 238, 224, 0.86);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.match-copy--muted {
+  color: var(--mute);
+  font-size: 0.88rem;
+}
+
+.match-cta {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.35rem;
+}
+
+.match-quiz-progress {
+  margin: 0 0 0.5rem;
+  color: var(--ice);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.match-quiz-question {
+  margin: 0 0 1rem;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.match-quiz-choices {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.match-quiz-btn {
+  min-height: 44px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(143, 216, 220, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(8, 12, 18, 0.55);
+  color: rgba(243, 238, 224, 0.9);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+
+.match-quiz-btn:hover {
+  border-color: rgba(89, 199, 210, 0.45);
+  background: rgba(89, 199, 210, 0.08);
+}
+
+.match-spectrum {
+  position: relative;
+  height: 5.5rem;
+  margin: 0.25rem 0 1.25rem;
+}
+
+.match-spectrum__track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, #e57373 0%, rgba(243, 238, 224, 0.35) 50%, #59c7d2 100%);
+}
+
+.match-spectrum__label {
+  position: absolute;
+  bottom: 0;
+  max-width: 42%;
+  color: var(--mute);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.match-spectrum__label--left { left: 0; }
+.match-spectrum__label--right { right: 0; text-align: right; }
+
+.match-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+}
+
+.match-marker::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35);
+}
+
+.match-marker--host::before { background: var(--amber); }
+.match-marker--guest::before { background: var(--ice); }
+
+.match-marker span {
+  color: rgba(243, 238, 224, 0.82);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.match-result h2 {
+  margin: 0 0 0.55rem;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.match-result p {
+  margin: 0;
+  color: rgba(243, 238, 224, 0.82);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.match-actions {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.match-actions .match-cta {
+  text-align: center;
+  text-decoration: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .brand-lockup,
   .brand-lockup__star,
