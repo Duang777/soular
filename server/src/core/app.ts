@@ -104,11 +104,11 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
     storedProfile: ZhihuProfile | null,
     accountFingerprint: string,
   ): Promise<ZhihuProfile | null> {
-    if (storedProfile?.avatarUrl || !config.dataApiConfigured) {
+    if (storedProfile?.avatarUrl) {
       return storedProfile;
     }
 
-    const cacheKey = `oauth-profile:${accountFingerprint}`;
+    const cacheKey = `oauth-profile:v2:${accountFingerprint}`;
     const existingRequest = profileInflight.get(cacheKey);
     if (existingRequest) {
       return mergeOAuthProfiles(storedProfile, await existingRequest);
@@ -130,7 +130,10 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         } else if (
           cached &&
           !isUnavailableProfile(cached.value) &&
-          cached.ageMs <= OAUTH_PROFILE_TTL_SECONDS * 1000
+          cached.ageMs <=
+            (cached.value.avatarUrl
+              ? OAUTH_PROFILE_TTL_SECONDS
+              : OAUTH_PROFILE_FAILURE_TTL_SECONDS) * 1000
         ) {
           return mergeOAuthProfiles(storedProfile, cached.value);
         }
@@ -138,26 +141,45 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         // Profile cache outages must not hide an otherwise valid login.
       }
     }
-
     let request = profileInflight.get(cacheKey);
     if (!request) {
       request = (async () => {
-        const profile = await fetchProfile(config.accessSecret, oauthToken)
+        if (contentCache) {
+          try {
+            const legacyCached = await contentCache.get<OAuthProfileCacheValue>(
+              `oauth-profile:${accountFingerprint}`,
+            );
+            if (
+              legacyCached &&
+              !isUnavailableProfile(legacyCached.value) &&
+              legacyCached.value.avatarUrl &&
+              legacyCached.ageMs < OAUTH_PROFILE_TTL_SECONDS * 1000
+            ) {
+              return legacyCached.value;
+            }
+          } catch {
+            // Legacy cache migration is best-effort.
+          }
+        }
+
+        const profile = await fetchProfile(oauthToken)
           .catch(() => null);
-        if (profile) {
+        if (profile?.avatarUrl) {
           profileFailureUntil.delete(cacheKey);
-        } else {
+        } else if (!profile) {
           profileFailureUntil.set(
             cacheKey,
             Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
           );
+        } else {
+          profileFailureUntil.delete(cacheKey);
         }
         if (contentCache) {
           try {
             await contentCache.set(
               cacheKey,
               profile ?? { unavailable: true },
-              profile
+              profile?.avatarUrl
                 ? OAUTH_PROFILE_TTL_SECONDS
                 : OAUTH_PROFILE_FAILURE_TTL_SECONDS,
             );
@@ -296,7 +318,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
           session.error = null;
 
           try {
-            session.profile = await fetchProfile(config.accessSecret, token.accessToken);
+            session.profile = await fetchProfile(token.accessToken);
           } catch {
             session.profile = null;
           }
