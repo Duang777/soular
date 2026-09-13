@@ -614,6 +614,7 @@
       }
       body.entry-active .hud,
       body.entry-active .observatory-controls,
+      body.entry-active .journey-actions,
       body.entry-active .explore-shell,
       body.entry-active .persona-quick-entry,
       body.entry-active .cards-quick-entry,
@@ -841,6 +842,114 @@
         transform: translateX(-50%);
       }
 
+      .journey-actions {
+        position: fixed;
+        z-index: 14;
+        top: max(92px, calc(env(safe-area-inset-top) + 84px));
+        right: 20px;
+        display: flex;
+        width: 184px;
+        overflow: hidden;
+        flex-direction: column;
+        border: 1px solid rgba(143, 216, 220, 0.22);
+        border-radius: 8px;
+        background: #0b1218;
+        box-shadow: -3px 4px 0 rgba(4, 8, 12, 0.88), 0 16px 36px rgba(0, 0, 0, 0.42);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+      }
+      .journey-action {
+        position: relative;
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        min-height: 50px;
+        padding: 6px 9px;
+        border: 0;
+        border-bottom: 1px solid rgba(143, 216, 220, 0.1);
+        background: transparent;
+        color: rgba(222, 230, 230, 0.78);
+        font: inherit;
+        text-align: left;
+        appearance: none;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+      }
+      .journey-action:last-child { border-bottom: 0; }
+      .journey-actions.has-three .journey-action:nth-child(3) { border-bottom: 0; }
+      .journey-action[hidden] { display: none; }
+      .journey-action:hover {
+        background: #13232b;
+        color: #f3eee0;
+      }
+      .journey-action:active { transform: scale(0.98); }
+      .journey-action:focus-visible {
+        z-index: 1;
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: -3px;
+      }
+      .journey-action.is-active {
+        background: #17272e;
+        color: #f3eee0;
+      }
+      .journey-action.is-active::after {
+        content: "";
+        position: absolute;
+        top: 9px;
+        right: 8px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #e7c17f;
+      }
+      .journey-action-icon {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        color: #9fd8db;
+      }
+      .journey-action-icon .ui-icon { width: 20px; height: 20px; }
+      .journey-action-copy {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+      .journey-action-copy b {
+        display: block;
+        min-height: 14px;
+        color: inherit;
+        font-size: 10.5px;
+        font-weight: 650;
+        line-height: 14px;
+        letter-spacing: 0;
+        white-space: nowrap;
+      }
+      .journey-action-copy small {
+        display: block;
+        min-height: 10px;
+        overflow: hidden;
+        color: rgba(196, 207, 211, 0.48);
+        font: 7.5px/10px var(--font);
+        letter-spacing: 0;
+        text-overflow: clip;
+        white-space: nowrap;
+      }
+      .journey-action.is-locked .journey-action-icon {
+        color: rgba(231, 193, 127, 0.72);
+      }
+      .journey-action.is-locked .journey-action-copy small {
+        color: rgba(231, 193, 127, 0.62);
+      }
+      body.is-explore-menu-open .journey-actions {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        pointer-events: none;
+      }
+
       .explore-shell {
         position: fixed;
         z-index: 15;
@@ -917,7 +1026,7 @@
         transform: translateY(-2px);
       }
       .self-draw-entry:disabled,
-      .dock-action:disabled,
+      .journey-action:disabled,
       .pcard-me-btn:disabled,
       .tip-like:disabled {
         cursor: not-allowed;
@@ -1699,74 +1808,9 @@
         border-radius: 50%;
         object-fit: cover;
       }
-      .explore-menu.has-discovery > .explore-section-label,
-      .explore-menu.has-discovery > .dock-action,
       .explore-menu.has-discovery > .dock-settings {
         display: none;
       }
-      .explore-section-label {
-        margin: 15px 1px 5px;
-        color: rgba(196, 207, 211, 0.5);
-        font-family: var(--mono);
-        font-size: 8px;
-        letter-spacing: 0;
-      }
-      .dock-action {
-        display: grid;
-        grid-template-columns: 34px minmax(0, 1fr) 16px;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 10px 0;
-        border: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        background: transparent;
-        color: var(--txt);
-        text-align: left;
-        cursor: pointer;
-      }
-      .dock-action:last-of-type { border-bottom: 0; }
-      .dock-action-icon {
-        display: grid;
-        place-items: center;
-        width: 34px;
-        height: 34px;
-        border: 1px solid rgba(143, 216, 220, 0.17);
-        border-radius: 10px 8px 11px 9px / 8px 11px 8px 10px;
-        background: #091117;
-        color: #9fd8db;
-        transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-      }
-      .dock-action:hover .dock-action-icon {
-        transform: translateX(2px);
-        border-color: rgba(23, 114, 246, 0.5);
-        color: #73aaf8;
-      }
-      .dock-action:active { transform: scale(0.985); }
-      .dock-action.is-locked {
-        color: rgba(224, 232, 232, 0.72);
-      }
-      .dock-action.is-locked .dock-action-icon {
-        border-style: dashed;
-        color: rgba(231, 193, 127, 0.68);
-      }
-      .dock-action.is-locked .dock-action-copy span {
-        color: rgba(231, 193, 127, 0.58);
-      }
-      .dock-action-copy b {
-        display: block;
-        color: var(--hi);
-        font-size: 12px;
-        font-weight: 620;
-      }
-      .dock-action-copy span {
-        display: block;
-        margin-top: 3px;
-        color: var(--txt-faint);
-        font-size: 9.5px;
-        line-height: 1.4;
-      }
-      .dock-arrow { color: var(--txt-faint); font-size: 14px; }
       .dock-settings {
         display: grid;
         gap: 9px;
@@ -2025,6 +2069,7 @@
       }
       body.is-cards-open .explore-shell,
       body.is-cards-open .observatory-controls,
+      body.is-cards-open .journey-actions,
       body.is-cards-open .persona-quick-entry,
       body.is-cards-open .cards-quick-entry,
       body.is-cards-open .circle-chip,
@@ -3560,6 +3605,56 @@
         }
         .pcard::before { display: none; }
       }
+      @media (max-width: 900px) {
+        .journey-actions {
+          top: max(74px, calc(env(safe-area-inset-top) + 66px));
+          right: 14px;
+          left: 14px;
+          width: auto;
+          flex-direction: row;
+        }
+        .journey-action {
+          flex: 1 1 0;
+          grid-template-columns: 1fr;
+          grid-template-rows: 20px auto auto;
+          justify-items: center;
+          gap: 2px;
+          min-width: 0;
+          min-height: 64px;
+          padding: 5px 2px;
+          border-right: 1px solid rgba(143, 216, 220, 0.1);
+          border-bottom: 0;
+          text-align: center;
+        }
+        .journey-action:last-child { border-right: 0; }
+        .journey-actions.has-three .journey-action:nth-child(3) { border-right: 0; }
+        .journey-action-icon {
+          width: 20px;
+          height: 20px;
+        }
+        .journey-action-icon .ui-icon { width: 18px; height: 18px; }
+        .journey-action-copy {
+          justify-items: center;
+          gap: 2px;
+          width: 100%;
+        }
+        .journey-action-copy b { font-size: 10px; }
+        .journey-action-copy small {
+          max-width: 100%;
+          font-size: 7px;
+        }
+        .journey-action.is-active::after {
+          top: 5px;
+          right: 6px;
+        }
+        .verdict,
+        .focus-banner {
+          top: max(152px, calc(env(safe-area-inset-top) + 144px));
+        }
+        body.is-focusing .verdict {
+          top: max(226px, calc(env(safe-area-inset-top) + 218px));
+        }
+      }
       @media (max-width: 720px) {
         .entry-brand { top: max(16px, env(safe-area-inset-top)); left: 16px; }
         .entry-brand img { width: 32px; height: 32px; }
@@ -3722,8 +3817,8 @@
           width: calc(100vw - 24px);
           bottom: var(--mobile-panel-clearance, 152px);
         }
-        .verdict, .focus-banner { top: max(76px, calc(env(safe-area-inset-top) + 68px)); }
-        body.is-focusing .verdict { top: max(148px, calc(env(safe-area-inset-top) + 140px)); }
+        .verdict, .focus-banner { top: max(152px, calc(env(safe-area-inset-top) + 144px)); }
+        body.is-focusing .verdict { top: max(226px, calc(env(safe-area-inset-top) + 218px)); }
         .focus-banner {
           width: calc(100vw - 24px);
           grid-template-columns: 26px minmax(0, 1fr) 32px;
@@ -3856,7 +3951,7 @@
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .journey-actions, .journey-action, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -4042,8 +4137,66 @@
       </button>
     </nav>
 
+    <nav class="journey-actions" id="journeyActions" aria-label="思想探索快捷入口">
+      <button type="button" class="journey-action" id="guideBtn" aria-label="打开星图向导">
+        <span class="journey-action-icon" aria-hidden="true">
+          <svg class="ui-icon" viewBox="0 0 24 24">
+            <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"></path>
+            <path d="M5 19h14"></path>
+            <path d="M8 16h8"></path>
+          </svg>
+        </span>
+        <span class="journey-action-copy">
+          <b>星图向导</b>
+          <small>读懂争议</small>
+        </span>
+      </button>
+      <button type="button" class="journey-action" id="peerDiscoveryBtn" aria-disabled="true">
+        <span class="journey-action-icon" aria-hidden="true">
+          <svg class="ui-icon" viewBox="0 0 24 24">
+            <circle cx="8" cy="8" r="3"></circle>
+            <circle cx="16" cy="8" r="3"></circle>
+            <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
+            <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
+          </svg>
+        </span>
+        <span class="journey-action-copy">
+          <b>同频发现</b>
+          <small id="peerDiscoveryHint">还差 3 次表态</small>
+        </span>
+      </button>
+      <button type="button" class="journey-action" id="clashBtn" aria-disabled="true">
+        <span class="journey-action-icon" aria-hidden="true">
+          <svg class="ui-icon" viewBox="0 0 24 24">
+            <path d="M7 7h11l-3-3"></path>
+            <path d="m18 7-3 3"></path>
+            <path d="M17 17H6l3 3"></path>
+            <path d="m6 17 3-3"></path>
+          </svg>
+        </span>
+        <span class="journey-action-copy">
+          <b>观点碰撞</b>
+          <small id="clashHint">还差 3 次表态</small>
+        </span>
+      </button>
+      <button type="button" class="journey-action" id="circleBtn" aria-disabled="true" aria-pressed="false">
+        <span class="journey-action-icon" aria-hidden="true">
+          <svg class="ui-icon" viewBox="0 0 24 24">
+            <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"></path>
+            <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            <path d="M21 21v-2a4 4 0 0 0-3-3.85"></path>
+          </svg>
+        </span>
+        <span class="journey-action-copy">
+          <b>聚焦小圈子</b>
+          <small id="circleHint">还差 3 次表态</small>
+        </span>
+      </button>
+    </nav>
+
     <div class="explore-shell" id="exploreShell">
-      <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河故事与星云工具">
+      <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="问题与知乎发现">
         <div class="explore-head">
           <div>
             <span class="explore-series" id="presetSeries">GALAXY STORIES · 01</span>
@@ -4136,66 +4289,6 @@
           </div>
           <ol class="discovery-results" id="discoveryResults"></ol>
         </section>
-        <div class="explore-section-label">盒内隐藏功能</div>
-        <button type="button" class="dock-action" id="guideBtn">
-          <span class="dock-action-icon" aria-hidden="true">
-            <svg class="ui-icon" viewBox="0 0 24 24">
-              <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"></path>
-              <path d="M5 19h14"></path>
-              <path d="M8 16h8"></path>
-            </svg>
-          </span>
-          <span class="dock-action-copy">
-            <b>星图向导</b>
-            <span>一句话看懂争议，帮你定位起点</span>
-          </span>
-          <span class="dock-arrow" aria-hidden="true">›</span>
-        </button>
-        <button type="button" class="dock-action" id="peerDiscoveryBtn">
-          <span class="dock-action-icon" aria-hidden="true">
-            <svg class="ui-icon" viewBox="0 0 24 24">
-              <circle cx="8" cy="8" r="3"></circle>
-              <circle cx="16" cy="8" r="3"></circle>
-              <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
-              <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
-            </svg>
-          </span>
-          <span class="dock-action-copy">
-            <b>同频发现</b>
-            <span id="peerDiscoveryHint">一次遇见 5 位相近回答者</span>
-          </span>
-          <span class="dock-arrow" aria-hidden="true">›</span>
-        </button>
-        <button type="button" class="dock-action" id="clashBtn">
-          <span class="dock-action-icon" aria-hidden="true">
-            <svg class="ui-icon" viewBox="0 0 24 24">
-              <path d="M7 7h11l-3-3"></path>
-              <path d="m18 7-3 3"></path>
-              <path d="M17 17H6l3 3"></path>
-              <path d="m6 17 3-3"></path>
-            </svg>
-          </span>
-          <span class="dock-action-copy">
-            <b>观点碰撞</b>
-            <span id="clashHint">发现同频或互补的回答者</span>
-          </span>
-          <span class="dock-arrow" aria-hidden="true">›</span>
-        </button>
-        <button type="button" class="dock-action" id="circleBtn">
-          <span class="dock-action-icon" aria-hidden="true">
-            <svg class="ui-icon" viewBox="0 0 24 24">
-              <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"></path>
-              <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              <path d="M21 21v-2a4 4 0 0 0-3-3.85"></path>
-            </svg>
-          </span>
-          <span class="dock-action-copy">
-            <b>聚焦小圈子</b>
-            <span id="circleHint">发现互相点赞的同路人</span>
-          </span>
-          <span class="dock-arrow" aria-hidden="true">›</span>
-        </button>
         <div class="dock-settings">
           <div class="dock-settings-head">
             <b>星图显示</b>
@@ -4215,7 +4308,7 @@
           </div>
         </div>
       </div>
-      <button type="button" class="explore-toggle" id="exploreToggle" aria-expanded="false" aria-controls="exploreMenu" aria-label="打开银河故事">
+      <button type="button" class="explore-toggle" id="exploreToggle" aria-expanded="false" aria-controls="exploreMenu" aria-label="打开问题与知乎发现">
         <span class="blindbox-lid" aria-hidden="true"></span>
         <span class="zh-orbit-ring" aria-hidden="true"></span>
         <span class="zh-mark">知</span>
@@ -4789,7 +4882,11 @@
       document.getElementById("filterRightCount").textContent =
         PEOPLE.filter((person) => person[1] > 0.2).length;
       document.getElementById("commentToggleRow").hidden = COMMENTS.length === 0;
-      document.getElementById("circleBtn").style.display = CLUSTERS.length ? "" : "none";
+      document.getElementById("circleBtn").hidden = CLUSTERS.length === 0;
+      document.getElementById("journeyActions").classList.toggle(
+        "has-three",
+        CLUSTERS.length === 0,
+      );
 
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
@@ -6445,14 +6542,26 @@
         clashButton.setAttribute("aria-disabled", String(!unlocked));
         circleButton.setAttribute("aria-disabled", String(!unlocked));
         document.getElementById("peerDiscoveryHint").textContent = unlocked
-          ? "一次遇见 5 位相近回答者"
-          : `再表态 ${remaining} 次解锁同频发现`;
+          ? "5 位同频者"
+          : `还差 ${remaining} 次表态`;
         document.getElementById("clashHint").textContent = unlocked
-          ? "发现同频或互补的回答者"
-          : `再表态 ${remaining} 次解锁匹配`;
+          ? "同频或互补"
+          : `还差 ${remaining} 次表态`;
         document.getElementById("circleHint").textContent = unlocked
-          ? "发现互相点赞的同路人"
-          : `再表态 ${remaining} 次解锁圈子`;
+          ? "发现同路人"
+          : `还差 ${remaining} 次表态`;
+        peerButton.setAttribute(
+          "aria-label",
+          unlocked ? "打开同频发现，查看 5 位同频回答者" : `同频发现，还差 ${remaining} 次表态解锁`,
+        );
+        clashButton.setAttribute(
+          "aria-label",
+          unlocked ? "打开观点碰撞" : `观点碰撞，还差 ${remaining} 次表态解锁`,
+        );
+        circleButton.setAttribute(
+          "aria-label",
+          unlocked ? "聚焦小圈子" : `聚焦小圈子，还差 ${remaining} 次表态解锁`,
+        );
       }
 
       users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
@@ -7018,8 +7127,9 @@
           const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
           const minX = side === "left" ? width + 14 : 14;
           const maxX = side === "left" ? window.innerWidth - 14 : window.innerWidth - width - 14;
+          const minY = window.innerWidth <= 900 ? 186 : 82;
           element.style.left = `${Math.max(minX, Math.min(maxX, x))}px`;
-          element.style.top = `${Math.max(82, Math.min(window.innerHeight - 82, y))}px`;
+          element.style.top = `${Math.max(minY, Math.min(window.innerHeight - 82, y))}px`;
         };
         place(axisLeftEl, axisLeftAnchor, "left");
         place(axisRightEl, axisRightAnchor, "right");
@@ -7567,7 +7677,10 @@
         exploreShellEl.classList.toggle("is-open", open);
         document.body.classList.toggle("is-explore-menu-open", open);
         exploreToggleEl.setAttribute("aria-expanded", String(open));
-        exploreToggleEl.setAttribute("aria-label", open ? "收起银河故事" : "打开银河故事");
+        exploreToggleEl.setAttribute(
+          "aria-label",
+          open ? "收起问题与知乎发现" : "打开问题与知乎发现",
+        );
         exploreMenuEl.setAttribute("aria-hidden", String(!open));
         if (!open) {
           setPresetPickerOpen(false);
@@ -8492,10 +8605,7 @@
           activeElement instanceof HTMLElement &&
           activeElement !== document.body &&
           activeElement.getClientRects().length > 0;
-        peerReturnFocus =
-          activeElement === $("peerDiscoveryBtn") || !canRestoreActiveFocus
-            ? exploreToggleEl
-            : activeElement;
+        peerReturnFocus = canRestoreActiveFocus ? activeElement : $("peerDiscoveryBtn");
         setExploreOpen(false);
         deferCirclePrompt();
         if (!peerBatch.length && !restorePeerBatch()) renderNextPeerBatch();
@@ -8860,7 +8970,7 @@
         guideEl.classList.remove("show");
         guideEl.setAttribute("aria-hidden", "true");
         resumeCirclePrompt();
-        if (restoreFocus) $("exploreToggle").focus();
+        if (restoreFocus) $("guideBtn").focus();
       }
       $("guideBtn").addEventListener("click", () => {
         setExploreOpen(false);
@@ -9124,7 +9234,7 @@
       }
       function closeClash() {
         const wasOpen = clashEl.classList.contains("show");
-        if (wasOpen) exploreToggleEl.focus({ preventScroll: true });
+        if (wasOpen) $("clashBtn").focus({ preventScroll: true });
         clashEl.classList.remove("show");
         matchIndex = -1;
         resumeCirclePrompt();
@@ -9321,6 +9431,8 @@
         focusBannerEl.classList.remove("show");
         focusBannerEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("is-focusing");
+        $("circleBtn").classList.remove("is-active");
+        $("circleBtn").setAttribute("aria-pressed", "false");
         commentGroup.visible = includeComments;
         resumeCirclePrompt();
       }
@@ -9356,6 +9468,8 @@
         focusBannerEl.classList.add("show");
         focusBannerEl.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-focusing");
+        $("circleBtn").classList.add("is-active");
+        $("circleBtn").setAttribute("aria-pressed", "true");
       }
 
       function setFollowedOnly(active, announce = true) {
