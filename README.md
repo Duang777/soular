@@ -18,7 +18,7 @@
 
 <p align="center"><code>React 19</code> · <code>TypeScript</code> · <code>Three.js</code></p>
 
-![思想银河封面：人格猫的尾巴卷成承载不同观点的星云轨道](./docs/images/soular-cover-childlike.png)
+![思想银河的 3D 观点星云，真实回答者沿观点光谱分布](./docs/images/viewpoint-galaxy.jpg)
 
 > 思想银河不替用户给结论。它把讨论的结构摊开，让观点、分歧和人与人的距离变得可见。
 
