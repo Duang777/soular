@@ -35,19 +35,18 @@ const QUESTION_PRESETS = [
     detail: "3 个观点",
   },
   {
-    id: "ai-math-revolution",
+    id: "scholars-ai-math",
     serial: "05",
     kind: "真实讨论",
-    title: "数学已经被 AI 彻底革命了么？",
-    detail: "5 个观点",
+    title: "如何看待现在有学者用 AI 做数学科研？",
+    detail: "47 个观点",
   },
   {
-    id: "imu-ai-declaration",
+    id: "tao-ai-math-proof",
     serial: "06",
     kind: "真实讨论",
-    title:
-      "国际数学联盟发布《人工智能与数学莱顿宣言》，回应 AI 对数学研究影响的问题，如何理解这份宣言？",
-    detail: "5 个观点",
+    title: "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+    detail: "3 个观点",
   },
 ] as const;
 

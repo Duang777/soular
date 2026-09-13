@@ -108,6 +108,8 @@
 - 2026-09-13：银河工具箱三项发现能力可直接使用：搜索覆盖已发布问题、回答者与观点正文，推荐根据当前表态给出同频观点或光谱代表观点，热榜不可用时回退已发布星云；观点碰撞和小圈子保持三次表态门槛，但按钮始终可点击并提示剩余次数。
 - 2026-09-13：从问题确认页生成的星云在顶部提供“返回问题”，可回到同一问题的确认态；生成完成后父 URL 同步为探索态，从人格卡浏览器返回不会误回确认页。开始生成前先同步绘制降亮度暗场，再揭开生成覆盖层并启动计时，避免完整星云短暂闪现。
 - 2026-09-14：新增 4 个真实快照（`tao-ai-tradition`、`pangdonglai-labor`、`ai-math-revolution`、`imu-ai-declaration`），首页问题入口扩展至 6 个；各快照含 HTTPS 知乎来源、人工校验立场与头像，`npm run build` 与导航契约检查通过。
+- 2026-09-15：将 05/06 号位替换为用户选定的 G/H 题（`scholars-ai-math`、`tao-ai-math-proof`），各含 3 条未登录可抓取的知乎真实回答、头像与立场；`npm run build` 通过。完整约 30 人版本待本机配置 `ZHIHU_ACCESS_SECRET` 后运行 `server/scripts/prepare-question-preset.ts`。
+- 2026-09-14：`scholars-ai-math` 通过 Access Secret 分页采集 47 条回答并完成作者/头像/立场加工后上线；`tao-ai-math-proof` 因 `question_answers` 当日额度用尽暂保留 3 条高赞回答，待额度恢复后补抓全量 54 条。
 
 ### F-002 观点探索与人格
 
