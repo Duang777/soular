@@ -9,21 +9,17 @@ export interface TouchResult {
   setCookie: string | null;
 }
 
+export interface ClearResult {
+  setCookie: string | null;
+  storageCleared: boolean;
+}
+
 function newToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-function safeEqual(left: string | null, right: string | null): boolean {
-  const a = String(left ?? "");
-  const b = String(right ?? "");
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
 }
 
 export class SessionStore {
@@ -38,15 +34,24 @@ export class SessionStore {
     for (const part of cookie.split(";")) {
       const item = part.trim();
       if (item.startsWith(`${SESSION_COOKIE}=`)) {
-        return decodeURIComponent(item.slice(SESSION_COOKIE.length + 1));
+        try {
+          const value = decodeURIComponent(item.slice(SESSION_COOKIE.length + 1));
+          return /^[A-Za-z0-9_-]{32}$/.test(value) ? value : null;
+        } catch {
+          return null;
+        }
       }
     }
     return null;
   }
 
   ttlSeconds(session: SessionState): number {
-    if (!session.expiresAt) return SESSION_TTL_SECONDS;
-    const remaining = Math.ceil((session.expiresAt - Date.now()) / 1000);
+    const expiresAt = Math.max(
+      session.expiresAt ?? 0,
+      session.stateExpiresAt ?? 0,
+    );
+    if (!expiresAt) return SESSION_TTL_SECONDS;
+    const remaining = Math.ceil((expiresAt - Date.now()) / 1000);
     return Math.min(SESSION_TTL_SECONDS, Math.max(60, remaining));
   }
 
@@ -62,10 +67,26 @@ export class SessionStore {
     return cookie.join("; ");
   }
 
+  private buildExpiredCookie(): string {
+    const cookie = [
+      `${SESSION_COOKIE}=`,
+      "HttpOnly",
+      "SameSite=Lax",
+      "Path=/",
+      "Max-Age=0",
+      "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    ];
+    if (this.cookieSecure) cookie.push("Secure");
+    return cookie.join("; ");
+  }
+
   private blankSession(): SessionState {
     return {
       id: newToken(),
       state: null,
+      stateExpiresAt: null,
+      oauthFlowId: null,
+      claimedOAuthFlowId: null,
       token: null,
       expiresAt: null,
       profile: null,
@@ -74,48 +95,82 @@ export class SessionStore {
     };
   }
 
-  async touch(request: Request): Promise<TouchResult> {
+  async load(request: Request): Promise<SessionState | null> {
     const sid = this.readSid(request);
-    if (sid) {
-      const loaded = await this.backend.load(sid);
-      if (loaded) return { session: loaded, setCookie: null };
-    }
+    return sid ? this.backend.load(sid) : null;
+  }
+
+  async touch(request: Request): Promise<TouchResult> {
+    const loaded = await this.load(request);
+    if (loaded) return { session: loaded, setCookie: null };
     const session = this.blankSession();
     await this.backend.save(session, SESSION_TTL_SECONDS);
     return { session, setCookie: this.buildCookie(session) };
+  }
+
+  async begin(
+    request: Request,
+    state: string,
+    stateExpiresAt: number,
+  ): Promise<TouchResult> {
+    const sid = this.readSid(request);
+    if (sid) {
+      const current = await this.backend.startOAuthState(
+        sid,
+        state,
+        stateExpiresAt,
+        Date.now(),
+      );
+      if (current) return { session: current, setCookie: null };
+    }
+
+    const session = this.blankSession();
+    session.state = state;
+    session.stateExpiresAt = stateExpiresAt;
+    session.oauthFlowId = state;
+    await this.backend.save(session, SESSION_TTL_SECONDS);
+    return { session, setCookie: this.buildCookie(session) };
+  }
+
+  async clear(request: Request): Promise<ClearResult> {
+    const sid = this.readSid(request);
+    let storageCleared = true;
+    if (sid) {
+      try {
+        await this.backend.delete(sid);
+      } catch {
+        storageCleared = false;
+      }
+    }
+    return {
+      setCookie: storageCleared ? this.buildExpiredCookie() : null,
+      storageCleared,
+    };
+  }
+
+  async claimOAuthCallback(
+    request: Request,
+    returnedState: string | null,
+  ): Promise<SessionState | null> {
+    const sid = this.readSid(request);
+    return sid
+      ? this.backend.claimOAuthState(sid, returnedState, Date.now())
+      : null;
   }
 
   async save(session: SessionState): Promise<void> {
     await this.backend.save(session, this.ttlSeconds(session));
   }
 
-  reset(session: SessionState): void {
-    session.state = null;
-    session.token = null;
-    session.expiresAt = null;
-    session.profile = null;
-    session.stateVerified = null;
-    session.error = null;
+  async saveIfPresent(
+    session: SessionState,
+    expectedOAuthFlowId: string,
+  ): Promise<boolean> {
+    return this.backend.saveIfPresent(
+      session,
+      this.ttlSeconds(session),
+      expectedOAuthFlowId,
+    );
   }
 
-  expireIfNeeded(session: SessionState): boolean {
-    if (session.expiresAt && session.expiresAt <= Date.now()) {
-      session.token = null;
-      session.expiresAt = null;
-      session.profile = null;
-      session.error = { code: "TOKEN_EXPIRED", message: "授权已过期，请重新登录。" };
-      return true;
-    }
-    return false;
-  }
-
-  verifyState(session: SessionState, returnedState: string | null): boolean {
-    if (!returnedState) {
-      session.stateVerified = false;
-      return true;
-    }
-    const matched = safeEqual(returnedState, session.state);
-    session.stateVerified = matched;
-    return matched;
-  }
 }

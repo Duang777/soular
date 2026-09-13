@@ -1,5 +1,4 @@
-import type { SessionState } from "../core/session-state.js";
-import type { AsyncCache, SessionBackend } from "../core/storage.js";
+import type { AsyncCache } from "../core/storage.js";
 
 export interface KVNamespaceLike {
   getWithMetadata(
@@ -14,7 +13,6 @@ export interface KVNamespaceLike {
   delete(key: string): Promise<void>;
 }
 
-const SESSION_PREFIX = "sess:";
 const CACHE_PREFIX = "cache:";
 const STALE_TTL_FACTOR = 6;
 const MAX_STORAGE_TTL_SECONDS = 24 * 60 * 60;
@@ -30,40 +28,6 @@ async function encodeCacheKey(raw: string): Promise<string> {
 function legacyCacheKey(raw: string): string | null {
   const key = CACHE_PREFIX + encodeURIComponent(raw);
   return new TextEncoder().encode(key).length <= 512 ? key : null;
-}
-
-export class KvSessionBackend implements SessionBackend {
-  private readonly l1 = new Map<string, { state: SessionState; expiresAt: number }>();
-
-  constructor(private readonly kv: KVNamespaceLike) {}
-
-  async load(id: string): Promise<SessionState | null> {
-    const l1Hit = this.l1.get(id);
-    if (l1Hit && l1Hit.expiresAt > Date.now()) return l1Hit.state;
-    if (l1Hit) this.l1.delete(id);
-
-    const result = await this.kv.getWithMetadata(SESSION_PREFIX + id, { type: "json" });
-    const state = (result?.value as SessionState | null) ?? null;
-    if (state && state.id === id) {
-      this.l1.set(id, { state, expiresAt: Date.now() + 60 * 1000 });
-      return state;
-    }
-    return null;
-  }
-
-  async save(state: SessionState, ttlSeconds: number): Promise<void> {
-    this.l1.set(state.id, {
-      state,
-      expiresAt: Date.now() + Math.min(ttlSeconds, 10 * 60) * 1000,
-    });
-    if (this.l1.size > 500) {
-      const firstKey = this.l1.keys().next().value;
-      if (firstKey) this.l1.delete(firstKey);
-    }
-    await this.kv.put(SESSION_PREFIX + state.id, JSON.stringify(state), {
-      expirationTtl: ttlSeconds,
-    });
-  }
 }
 
 export class KvContentCache implements AsyncCache {

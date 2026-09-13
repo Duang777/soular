@@ -41,7 +41,8 @@
 
 公开数据接口不需要登录，也不要携带知乎密钥或 Token。
 
-OAuth 当前采用后端 `HttpOnly` Session Cookie。前端启动登录时应使用页面跳转：
+OAuth 当前采用后端 `HttpOnly` Session Cookie，服务端会话存入 Cloudflare Durable
+Object。前端启动登录时应使用页面跳转：
 
 ```ts
 window.location.assign(`${API_BASE_URL}/api/oauth/start`);
@@ -52,6 +53,7 @@ OAuth 成功或失败后，后端跳回正式前端，并追加 `oauth=success` 
 
 正式前端、API 和 OAuth 回调均位于 `soular.top`，Session Cookie 是第一方 Cookie。
 GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式入口。
+镜像和本地预览中的登录入口直接前往正式站，避免跨站 Cookie 被浏览器拦截。
 
 ## 3. 公开接口
 
@@ -64,9 +66,9 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 ```json
 {
   "ok": true,
-  "configured": false,
+  "configured": true,
   "dataApiConfigured": true,
-  "appId": null,
+  "appId": "422",
   "redirectUri": "https://soular.top/auth/callback"
 }
 ```
@@ -109,8 +111,11 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 
 别名：`GET /login`。
 
-创建 Session 和 OAuth `state`，然后 `302` 跳转知乎授权页。必须作为顶层页面导航，
-不要用 `fetch`。
+首次登录时创建 Session 和 OAuth `state`，然后 `302` 跳转知乎授权页。
+已有 Session 会原子创建或复用 10 分钟内的同一待处理流程；当前授权在新授权成功前保留，
+失败时前端提示原账号仍连接。
+回调提交时必须匹配已认领的流程标识；旧回调不得覆盖随后发起的新登录流程或退出操作。
+该接口必须作为顶层页面导航，不要用 `fetch`。
 
 ### GET `/auth/callback`
 
@@ -119,6 +124,10 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 - `authorization_code`（优先）
 - `code`
 - `state`（知乎可能不回传；回传时必须匹配）
+
+缺少 `state` 时，仅允许同一 Session 中 10 分钟内已经发起过授权的回调继续，并将
+`stateVerified` 记录为 `false`；前端必须明确显示“仅适合临时联调”。
+没有待处理授权状态的回调一律拒绝。
 
 成功后 `302` 到：
 
@@ -130,14 +139,15 @@ https://soular.top/?oauth=success
 
 ### GET `/api/oauth/status`
 
-需要 Session Cookie。前端请求必须设置 `credentials: "include"`。
+前端请求设置 `credentials: "include"`。没有 Session Cookie 时只读返回未授权状态，
+不创建 Session 或写入会话存储。
 
 ```json
 {
   "ok": true,
-  "configured": false,
+  "configured": true,
   "dataApiConfigured": true,
-  "appId": null,
+  "appId": "422",
   "redirectUri": "https://soular.top/auth/callback",
   "authorized": false,
   "profile": null,
@@ -147,21 +157,25 @@ https://soular.top/?oauth=success
 }
 ```
 
+首页根据该接口展示“知乎登录”、已连接账号或重试状态。`profile` 获取失败时仍保留
+已授权状态，不伪造昵称或头像。
+
 ### POST `/api/oauth/logout`
 
-需要 Session Cookie。清空后端 Session 中的 OAuth Token 与用户资料。
+需要 Session Cookie。后端 Session 删除成功后返回 `Max-Age=0` 的 Cookie。
+删除失败时保留 Cookie 并返回 `SESSION_DELETE_FAILED`，前端显示“重试退出”。
 
 ### GET `/api/me/portrait`
 
 需要 Session Cookie 和有效知乎 OAuth Token。
 
-可选参数：
+缓存：按 OAuth Token 指纹隔离 10 分钟，避免同一浏览器切换账号后复用旧画像。
+公开接口不提供缓存绕过参数；同一运行实例中的并发画像请求合并为一次上游调用。
 
-| 参数 | 类型 | 说明 |
-| --- | --- | --- |
-| `refresh` | `0 | 1` | `1` 跳过当前用户的画像缓存 |
-
-缓存：每个 Session 10 分钟。
+画像缓存未命中时，服务端读取创作、关注、收藏夹和近期收藏，并从首个公开收藏夹
+最多采样一条内容用于关键词计算。收藏夹为空时跳过；单项失败写入 `warnings`，
+不阻断其他画像数据，部分成功结果只缓存 60 秒。四项主要数据源全部失败时返回
+`PORTRAIT_UNAVAILABLE`，并对相同账号记录 60 秒失败退避，不缓存空画像。
 
 `data` 主要结构：
 
@@ -195,12 +209,15 @@ https://soular.top/?oauth=success
 | 404 | `NOT_FOUND` | API 或资源不存在 |
 | 500 | `INTERNAL` | 后端未分类异常 |
 | 500 | `KV_BINDING_MISSING` | Worker 缺少 KV 绑定 |
+| 500 | `SESSION_BINDING_MISSING` | Worker 缺少 Session Durable Object 绑定 |
 | 500 | `BOOTSTRAP_ERROR` | Worker 配置初始化失败 |
 | 502 | `20001` | 知乎上游鉴权失败 |
 | 429 | `30001` | 知乎上游频率限制 |
 | 429 | `30002` | 知乎上游日配额耗尽 |
 | 502 | `90001` | 知乎上游或直答模型内部错误 |
 | 503 | `NOT_CONFIGURED` | Access Secret 或 OAuth 凭证未配置 |
+| 503 | `PORTRAIT_UNAVAILABLE` | 画像主要数据源暂时全部不可用 |
+| 503 | `SESSION_DELETE_FAILED` | 服务端会话删除失败，Cookie 保留以便重试退出 |
 
 前端应同时读取 HTTP 状态与 `error.code`。收到 429 时不要立即自动重试，避免延长
 上游限流窗口或继续消耗日配额。

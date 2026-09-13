@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "projectName": "思想银河",
+  "projectSlug": "soular",
+  "oauth": {
+    "enabled": true,
+    "appId": "422",
+    "redirectUri": "https://soular.top/auth/callback",
+    "credentialService": "zhihu-hackathon:soular:4a91a2e0cf",
+    "credentialAccount": "oauth-app-key"
+  },
+  "host": "127.0.0.1",
+  "port": 8787
+}

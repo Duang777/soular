@@ -1037,6 +1037,127 @@ textarea.field:focus-visible,
   background: #05060a;
 }
 
+.oauth-account {
+  position: fixed;
+  top: max(14px, calc(env(safe-area-inset-top) + 10px));
+  right: max(14px, calc(env(safe-area-inset-right) + 10px));
+  z-index: 32;
+  box-sizing: border-box;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  color: #f5f5f5;
+  background: rgba(8, 9, 12, 0.88);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.32);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.oauth-account--action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.12s ease;
+}
+
+.oauth-account--status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  color: rgba(243, 240, 233, 0.64);
+}
+
+.oauth-account--connected {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  max-width: min(280px, calc(100vw - 28px));
+  padding-left: 8px;
+}
+
+.oauth-account__avatar {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  outline: 1px solid rgba(255, 255, 255, 0.14);
+  outline-offset: -1px;
+}
+
+.oauth-account__dot {
+  width: 9px;
+  height: 9px;
+  margin-left: 9px;
+  border-radius: 50%;
+  background: #1772f6;
+  box-shadow: 0 0 0 4px rgba(23, 114, 246, 0.14);
+}
+
+.oauth-account__name {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.oauth-account__name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oauth-account__warning {
+  color: #f0b34c;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.oauth-account__logout {
+  align-self: stretch;
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0 6px 6px 0;
+  color: rgba(243, 240, 233, 0.68);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease, transform 0.12s ease;
+}
+
+.oauth-account__logout:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.oauth-account:focus-visible,
+.oauth-account__logout:focus-visible {
+  outline: 2px solid #69a5ff;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .oauth-account--action:hover,
+  .oauth-account__logout:hover:not(:disabled) {
+    color: #fff;
+    background: rgba(23, 114, 246, 0.2);
+    border-color: rgba(23, 114, 246, 0.72);
+  }
+}
+
+.oauth-account--action:active,
+.oauth-account__logout:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
 .nebula-entry {
   position: fixed;
   left: 50%;
@@ -1114,6 +1235,15 @@ textarea.field:focus-visible,
 }
 
 @media (max-width: 720px) {
+  .oauth-account {
+    top: max(10px, calc(env(safe-area-inset-top) + 8px));
+    right: max(10px, calc(env(safe-area-inset-right) + 8px));
+  }
+
+  .oauth-account--connected {
+    max-width: min(190px, calc(100vw - 20px));
+  }
+
   .nebula-entry {
     bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px));
     width: calc(100vw - 24px);
@@ -2018,7 +2148,9 @@ textarea.field:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   .brand-lockup,
-  .brand-lockup__star {
+  .brand-lockup__star,
+  .oauth-account--action,
+  .oauth-account__logout {
     transition: none;
   }
 

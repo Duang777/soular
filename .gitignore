@@ -1,3 +1,7 @@
 node_modules
 dist
 .DS_Store
+
+# Project-local official Skills are installed from their upstream packages.
+.trae/skills/zhihu-hackathon/
+.codex/skills/zhihu/

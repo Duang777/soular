@@ -16,7 +16,7 @@
 - `public/nebula-scene/`：使用原生 HTML、CSS、JavaScript 和 Three.js 实现的星云体验及人工验收的观点快照。
 - `public/books/` 和 `public/personas/`：静态书架与人格形象素材。
 - `public/kanshan/`：体验中使用的刘看山展示素材。
-- `server/`：部署为 Cloudflare Worker 的 Node 22 TypeScript 服务，负责 OAuth、知乎开放平台访问、KV 会话与缓存，并托管 `dist/`。
+- `server/`：部署为 Cloudflare Worker 的 Node 22 TypeScript 服务，负责 OAuth、知乎开放平台访问、Durable Object 会话、KV 缓存，并托管 `dist/`。
 - `docs/api-contract.md`：前后端边界和公开响应结构的唯一事实来源。
 
 正式环境地址为 `https://soular.top/`；开源仓库为 `Duang777/soular`，GitHub Pages 在 `/soular/` 下提供静态镜像。

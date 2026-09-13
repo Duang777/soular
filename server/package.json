@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "check": "npm run typecheck && npm run check:client-safety && npm run check:question-spectrum",
+    "check": "npm run typecheck && npm run check:oauth && npm run check:client-safety && npm run check:question-spectrum",
+    "check:oauth": "tsx scripts/check-oauth.ts",
     "check:client-safety": "tsx scripts/check-client-safety.ts",
     "check:question-spectrum": "tsx scripts/check-question-spectrum.ts",
     "prepare:hot-spectrums": "tsx scripts/prepare-hot-spectrums.ts",

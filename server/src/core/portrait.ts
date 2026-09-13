@@ -6,6 +6,14 @@ import type {
 import type { ZhihuClient } from "../zhihu/client.js";
 
 export const PORTRAIT_TTL_SECONDS = 10 * 60;
+export const PARTIAL_PORTRAIT_TTL_SECONDS = 60;
+
+export class PortraitUnavailableError extends Error {
+  constructor() {
+    super("画像数据暂时不可用，请稍后再试");
+    this.name = "PortraitUnavailableError";
+  }
+}
 
 const FETCH_LIMIT = 50;
 const TOP_CONTENT_COUNT = 6;
@@ -173,6 +181,74 @@ function failureName(result: PromiseSettledResult<unknown>): string {
     : "请求失败";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isUserContentItem(value: unknown): value is UserContentItem {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.ContentType === "string" &&
+    typeof value.Url === "string" &&
+    isFiniteNumber(value.CreatedAt) &&
+    isFiniteNumber(value.LikeCount) &&
+    isFiniteNumber(value.CommentCount) &&
+    isFiniteNumber(value.FavoriteCount) &&
+    typeof value.Title === "string" &&
+    typeof value.Summary === "string"
+  );
+}
+
+function isFolloweeItem(value: unknown): value is FolloweeItem {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.Fullname === "string" &&
+    typeof value.UrlToken === "string" &&
+    typeof value.Url === "string" &&
+    typeof value.AvatarUrl === "string" &&
+    typeof value.Headline === "string" &&
+    isFiniteNumber(value.Gender) &&
+    isFiniteNumber(value.FollowerCount)
+  );
+}
+
+function isFavlistRecord(value: unknown): value is FavlistRecord {
+  if (!isRecord(value)) return false;
+  return (
+    (typeof value.UrlToken === "string" ||
+      typeof value.UrlToken === "number") &&
+    typeof value.Url === "string" &&
+    typeof value.Title === "string" &&
+    typeof value.Description === "string" &&
+    typeof value.IsPublic === "boolean"
+  );
+}
+
+function normalizeItems<T>(
+  value: unknown,
+  isItem: (item: unknown) => item is T,
+): { items: T[]; valid: boolean; dropped: number } {
+  if (!isRecord(value) || !Array.isArray(value.Items)) {
+    return { items: [], valid: false, dropped: 0 };
+  }
+  const items = value.Items.filter(isItem);
+  return {
+    items,
+    valid: true,
+    dropped: value.Items.length - items.length,
+  };
+}
+
+function totalFrom(value: unknown, fallback: number): number {
+  if (!isRecord(value) || !isRecord(value.Paging)) return fallback;
+  const total = value.Paging.Totals;
+  return isFiniteNumber(total) && total >= 0 ? total : fallback;
+}
+
 export async function buildPortrait(
   client: ZhihuClient,
   oauthToken: string,
@@ -186,23 +262,86 @@ export async function buildPortrait(
     ]);
 
   const warnings: string[] = [];
-  if (!isSettled(contentsResult)) warnings.push(`创作数据获取失败：${failureName(contentsResult)}`);
-  if (!isSettled(followeesResult)) warnings.push(`关注列表获取失败：${failureName(followeesResult)}`);
-  if (!isSettled(favlistsResult)) warnings.push(`收藏夹获取失败：${failureName(favlistsResult)}`);
-  if (!isSettled(collectionsResult)) warnings.push(`近期收藏获取失败：${failureName(collectionsResult)}`);
+  const normalizedContents = normalizeItems(
+    isSettled(contentsResult) ? contentsResult.value : null,
+    isUserContentItem,
+  );
+  const normalizedFollowees = normalizeItems(
+    isSettled(followeesResult) ? followeesResult.value : null,
+    isFolloweeItem,
+  );
+  const normalizedFavlists = normalizeItems(
+    isSettled(favlistsResult) ? favlistsResult.value : null,
+    isFavlistRecord,
+  );
+  const normalizedCollections = normalizeItems(
+    isSettled(collectionsResult) ? collectionsResult.value : null,
+    isUserContentItem,
+  );
+  const normalizedSources = [
+    normalizedContents,
+    normalizedFollowees,
+    normalizedFavlists,
+    normalizedCollections,
+  ];
 
-  const contentItems: UserContentItem[] = isSettled(contentsResult)
-    ? contentsResult.value.Items
-    : [];
-  const followeeItems: FolloweeItem[] = isSettled(followeesResult)
-    ? followeesResult.value.Items
-    : [];
-  const favlistItems: FavlistRecord[] = isSettled(favlistsResult)
-    ? favlistsResult.value.Items
-    : [];
-  const collectionItems: UserContentItem[] = isSettled(collectionsResult)
-    ? collectionsResult.value.Items
-    : [];
+  const sourceResults = [
+    ["创作数据", contentsResult, normalizedContents],
+    ["关注列表", followeesResult, normalizedFollowees],
+    ["收藏夹", favlistsResult, normalizedFavlists],
+    ["近期收藏", collectionsResult, normalizedCollections],
+  ] as const;
+  for (const [label, result, normalized] of sourceResults) {
+    if (result.status === "rejected") {
+      warnings.push(`${label}获取失败：${failureName(result)}`);
+    } else if (!normalized.valid) {
+      warnings.push(`${label}获取失败：返回格式无效`);
+    } else if (normalized.dropped > 0) {
+      warnings.push(`${label}已跳过 ${normalized.dropped} 条格式无效数据`);
+    }
+  }
+
+  if (normalizedSources.every((source) => !source.valid)) {
+    throw new PortraitUnavailableError();
+  }
+
+  const contentItems = normalizedContents.items;
+  const followeeItems = normalizedFollowees.items;
+  const favlistItems = normalizedFavlists.items;
+  const collectionItems = normalizedCollections.items;
+  const sampleFavlist = favlistItems.find(
+    (favlist) =>
+      favlist &&
+      favlist.IsPublic === true &&
+      (typeof favlist.UrlToken === "string" ||
+        typeof favlist.UrlToken === "number") &&
+      String(favlist.UrlToken).trim(),
+  );
+  let sampledFavlistTexts: ScoredText[] = [];
+  if (sampleFavlist) {
+    try {
+      const sampled = await client.userFavlistContents(
+        oauthToken,
+        sampleFavlist.UrlToken,
+        { limit: 1 },
+      );
+      const normalized = normalizeItems(sampled, isUserContentItem);
+      if (!normalized.valid || normalized.dropped > 0) {
+        throw new Error("返回内容格式无效");
+      }
+      const first = normalized.items[0];
+      if (first) {
+        sampledFavlistTexts = [{ text: first.Title, weight: 2 }];
+        if (first.Summary) {
+          sampledFavlistTexts.push({ text: first.Summary, weight: 1 });
+        }
+      }
+    } catch (error) {
+      warnings.push(
+        `收藏夹内容获取失败：${error instanceof Error ? error.message : "请求失败"}`,
+      );
+    }
+  }
 
   const contentKinds: Record<string, number> = {};
   let likesReceived = 0;
@@ -248,6 +387,7 @@ export async function buildPortrait(
     corpus.push({ text: item.Title, weight: 2 });
     if (item.Summary) corpus.push({ text: item.Summary, weight: 1 });
   }
+  corpus.push(...sampledFavlistTexts);
   for (const item of followeeItems) {
     if (item.Headline) corpus.push({ text: item.Headline, weight: 1 });
   }
@@ -255,8 +395,14 @@ export async function buildPortrait(
   return {
     generatedAt: new Date().toISOString(),
     stats: {
-      contents: isSettled(contentsResult) ? contentsResult.value.Paging.Totals : 0,
-      followees: isSettled(followeesResult) ? followeesResult.value.Paging.Totals : 0,
+      contents: totalFrom(
+        isSettled(contentsResult) ? contentsResult.value : null,
+        contentItems.length,
+      ),
+      followees: totalFrom(
+        isSettled(followeesResult) ? followeesResult.value : null,
+        followeeItems.length,
+      ),
       favlists: favlistItems.length,
       collections: collectionItems.length,
       likesReceived,

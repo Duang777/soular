@@ -16,7 +16,16 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = true
 
-# KV 命名空间：会话与内容缓存。
+# Durable Object：OAuth Session 的强一致存储。
+[[durable_objects.bindings]]
+name = "SESSIONS"
+class_name = "SessionDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SessionDurableObject"]
+
+# KV 命名空间：公开内容与用户画像缓存。
 # 首次使用先执行：npm run cf:kv:create
 # 把输出的 id 填到下面（preview_id 用于 preview 环境，可省略）。
 # 本地 wrangler dev 会自动模拟 KV，无需真实 id。
@@ -28,7 +37,7 @@ id = "0f1009bb96144aa7b117a581d6ef7f93"
 enabled = true
 
 [vars]
-ZHIHU_APP_ID = ""
+ZHIHU_APP_ID = "422"
 ZHIHU_REDIRECT_URI = "https://soular.top/auth/callback"
 FRONTEND_URL = "https://soular.top/"
 FRONTEND_ORIGIN = "https://soular.top,https://duang777.github.io"

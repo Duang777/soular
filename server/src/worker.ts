@@ -2,7 +2,14 @@ import { buildRuntimeConfig, type Environment } from "./core/config.js";
 import { createHandler } from "./core/app.js";
 import { corsPreflight, withCors } from "./core/cors.js";
 import { SessionStore } from "./core/session.js";
-import { KvContentCache, KvSessionBackend, type KVNamespaceLike } from "./adapters/cloudflare-kv.js";
+import { KvContentCache, type KVNamespaceLike } from "./adapters/cloudflare-kv.js";
+import {
+  DurableSessionBackend,
+  SessionDurableObject,
+  type DurableObjectNamespaceLike,
+} from "./adapters/durable-session.js";
+
+export { SessionDurableObject };
 
 interface AssetBinding {
   fetch(request: Request): Promise<Response>;
@@ -16,6 +23,7 @@ export interface Env {
   FRONTEND_ORIGIN?: string;
   ASSETS: AssetBinding;
   KV: KVNamespaceLike;
+  SESSIONS: DurableObjectNamespaceLike;
   [key: string]: unknown;
 }
 
@@ -32,6 +40,11 @@ function resolveHandler(env: Env): FetchHandler {
   if (!env.KV || typeof env.KV.getWithMetadata !== "function") {
     throw new Error("缺少 KV 绑定：请在 wrangler.toml 配置 [[kv_namespaces]] binding = \"KV\"");
   }
+  if (!env.SESSIONS || typeof env.SESSIONS.idFromName !== "function") {
+    throw new Error(
+      "缺少 SESSIONS Durable Object 绑定：请检查 wrangler.toml",
+    );
+  }
 
   const config = buildRuntimeConfig(env as unknown as Environment);
   const fingerprint = [
@@ -43,7 +56,10 @@ function resolveHandler(env: Env): FetchHandler {
   ].join("|");
 
   if (!cached || cached.fingerprint !== fingerprint) {
-    const sessions = new SessionStore(new KvSessionBackend(env.KV), true);
+    const sessions = new SessionStore(
+      new DurableSessionBackend(env.SESSIONS),
+      true,
+    );
     const contentCache = new KvContentCache(env.KV);
     cached = {
       fingerprint,
@@ -83,7 +99,11 @@ export default {
       return withCors(request, response, env.FRONTEND_ORIGIN);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Worker 启动失败";
-      const code = message.includes("KV") ? "KV_BINDING_MISSING" : "BOOTSTRAP_ERROR";
+      const code = message.includes("SESSIONS")
+        ? "SESSION_BINDING_MISSING"
+        : message.includes("KV")
+          ? "KV_BINDING_MISSING"
+          : "BOOTSTRAP_ERROR";
       return withCors(
         request,
         errorResponse(500, code, message),
