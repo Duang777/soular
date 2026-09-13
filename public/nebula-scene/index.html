@@ -615,12 +615,20 @@
       body.entry-active .hud,
       body.entry-active .observatory-controls,
       body.entry-active .explore-shell,
+      body.entry-active .persona-quick-entry,
       body.entry-active .cards-quick-entry,
       body.entry-active .circle-chip,
       body.entry-active .focus-banner,
       body.entry-active .verdict,
+      body.entry-active .persona-focus-chip,
       body.entry-active #tip { visibility: hidden; opacity: 0; pointer-events: none; }
       body.entry-active #scene { pointer-events: none; cursor: default; }
+      body.is-circle-open .persona-quick-entry,
+      body.is-circle-open .cards-quick-entry {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
 
       #tip {
         position: fixed;
@@ -938,6 +946,107 @@
       .self-draw-entry > span:last-child {
         color: #e7c17f;
         font-size: 14px;
+        text-align: right;
+      }
+      .persona-quick-entry {
+        position: fixed;
+        z-index: 15;
+        right: 20px;
+        bottom: max(122px, calc(env(safe-area-inset-bottom) + 114px));
+        display: grid;
+        grid-template-columns: 66px minmax(0, 1fr) 16px;
+        align-items: center;
+        gap: 10px;
+        width: 238px;
+        height: 76px;
+        padding: 8px 12px 8px 9px;
+        border: 1px solid rgba(231, 193, 127, 0.7);
+        border-radius: 8px;
+        background: #17191d;
+        color: #f4f0df;
+        box-shadow: -4px 5px 0 #05090d, 0 16px 36px rgba(0, 0, 0, 0.52);
+        cursor: pointer;
+        text-align: left;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+      .persona-quick-entry:hover {
+        transform: translateY(-3px);
+        border-color: #e7c17f;
+        background: #202126;
+      }
+      .persona-quick-entry:active { transform: scale(0.98); }
+      .persona-quick-entry.is-active {
+        border-color: var(--persona, #e7c17f);
+      }
+      .persona-quick-stack {
+        position: relative;
+        display: block;
+        width: 62px;
+        height: 56px;
+      }
+      .persona-quick-portrait {
+        position: absolute;
+        top: 6px;
+        width: 34px;
+        height: 46px;
+        overflow: hidden;
+        border: 1px solid rgba(231, 193, 127, 0.62);
+        border-radius: 6px;
+        background: #0b1117;
+        box-shadow: 1px 2px 0 rgba(3, 7, 10, 0.86);
+        transform-origin: center bottom;
+        transition: transform 0.18s ease;
+      }
+      .persona-quick-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .persona-quick-portrait:nth-child(1) { left: 1px; transform: rotate(-9deg); opacity: 0.76; }
+      .persona-quick-portrait:nth-child(2) { left: 14px; transform: translateY(-3px); opacity: 0.9; }
+      .persona-quick-portrait:nth-child(3) { left: 27px; transform: rotate(9deg); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(1) { transform: translateX(-4px) rotate(-12deg); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(2) { transform: translateY(-6px); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(3) { transform: translateX(4px) rotate(12deg); }
+      .persona-quick-count {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        place-items: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 5px;
+        border: 1px solid rgba(231, 193, 127, 0.74);
+        border-radius: 50%;
+        background: #11171d;
+        color: #f0d8a5;
+        font: 600 8px/1 var(--mono);
+      }
+      .persona-quick-copy {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+      .persona-quick-kicker {
+        color: rgba(231, 193, 127, 0.56);
+        font: 500 7px/1 var(--mono);
+      }
+      .persona-quick-copy b {
+        color: #fff7e6;
+        font-size: 13px;
+        letter-spacing: 0;
+      }
+      .persona-quick-copy span {
+        color: rgba(205, 211, 211, 0.64);
+        font-size: 8px;
+        line-height: 1.3;
+        letter-spacing: 0;
+      }
+      .persona-quick-arrow {
+        color: #e7c17f;
+        font-size: 16px;
         text-align: right;
       }
       .cards-quick-entry {
@@ -1916,10 +2025,12 @@
       }
       body.is-cards-open .explore-shell,
       body.is-cards-open .observatory-controls,
+      body.is-cards-open .persona-quick-entry,
       body.is-cards-open .cards-quick-entry,
       body.is-cards-open .circle-chip,
       body.is-cards-open .focus-banner,
-      body.is-cards-open .verdict { display: none !important; }
+      body.is-cards-open .verdict,
+      body.is-cards-open .persona-focus-chip { display: none !important; }
       body.is-explore-menu-open .observatory-controls {
         opacity: 0;
         visibility: hidden;
@@ -2093,6 +2204,54 @@
         color: #f3eee0;
       }
       .cards-filter.is-active b { color: #9fd8db; }
+      .cards-persona-title { margin-top: 22px; }
+      .persona-filter-list { display: grid; }
+      .persona-filter {
+        justify-content: flex-start;
+        gap: 8px;
+        border-left-color: transparent;
+      }
+      .persona-filter i {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 50%;
+        background: var(--persona);
+      }
+      .persona-filter span { min-width: 0; flex: 1; }
+      .persona-filter.is-active {
+        border-left-color: transparent;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--persona) 32%, transparent);
+      }
+      .persona-filter.is-active i {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--persona) 18%, transparent);
+      }
+      .persona-deck-entry {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 44px;
+        margin-bottom: 18px;
+        padding: 0 10px;
+        border: 1px solid rgba(231, 193, 127, 0.2);
+        border-radius: 8px;
+        background: #10171d;
+        color: rgba(240, 223, 189, 0.76);
+        font: 10.5px/1 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-entry b {
+        color: rgba(231, 193, 127, 0.56);
+        font: 500 8px/1 var(--mono);
+      }
+      .persona-deck-entry:hover {
+        border-color: rgba(231, 193, 127, 0.52);
+        color: #f3eee0;
+      }
+      .persona-deck-entry:active { transform: scale(0.97); }
       .cards-rail-note {
         margin-top: 14px;
         padding: 12px 10px 0;
@@ -2111,6 +2270,155 @@
       .cards-list::-webkit-scrollbar { width: 6px; }
       .cards-list::-webkit-scrollbar-thumb { background: rgba(143, 216, 220, 0.16); border-radius: 99px; }
       .cards-list::-webkit-scrollbar-thumb:hover { background: rgba(143, 216, 220, 0.28); }
+      .persona-deck {
+        display: grid;
+        grid-template-columns: 44px 78px minmax(0, 1fr) minmax(132px, auto) 44px;
+        grid-template-areas: "previous art copy actions next";
+        align-items: center;
+        gap: 16px;
+        min-height: 154px;
+        margin-bottom: 16px;
+        padding: 16px 14px;
+        border-top: 1px solid color-mix(in srgb, var(--persona) 42%, transparent);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.025);
+      }
+      .persona-deck-nav {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 8px;
+        background: #111820;
+        color: rgba(232, 237, 238, 0.68);
+        font: 24px/1 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-nav:hover {
+        border-color: color-mix(in srgb, var(--persona) 60%, transparent);
+        color: #f3eee0;
+      }
+      .persona-deck-nav:active { transform: scale(0.94); }
+      .persona-deck-nav--previous { grid-area: previous; }
+      .persona-deck-nav--next { grid-area: next; }
+      .persona-deck-art {
+        grid-area: art;
+        width: 78px;
+        height: 96px;
+        object-fit: cover;
+        object-position: center top;
+        border-radius: 8px;
+        outline: 1px solid color-mix(in srgb, var(--persona) 48%, transparent);
+        outline-offset: -1px;
+        background: #0b1117;
+      }
+      .persona-deck-copy { grid-area: copy; min-width: 0; }
+      .persona-deck-kicker {
+        color: color-mix(in srgb, var(--persona) 78%, #dfe8e8);
+        font: 500 8px/1.4 var(--mono);
+      }
+      .persona-deck-name {
+        margin: 5px 0 0;
+        color: #f3eee0;
+        font-size: 19px;
+        font-weight: 650;
+        line-height: 1.25;
+      }
+      .persona-deck-role {
+        margin-top: 3px;
+        color: rgba(204, 212, 214, 0.52);
+        font-size: 10px;
+      }
+      .persona-deck-claim {
+        margin-top: 10px;
+        color: rgba(226, 231, 232, 0.74);
+        font-size: 11.5px;
+        line-height: 1.65;
+        text-wrap: pretty;
+      }
+      .persona-deck-source {
+        margin-top: 5px;
+        color: rgba(180, 193, 197, 0.4);
+        font: 8px/1.5 var(--mono);
+      }
+      .persona-deck-actions {
+        grid-area: actions;
+        display: grid;
+        gap: 8px;
+      }
+      .persona-deck-action {
+        min-height: 44px;
+        padding: 0 13px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 8px;
+        background: #111a21;
+        color: rgba(226, 234, 234, 0.76);
+        font: 10px/1.3 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-action--primary {
+        border-color: color-mix(in srgb, var(--persona) 52%, transparent);
+        color: #f3eee0;
+      }
+      .persona-deck-action:hover {
+        border-color: color-mix(in srgb, var(--persona) 72%, transparent);
+        color: #fff8e8;
+      }
+      .persona-deck-action:active { transform: scale(0.97); }
+      .persona-focus-chip {
+        position: fixed;
+        z-index: 10;
+        top: max(142px, calc(env(safe-area-inset-top) + 134px));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        max-width: min(86vw, 440px);
+        min-height: 44px;
+        padding: 0 8px 0 13px;
+        border: 1px solid color-mix(in srgb, var(--persona) 48%, transparent);
+        border-radius: 8px;
+        background: #111820;
+        color: rgba(231, 236, 237, 0.76);
+        font-size: 10.5px;
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+      }
+      .persona-focus-chip[hidden] { display: none; }
+      .persona-focus-chip i {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--persona);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--persona) 16%, transparent);
+      }
+      .persona-focus-chip b { color: #f3eee0; font-weight: 650; }
+      .persona-focus-chip button {
+        min-height: 44px;
+        margin-left: 4px;
+        padding: 0 9px;
+        border: 0;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.045);
+        color: rgba(231, 193, 127, 0.82);
+        font: 9px/1 var(--font);
+        cursor: pointer;
+      }
+      .persona-focus-chip button:active { transform: scale(0.96); }
+      .cards-filter:focus-visible,
+      .persona-quick-entry:focus-visible,
+      .persona-deck-entry:focus-visible,
+      .persona-deck-nav:focus-visible,
+      .persona-deck-action:focus-visible,
+      .persona-focus-chip button:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
+      }
       .me-strip {
         display: grid;
         grid-template-columns: 46px minmax(0, 1fr) 150px auto;
@@ -3221,6 +3529,8 @@
           border-bottom: 1px solid rgba(143, 216, 220, 0.1);
         }
         .cards-rail-title, .cards-rail-note { display: none; }
+        .cards-persona-title { display: none; }
+        .persona-filter-list { display: contents; }
         .cards-filter {
           flex: none;
           width: auto;
@@ -3231,6 +3541,16 @@
           border-bottom: 2px solid transparent;
         }
         .cards-filter.is-active { border-left-color: transparent; border-bottom-color: #9fd8db; }
+        .persona-filter.is-active {
+          border-bottom-color: var(--persona);
+          box-shadow: none;
+        }
+        .persona-deck-entry {
+          flex: none;
+          width: auto;
+          margin: 0;
+          gap: 10px;
+        }
         .pcard::before { display: none; }
       }
       @media (max-width: 720px) {
@@ -3317,6 +3637,24 @@
           width: min(168px, calc(100vw - 222px));
           height: 54px;
         }
+        .persona-quick-entry {
+          right: 14px;
+          bottom: max(148px, calc(env(safe-area-inset-bottom) + 142px));
+          grid-template-columns: 50px minmax(0, 1fr);
+          gap: 7px;
+          width: 178px;
+          height: 64px;
+          padding: 5px 8px;
+        }
+        .persona-quick-stack { width: 48px; height: 50px; }
+        .persona-quick-portrait { top: 6px; width: 28px; height: 38px; }
+        .persona-quick-portrait:nth-child(1) { left: 0; }
+        .persona-quick-portrait:nth-child(2) { left: 8px; }
+        .persona-quick-portrait:nth-child(3) { left: 16px; }
+        .persona-quick-count { min-width: 20px; height: 20px; }
+        .persona-quick-copy b { font-size: 11px; }
+        .persona-quick-copy span { font-size: 7.5px; }
+        .persona-quick-arrow { display: none; }
         .cards-quick-entry {
           right: 14px;
           bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
@@ -3408,6 +3746,28 @@
         .cards-rail { margin: 0 -14px; padding: 8px 14px 7px; }
         .cards-filter { min-height: 44px; padding: 0 10px; font-size: 9.5px; }
         .cards-list { padding: 10px 0 26px; }
+        .persona-deck {
+          grid-template-columns: 44px 58px minmax(0, 1fr) 44px;
+          grid-template-areas:
+            "previous art copy next"
+            "actions actions actions actions";
+          gap: 10px;
+          min-height: 0;
+          margin: 0 0 12px;
+          padding: 13px 4px;
+        }
+        .persona-deck-art { width: 58px; height: 76px; }
+        .persona-deck-name { font-size: 16px; }
+        .persona-deck-claim { font-size: 10.5px; }
+        .persona-deck-actions {
+          grid-column: 1 / -1;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .persona-deck-action { padding: 0 8px; }
+        .persona-focus-chip {
+          top: max(126px, calc(env(safe-area-inset-top) + 118px));
+          max-width: calc(100vw - 24px);
+        }
         .me-strip {
           grid-template-columns: 44px minmax(0, 1fr);
           gap: 11px;
@@ -3489,7 +3849,7 @@
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -3864,6 +4224,21 @@
       </button>
     </div>
 
+    <button type="button" class="persona-quick-entry" id="personaQuickEntry">
+      <span class="persona-quick-stack" aria-hidden="true">
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-count" id="personaQuickCount">0</span>
+      </span>
+      <span class="persona-quick-copy">
+        <small class="persona-quick-kicker">PERSONA CONSTELLATION</small>
+        <b id="personaQuickTitle">本题人格星群</b>
+        <span id="personaQuickHint">看占比与代表观点</span>
+      </span>
+      <span class="persona-quick-arrow" aria-hidden="true">→</span>
+    </button>
+
     <button type="button" class="cards-quick-entry" id="cardsQuickEntry">
       <span class="cards-quick-deck" aria-hidden="true">
         <span class="cards-quick-sheet"><img data-cards-quick-avatar alt="" /></span>
@@ -3911,12 +4286,18 @@
       </div>
       <div class="cards-layout">
         <aside class="cards-rail" aria-label="筛选观点">
+          <div class="cards-rail-title">PERSONA LIBRARY · 本题人格</div>
+          <button type="button" class="persona-deck-entry" id="personaDeckOpen" aria-expanded="false">
+            <span>本题人格卡群</span><b id="personaDeckCount">0</b>
+          </button>
           <div class="cards-rail-title">FILTER · 立场筛选</div>
           <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="left"><span id="presetFilterLeft">倾向转行</span><b id="filterLeftCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="center"><span id="presetFilterCenter">中立观察</span><b id="filterCenterCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="right"><span id="presetFilterRight">倾向深耕</span><b id="filterRightCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="liked"><span>我赞过的</span><b id="filterLikedCount">0</b></button>
+          <div class="cards-rail-title cards-persona-title">PERSONA · 人格筛选</div>
+          <div class="persona-filter-list" id="personaFilters" role="group" aria-label="按观点人格筛选"></div>
           <p class="cards-rail-note">沿观点光谱从左到右排列。坐标越靠近两端，立场越明确。</p>
         </aside>
         <div class="cards-list" id="cardsList"></div>
@@ -4140,6 +4521,12 @@
       <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
     </div>
 
+    <div class="persona-focus-chip" id="personaFocusChip" aria-live="polite" hidden>
+      <i aria-hidden="true"></i>
+      <span><b id="personaFocusName"></b> 星体已高亮</span>
+      <button type="button" id="personaFocusClear">回到整体</button>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <div id="tip" role="region" aria-live="polite" aria-label="当前观点" tabindex="-1"></div>
@@ -4190,6 +4577,12 @@
         visibleParticleBudget,
       } = await import(
         `./lod.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const {
+        buildPersonaCatalog,
+        cyclePersonaIndex,
+      } = await import(
+        `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
 
       const CASTS = {
@@ -4292,6 +4685,7 @@
       const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
       const CLUSTERS = Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS;
       const ME = PRESET.me || DEFAULT_ME;
+      const PERSONA_CATALOG = buildPersonaCatalog(CASTS, PEOPLE);
       const personAvatarPath = (index) => PRESET.avatarBase
         ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
         : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
@@ -4300,6 +4694,23 @@
         next.searchParams.set("avatar-retry", String(Date.now()));
         return next.href;
       }
+      const personaQuickEntryEl = document.getElementById("personaQuickEntry");
+      const personaQuickPreviewIndexes = [
+        0,
+        Math.floor(PERSONA_CATALOG.length / 2),
+        PERSONA_CATALOG.length - 1,
+      ];
+      document.querySelectorAll("[data-persona-quick-art]").forEach((image, index) => {
+        const persona = PERSONA_CATALOG[personaQuickPreviewIndexes[index]];
+        image.closest(".persona-quick-portrait").hidden = !persona;
+        if (persona) image.src = `../personas/${encodeURIComponent(persona.key)}.jpg`;
+      });
+      document.getElementById("personaQuickCount").textContent = PERSONA_CATALOG.length;
+      personaQuickEntryEl.hidden = PERSONA_CATALOG.length === 0;
+      personaQuickEntryEl.setAttribute(
+        "aria-label",
+        `浏览本题 ${PERSONA_CATALOG.length} 种人格卡`,
+      );
       const cardsQuickEntryEl = document.getElementById("cardsQuickEntry");
       const cardsQuickPreviewIndexes = [0, Math.floor(PEOPLE.length / 2), PEOPLE.length - 1];
       document.querySelectorAll("[data-cards-quick-avatar]").forEach((avatar, index) => {
@@ -4871,6 +5282,8 @@
 
       const nebula = new THREE.Group();
       scene.add(nebula);
+      const spectrumGroup = new THREE.Group();
+      nebula.add(spectrumGroup);
 
       const starPalette = ["#dff8ff", "#9ed8e4", "#b9d7e8", "#dbe9df", "#ffd9a0", "#fff4d6", "#ffffff"];
       nebula.add(buildStarfield(
@@ -5262,12 +5675,12 @@
         userGroup.add(group);
       }
 
-      nebula.add(userGroup);
+      spectrumGroup.add(userGroup);
 
       // 评论区观点：空心圆环，沿各自立场悬浮在星系两侧的“评论云”里，默认不显示
       const commentGroup = new THREE.Group();
       commentGroup.visible = false;
-      nebula.add(commentGroup);
+      spectrumGroup.add(commentGroup);
       const commentTargets = [];
       const cusers = COMMENTS.map(([name, stance, castKey, claim, funny], i) => {
         const [castName, castRole, castColor] = CASTS[castKey];
@@ -5327,7 +5740,7 @@
       // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
       // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
       const dustGroup = new THREE.Group();
-      nebula.add(dustGroup);
+      spectrumGroup.add(dustGroup);
       function buildCoreDust(count, size, opacity, budgetKey) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
@@ -6556,9 +6969,9 @@
       }
 
       function updateAxisLabels() {
-        nebula.updateMatrixWorld();
+        spectrumGroup.updateMatrixWorld();
         const place = (element, anchor, side) => {
-          const projected = nebula.localToWorld(anchor.clone()).project(camera);
+          const projected = spectrumGroup.localToWorld(anchor.clone()).project(camera);
           const width = element.offsetWidth || 96;
           const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
           const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
@@ -6607,20 +7020,23 @@
       function animateNode(u, t, baseAva, baseGlow) {
         const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
         u.group.position.y = u.baseY + floatY;
-        const hoverBoost = hovered === u ? 1.3 : 1;
-        u.scale += (hoverBoost - u.scale) * 0.14;
+        const personaSelected = Boolean(personaFilter) && !u.isMe && u.castKey === personaFilter;
+        const hoverBoost = hovered === u ? 1.3 : personaSelected ? 1.08 : 1;
+        u.scale += (hoverBoost - u.scale) * (reduceMotion ? 1 : 0.14);
         u.avatar.scale.setScalar(baseAva * u.scale);
         u.glow.scale.setScalar(baseGlow * u.scale);
         const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
         const dimmedByFocus = focusSet && !u.isMe && !focusSet.has(u.index);
         const dimmedByFollow = followedOnly && !u.isMe && !u.followed;
-        const dimmed = dimmedByFocus || dimmedByFollow;
+        const personaDimmed = Boolean(personaFilter) && !u.isMe && u.castKey !== personaFilter;
+        const dimmed = dimmedByFocus || dimmedByFollow || personaDimmed;
+        const fadeRate = reduceMotion ? 1 : 0.12;
         const avaTarget = dimmed ? 0.07 : 1;
-        u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * 0.12;
+        u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * fadeRate;
         const glowTarget = dimmed
           ? 0.03
-          : (hovered === u ? 0.68 : (u.isMe ? 0.44 : 0.18) * breathe);
-        u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * 0.12;
+          : (hovered === u ? 0.68 : personaSelected ? 0.42 : (u.isMe ? 0.44 : 0.18) * breathe);
+        u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * fadeRate;
         if (u.star) u.star.material.opacity = dimmed ? 0.04 : 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
         if (u.heart && u.heart.visible) {
           u.heart.material.opacity = dimmed ? 0.1 : 0.78 + Math.sin(t * 3.2 + u.phase) * 0.22;
@@ -6630,12 +7046,26 @@
         if (u.ring) {
           const onFocus = focusSet && !u.isMe && focusSet.has(u.index);
           const onMatch = matchIndex === u.index && performance.now() < matchUntil;
+          const onPersona = personaSelected && !dimmed;
           const matchOpacity = reduceMotion ? 0.9 : 0.7 + Math.sin(t * 6) * 0.3;
-          const target = onMatch ? matchOpacity : onFocus ? 0.9 : 0;
-          u.ring.material.opacity += (target - u.ring.material.opacity) * 0.14;
+          const personaOpacity = reduceMotion
+            ? 0.48
+            : 0.48 + Math.sin(t * 1.8 + u.phase) * 0.08;
+          const target = onMatch
+            ? matchOpacity
+            : onFocus
+              ? 0.9
+              : onPersona
+                ? personaOpacity
+                : 0;
+          const ringRate = reduceMotion ? 1 : 0.14;
+          u.ring.material.opacity += (target - u.ring.material.opacity) * ringRate;
           if (onMatch) {
-            u.ring.scale.setScalar(reduceMotion ? 1.08 : 1.08 + Math.sin(t * 6) * 0.07);
+            u.ring.scale.setScalar(
+              reduceMotion ? 1.08 : 1.08 + Math.sin(t * 6) * 0.07,
+            );
           }
+          else if (onPersona) u.ring.scale.setScalar(1.04);
           else if (!onFocus) u.ring.scale.setScalar(1.02);
         }
       }
@@ -6661,8 +7091,8 @@
         fogGroup.rotation.z = t * 0.008;
         fogGroup.rotation.y = Math.sin(t * 0.03) * 0.08;
         if (!reduceMotion) {
-          dustGroup.rotation.y = t * 0.014;
-          dustGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
+          spectrumGroup.rotation.y = t * 0.014;
+          spectrumGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
         }
 
         updateKeyboardCamera(delta);
@@ -7127,12 +7557,19 @@
       const cardsMeMarkerEl = $("cardsMeMarker");
       const cardFilterButtons = [...document.querySelectorAll("[data-card-filter]")];
       const cardsQuickEntryBtn = $("cardsQuickEntry");
+      const personaQuickEntryBtn = $("personaQuickEntry");
+      const personaFiltersEl = $("personaFilters");
+      const personaDeckOpenEl = $("personaDeckOpen");
+      const personaFocusChipEl = $("personaFocusChip");
       let cardsFilter = "all";
       let cardsQuery = "";
       let cardsTransitioning = false;
       const failedCardAvatarSources = new Set();
       const cardAvatarFallbacks = new Map();
       const resolvedCardAvatarSources = new Map();
+      let cardsReturnFocus = null;
+      let personaFilter = null;
+      let personaDeckOpen = false;
 
       function stancePercent(stance) {
         return Math.max(0, Math.min(100, Math.round((stance + 1) * 50)));
@@ -7142,7 +7579,8 @@
         if (stance > 0.2) return PRESET.axis.rightTendency;
         return PRESET.axis.center;
       }
-      function matchesCardFilter(stance, isLiked) {
+      function matchesCardFilter(stance, isLiked, castKey) {
+        if (personaFilter && castKey !== personaFilter) return false;
         if (cardsFilter === "left") return stance < -0.2;
         if (cardsFilter === "center") return stance >= -0.2 && stance <= 0.2;
         if (cardsFilter === "right") return stance > 0.2;
@@ -7152,6 +7590,135 @@
       function matchesCardQuery(name, castName, castRole, claim) {
         if (!cardsQuery) return true;
         return `${name} ${castName} ${castRole} ${claim}`.toLowerCase().includes(cardsQuery);
+      }
+      function personaByKey(key) {
+        return PERSONA_CATALOG.find((persona) => persona.key === key) || null;
+      }
+      function syncPersonaFilterUi() {
+        const active = personaByKey(personaFilter);
+        personaFiltersEl.querySelectorAll("[data-persona-filter]").forEach((button) => {
+          const selected = button.getAttribute("data-persona-filter") === personaFilter;
+          button.classList.toggle("is-active", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+        personaDeckOpenEl.setAttribute("aria-expanded", String(personaDeckOpen));
+        personaQuickEntryBtn.classList.toggle("is-active", Boolean(active));
+        personaQuickEntryBtn.style.setProperty("--persona", active?.color || "#e7c17f");
+        $("personaQuickTitle").textContent = active?.name || "本题人格星群";
+        $("personaQuickHint").textContent = active
+          ? "已高亮 · 重新打开卡群"
+          : "看占比与代表观点";
+        personaQuickEntryBtn.setAttribute(
+          "aria-label",
+          active
+            ? `重新打开${active.name}人格卡群`
+            : `浏览本题 ${PERSONA_CATALOG.length} 种人格卡`,
+        );
+        personaFocusChipEl.hidden = !active;
+        if (!active) return;
+        personaFocusChipEl.style.setProperty("--persona", active.color);
+        $("personaFocusName").textContent = active.name;
+      }
+      function setPersonaFilter(key, options = {}) {
+        const active = personaByKey(key);
+        personaFilter = active ? active.key : null;
+        personaDeckOpen = Boolean(active) && options.openDeck !== false;
+        if (active) {
+          users
+            .filter((user) => !user.isMe && user.castKey === active.key)
+            .forEach(ensureRing);
+        }
+        syncPersonaFilterUi();
+        if (cardsEl.classList.contains("show")) {
+          renderCards(options.resetScroll !== false);
+        }
+      }
+      function cyclePersona(offset) {
+        if (!PERSONA_CATALOG.length) return;
+        const current = PERSONA_CATALOG.findIndex((persona) => persona.key === personaFilter);
+        const next = cyclePersonaIndex(current, offset, PERSONA_CATALOG.length);
+        setPersonaFilter(PERSONA_CATALOG[next].key);
+        requestAnimationFrame(() => {
+          cardsListEl.querySelector(`[data-persona-step="${offset}"]`)?.focus();
+        });
+      }
+      function renderPersonaFilters() {
+        const buttons = PERSONA_CATALOG.map((persona) => {
+          const button = uiNode("button", "cards-filter persona-filter");
+          button.type = "button";
+          button.dataset.personaFilter = persona.key;
+          button.style.setProperty("--persona", persona.color);
+          button.setAttribute("aria-pressed", "false");
+          button.append(
+            uiNode("i"),
+            uiNode("span", "", persona.name),
+            uiNode("b", "", persona.count),
+          );
+          return button;
+        });
+        personaFiltersEl.replaceChildren(...buttons);
+        $("personaDeckCount").textContent = PERSONA_CATALOG.length;
+        personaDeckOpenEl.hidden = PERSONA_CATALOG.length === 0;
+        syncPersonaFilterUi();
+      }
+      function renderPersonaDeck() {
+        const persona = personaDeckOpen ? personaByKey(personaFilter) : null;
+        if (!persona) return null;
+        const representative = persona.representative;
+        const section = uiNode("section", "persona-deck");
+        section.style.setProperty("--persona", persona.color);
+        section.dataset.personaDeck = persona.key;
+        section.setAttribute("aria-label", `${persona.name}人格卡`);
+
+        const previous = uiNode("button", "persona-deck-nav persona-deck-nav--previous", "‹");
+        previous.type = "button";
+        previous.dataset.personaStep = "-1";
+        previous.setAttribute("aria-label", "上一种人格");
+        previous.title = "上一种人格";
+
+        const art = uiNode("img", "persona-deck-art");
+        art.src = `../personas/${encodeURIComponent(persona.key)}.jpg`;
+        art.alt = `${persona.name}人格形象`;
+        art.width = 78;
+        art.height = 96;
+
+        const copy = uiNode("div", "persona-deck-copy");
+        copy.append(
+          uiNode(
+            "div",
+            "persona-deck-kicker",
+            `${String(PERSONA_CATALOG.indexOf(persona) + 1).padStart(2, "0")} / ${String(PERSONA_CATALOG.length).padStart(2, "0")} · 本题 ${persona.count} 位 · 占 ${Math.round(persona.share * 100)}%`,
+          ),
+          uiNode("h2", "persona-deck-name", persona.name),
+          uiNode("div", "persona-deck-role", persona.role),
+          uiNode("p", "persona-deck-claim", `“${representative.claim}”`),
+          uiNode(
+            "div",
+            "persona-deck-source",
+            `代表观点 · @${representative.name}${Number.isFinite(representative.votes) ? ` · ${representative.votes} 赞同` : ""}`,
+          ),
+        );
+
+        const actions = uiNode("div", "persona-deck-actions");
+        const read = uiNode(
+          "button",
+          "persona-deck-action persona-deck-action--primary",
+          "看看这一派怎么说",
+        );
+        read.type = "button";
+        read.dataset.personaRead = "";
+        const clear = uiNode("button", "persona-deck-action", "回到整体");
+        clear.type = "button";
+        clear.dataset.personaClear = "";
+        actions.append(read, clear);
+
+        const next = uiNode("button", "persona-deck-nav persona-deck-nav--next", "›");
+        next.type = "button";
+        next.dataset.personaStep = "1";
+        next.setAttribute("aria-label", "下一种人格");
+        next.title = "下一种人格";
+        section.append(previous, art, copy, actions, next);
+        return section;
       }
 
       function cardAvatar(name, source, className, ringColor) {
@@ -7215,6 +7782,7 @@
         const on = liked.has(i);
         const article = uiNode("article", "pcard");
         article.dataset.u = String(i);
+        article.dataset.persona = castKey;
         article.dataset.signal = String(i + 1).padStart(2, "0");
         article.style.setProperty("--cast", castColor);
         article.style.setProperty("--stance", `${stancePercent(stance)}%`);
@@ -7343,7 +7911,7 @@
         const visibleEntries = totalEntries.filter(({ kind, data, index }) => {
           const [name, stance, castKey, claim] = data;
           const [castName, castRole] = CASTS[castKey];
-          return matchesCardFilter(stance, kind === "answer" && liked.has(index)) &&
+          return matchesCardFilter(stance, kind === "answer" && liked.has(index), castKey) &&
             matchesCardQuery(name, castName, castRole, claim);
         });
         const visibleAnswers = visibleEntries.filter((entry) => entry.kind === "answer");
@@ -7401,11 +7969,21 @@
         meButton.disabled = !personaUnlocked();
         head.append(meAvatar, meCopy, mePosition, meButton);
 
-        cardsListEl.replaceChildren(head);
+        cardsListEl.replaceChildren();
+        const personaDeck = renderPersonaDeck();
+        if (personaDeck) cardsListEl.appendChild(personaDeck);
+        cardsListEl.appendChild(head);
         if (visibleAnswers.length) {
           const section = uiNode("div", "cards-section");
+          const selectedPersona = personaByKey(personaFilter);
           section.append(
-            uiNode("span", "", PRESET.peopleLabel || "回答者观点"),
+            uiNode(
+              "span",
+              "",
+              selectedPersona
+                ? `${selectedPersona.name} · ${PRESET.peopleLabel || "回答者观点"}`
+                : PRESET.peopleLabel || "回答者观点",
+            ),
             uiNode("b", "", visibleAnswers.length),
           );
           cardsListEl.append(
@@ -7428,7 +8006,9 @@
           cardsListEl.appendChild(uiNode("div", "cards-empty", "没有找到符合条件的观点"));
         }
         cardsListEl.scrollTop = scrollTop;
-        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size} · 按立场从左到右排列`;
+        const persona = personaByKey(personaFilter);
+        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size}${persona ? ` · ${persona.name}` : ""} · 按立场从左到右排列`;
+        syncPersonaFilterUi();
       }
       function renderCardsIfOpen() {
         if (cardsEl.classList.contains("show")) renderCards();
@@ -7439,8 +8019,11 @@
           window.parent.postMessage({ type: "nebula-view-change", view }, location.origin);
         } catch (e) {}
       }
-      function openCards() {
+      function openCards(focusSelector = "#cardsClose") {
         if (cardsEl.classList.contains("show") || cardsTransitioning) return;
+        cardsReturnFocus = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
         exitFocus();
         renderCards();
         cardsTransitioning = true;
@@ -7457,6 +8040,7 @@
             cardsQuickEntryBtn.classList.remove("is-launching");
             document.body.classList.remove("is-view-transitioning");
             cardsTransitioning = false;
+            document.querySelector(focusSelector)?.focus();
           }, reduceMotion ? 0 : 290);
         }, reduceMotion ? 0 : 130);
       }
@@ -7471,24 +8055,75 @@
           notifyHostView("nebula");
           document.body.classList.remove("is-view-transitioning");
           cardsTransitioning = false;
+          cardsReturnFocus?.focus();
+          cardsReturnFocus = null;
           resumeCirclePrompt();
         }, reduceMotion ? 0 : 180);
       }
-      cardsQuickEntryBtn.addEventListener("click", openCards);
+      function openPersonaDeck() {
+        const key = personaFilter || PERSONA_CATALOG[0]?.key;
+        if (!key) return;
+        setPersonaFilter(key, { openDeck: true });
+        openCards('[data-persona-step="-1"]');
+      }
+      cardsQuickEntryBtn.addEventListener("click", () => openCards());
+      personaQuickEntryBtn.addEventListener("click", openPersonaDeck);
       $("cardsClose").addEventListener("click", closeCards);
       cardsSearchEl.addEventListener("input", (e) => {
         cardsQuery = e.target.value.trim().toLowerCase();
         renderCards(true);
       });
+      function setCardFilter(filter) {
+        cardsFilter = filter || "all";
+        cardFilterButtons.forEach((item) => {
+          const active = item.getAttribute("data-card-filter") === cardsFilter;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-pressed", String(active));
+        });
+      }
       cardFilterButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
         button.addEventListener("click", () => {
-          cardsFilter = button.getAttribute("data-card-filter") || "all";
-          cardFilterButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+          setCardFilter(button.getAttribute("data-card-filter"));
           renderCards(true);
         });
       });
+      personaFiltersEl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-persona-filter]");
+        if (!button) return;
+        setPersonaFilter(button.getAttribute("data-persona-filter"));
+      });
+      personaDeckOpenEl.addEventListener("click", () => {
+        const key = personaFilter || PERSONA_CATALOG[0]?.key;
+        if (key) setPersonaFilter(key, { openDeck: true });
+      });
+      $("personaFocusClear").addEventListener("click", () => {
+        setPersonaFilter(null);
+        showToast("已回到完整观点光谱");
+      });
       cardsListEl.addEventListener("click", (e) => {
         if (e.target.closest("[data-source]")) return;
+        const personaStep = e.target.closest("[data-persona-step]");
+        if (personaStep) {
+          cyclePersona(Number(personaStep.getAttribute("data-persona-step")));
+          return;
+        }
+        if (e.target.closest("[data-persona-read]")) {
+          setCardFilter("all");
+          cardsQuery = "";
+          cardsSearchEl.value = "";
+          personaDeckOpen = false;
+          renderCards(true);
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector(".pcard[data-u]")?.focus();
+          });
+          return;
+        }
+        if (e.target.closest("[data-persona-clear]")) {
+          setPersonaFilter(null);
+          requestAnimationFrame(() => personaDeckOpenEl.focus());
+          return;
+        }
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
@@ -7499,6 +8134,7 @@
         const card = e.target.closest(".pcard[data-u]");
         if (card) openPerson(Number(card.getAttribute("data-u")));
       });
+      renderPersonaFilters();
       cardsListEl.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" || e.target.closest("button")) return;
         const card = e.target.closest(".pcard[data-u]");
@@ -8582,10 +9218,12 @@
         renderClusterBlurb($("circleText"), c);
         chipEl.classList.add("show");
         chipEl.setAttribute("aria-hidden", "false");
+        document.body.classList.add("is-circle-open");
       }
       function hideChip() {
         chipEl.classList.remove("show");
         chipEl.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("is-circle-open");
       }
       function circlePromptBlocked() {
         return document.body.classList.contains("entry-active") ||
@@ -8627,7 +9265,7 @@
       function exitFocus() {
         focusSet = null;
         if (focusLines) {
-          nebula.remove(focusLines);
+          spectrumGroup.remove(focusLines);
           focusLines.geometry.dispose();
           focusLines.material.dispose();
           focusLines = null;
@@ -8641,6 +9279,7 @@
       function focusCluster(c) {
         setFollowedOnly(false, false);
         exitFocus();
+        setPersonaFilter(null);
         setHovered(null);
         cameraFocusUser = null;
         matchIndex = -1;
@@ -8663,7 +9302,7 @@
         });
         focusLines = new THREE.LineSegments(geo, mat);
         focusLines.renderOrder = 4;
-        nebula.add(focusLines);
+        spectrumGroup.add(focusLines);
         commentGroup.visible = false;
         renderClusterBlurb($("focusText"), c);
         focusBannerEl.classList.add("show");
@@ -9073,6 +9712,21 @@
           composer.render();
         },
         pointerEnergy: () => pointerEnergy,
+        spectrumChildrenAligned: () =>
+          userGroup.parent === spectrumGroup &&
+          commentGroup.parent === spectrumGroup &&
+          dustGroup.parent === spectrumGroup,
+        spectrumRotation: () => [
+          spectrumGroup.rotation.x,
+          spectrumGroup.rotation.y,
+          spectrumGroup.rotation.z,
+        ],
+        spectrumAlignmentError: () => {
+          spectrumGroup.updateMatrixWorld(true);
+          const avatarWorld = users[0].group.getWorldPosition(new THREE.Vector3());
+          const dustWorld = dustGroup.localToWorld(users[0].group.position.clone());
+          return avatarWorld.distanceTo(dustWorld);
+        },
         focusSize: () => (focusSet ? focusSet.size : 0),
         followedOnly: () => followedOnly,
         randomIndex: () => lastRandomIndex,
@@ -9093,6 +9747,8 @@
           stanceScore,
           interest,
         })),
+        personaFilter: () => personaFilter,
+        personaCatalog: () => PERSONA_CATALOG.map(({ key, count }) => ({ key, count })),
         portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
         play: () => { running = true; clock.getDelta(); scheduleFrame(); },
         randomDiscover: (animate = false) => randomDiscover(animate),
@@ -9102,6 +9758,7 @@
         heartOn: (i) => !!(users[i] && users[i].heart && users[i].heart.visible),
         ringOpacity: (i) => (users[i] && users[i].ring ? users[i].ring.material.opacity : 0),
         avatarOpacity: (i) => (users[i] ? users[i].avatar.material.opacity : -1),
+        setPersonaFilter: (key) => setPersonaFilter(key, { openDeck: false }),
       };
 
       try {

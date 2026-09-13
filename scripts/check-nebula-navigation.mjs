@@ -6,6 +6,10 @@ import {
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
+import {
+  buildPersonaCatalog,
+  cyclePersonaIndex,
+} from "../public/nebula-scene/persona-browser.js";
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
@@ -336,13 +340,68 @@ assert.match(
 );
 assert.match(
   source,
-  /cardsQuickEntryBtn\.addEventListener\("click",\s*openCards\)/,
+  /cardsQuickEntryBtn\.addEventListener\("click",\s*\(\) => openCards\(\)\)/,
   "常驻观点卡片入口必须直接打开光谱阅读",
 );
 assert.doesNotMatch(
   source,
   /id="modeCards"/,
   "观点卡片入口不得继续隐藏在银河工具箱中",
+);
+assert.match(
+  source,
+  /id="personaFilters"/,
+  "观点阅读必须提供人格筛选入口",
+);
+assert.match(
+  source,
+  /id="personaDeckOpen"/,
+  "观点阅读必须提供人格卡群入口",
+);
+assert.match(
+  source,
+  /id="personaQuickEntry"[\s\S]*id="personaQuickCount"/,
+  "主星云必须常驻展示本题人格卡群入口",
+);
+assert.match(
+  source,
+  /personaQuickEntryBtn\.addEventListener\("click",\s*openPersonaDeck\)/,
+  "主星云人格入口必须直接打开人格卡群",
+);
+assert.match(
+  source,
+  /body\.is-circle-open \.persona-quick-entry,[\s\S]*body\.is-circle-open \.cards-quick-entry/,
+  "小圈子结果显示时必须隐藏右侧常驻入口",
+);
+assert.match(
+  source,
+  /function showChip\(c\)[\s\S]*classList\.add\("is-circle-open"\)[\s\S]*function hideChip\(\)[\s\S]*classList\.remove\("is-circle-open"\)/,
+  "小圈子结果的打开和关闭必须同步页面占用状态",
+);
+assert.match(
+  source,
+  /personaDimmed\s*=\s*Boolean\(personaFilter\)[\s\S]*u\.castKey\s*!==\s*personaFilter/,
+  "人格筛选必须淡出其他人格星体而不是移除节点",
+);
+assert.match(
+  source,
+  /看看这一派怎么说[\s\S]*read\.dataset\.personaRead[\s\S]*回到整体[\s\S]*clear\.dataset\.personaClear/,
+  "人格卡群必须提供阅读当前人格与回到整体的操作",
+);
+assert.match(
+  source,
+  /if \(e\.target\.closest\("\[data-persona-read\]"\)\) \{[\s\S]*setCardFilter\("all"\);[\s\S]*cardsSearchEl\.value = "";/,
+  "阅读当前人格必须清除会掩盖该人格的次级筛选与搜索",
+);
+assert.match(
+  source,
+  /function openCards\(focusSelector = "#cardsClose"\)[\s\S]*document\.querySelector\(focusSelector\)\?\.focus\(\)/,
+  "打开观点层后必须把焦点移入可见内容",
+);
+assert.match(
+  source,
+  /function closeCards\(\)[\s\S]*cardsReturnFocus\?\.focus\(\)/,
+  "关闭观点层后必须恢复原入口焦点",
 );
 assert.match(
   source,
@@ -958,6 +1017,70 @@ assert.match(
   /nebula-view-change/,
   "阅读流必须通知 React 外壳切换视图",
 );
+assert.match(
+  source,
+  /const spectrumGroup = new THREE\.Group\(\);[\s\S]*nebula\.add\(spectrumGroup\)/,
+  "观点尘埃与人物节点必须共享可旋转的光谱容器",
+);
+assert.match(
+  source,
+  /spectrumGroup\.add\(userGroup\)[\s\S]*spectrumGroup\.add\(commentGroup\)[\s\S]*spectrumGroup\.add\(dustGroup\)/,
+  "回答者、评论者和观点尘埃必须位于同一坐标系",
+);
+assert.match(
+  source,
+  /spectrumGroup\.localToWorld\(anchor\.clone\(\)\)\.project\(camera\)/,
+  "光谱两端标签必须跟随旋转后的观点坐标",
+);
+assert.match(
+  source,
+  /spectrumGroup\.add\(focusLines\)/,
+  "小圈子连线必须跟随人物节点旋转",
+);
+assert.match(
+  source,
+  /function focusCluster\(c\)\s*\{[\s\S]*setPersonaFilter\(null\);[\s\S]*focusSet = new Set\(c\.members\)/,
+  "小圈子聚焦必须接管并清除已有的人格筛选",
+);
+assert.match(
+  source,
+  /const personaOpacity = reduceMotion\s*\?\s*0\.48[\s\S]*u\.ring\.material\.opacity \+= \(target - u\.ring\.material\.opacity\) \* ringRate/,
+  "减少动态模式下人格高亮环必须固定并立即收敛",
+);
+assert.doesNotMatch(
+  source,
+  /dustGroup\.rotation\.[yz]/,
+  "观点尘埃不得脱离人物节点独立旋转",
+);
+
+const personaCatalog = buildPersonaCatalog(
+  {
+    fox: ["长答派", "万字长答", "#aeb6d6"],
+    owl: ["深夜派", "三点的诚实", "#dde08a"],
+    goat: ["杠精派", "先找反例", "#bccf96"],
+  },
+  [
+    ["无效人物", -0.9, "missing", "不应进入目录"],
+    ["低赞作者", -0.5, "fox", "低赞观点", "", "", 3],
+    ["高赞作者", 0.1, "fox", "代表观点", "", "", 18],
+    ["夜间作者", 0.4, "owl", "夜间观点"],
+  ],
+);
+assert.deepEqual(
+  personaCatalog.map(({ key, count, representative }) => ({
+    key,
+    count,
+    representativeIndex: representative.index,
+  })),
+  [
+    { key: "fox", count: 2, representativeIndex: 2 },
+    { key: "owl", count: 1, representativeIndex: 3 },
+  ],
+  "人格目录必须省略空人格，并保留代表观点的原始人物索引",
+);
+assert.equal(personaCatalog[0].share, 2 / 3, "人格占比必须只统计合法人物");
+assert.equal(cyclePersonaIndex(0, -1, 2), 1, "人格卡群向前切换必须首尾循环");
+assert.equal(cyclePersonaIndex(1, 1, 2), 0, "人格卡群向后切换必须首尾循环");
 
 const path = "goat?self=1&preset=ai-math&version=20260912";
 
