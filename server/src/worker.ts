@@ -106,7 +106,7 @@ export default {
           : "BOOTSTRAP_ERROR";
       return withCors(
         request,
-        errorResponse(500, code, message),
+        errorResponse(500, code, "Worker 启动失败"),
         env.FRONTEND_ORIGIN,
       );
     }

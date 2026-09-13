@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  fetchZhihuPortrait,
+  fetchZhihuPublicProfile,
+  getActiveZhihuAccountVersion,
+  setActiveZhihuAccountVersion,
+  type ZhihuPortrait,
+} from "./zhihuPortrait";
+import { clearSelfProfileContexts } from "./people";
 
 const OFFICIAL_ORIGIN = "https://soular.top";
 const REQUEST_TIMEOUT_MS = 8_000;
@@ -11,6 +19,7 @@ interface OAuthProfile {
 interface OAuthStatus {
   configured: boolean;
   authorized: boolean;
+  accountVersion: string | null;
   stateVerified: boolean | null;
   profile: OAuthProfile | null;
   error: { code: string; message: string } | null;
@@ -58,19 +67,33 @@ export function OAuthAccount() {
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
+  const [portrait, setPortrait] = useState<ZhihuPortrait | null>(null);
+  const [portraitState, setPortraitState] = useState<"idle" | "loading" | "unavailable">("idle");
   const [callbackFailed, setCallbackFailed] = useState(
     () => new URLSearchParams(window.location.search).get("oauth") === "error",
   );
+  const statusRequestSequenceRef = useRef(0);
+  const statusRequestControllerRef = useRef<AbortController | null>(null);
+  const activeAccountVersionRef = useRef(getActiveZhihuAccountVersion());
+  const logoutInProgressRef = useRef(false);
 
-  const loadStatus = useCallback(async (signal?: AbortSignal) => {
-    if (!isOfficialOrigin) return;
+  const loadStatus = useCallback(async () => {
+    if (!isOfficialOrigin || logoutInProgressRef.current) return;
+    const sequence = ++statusRequestSequenceRef.current;
+    statusRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    statusRequestControllerRef.current = controller;
     try {
       const response = await fetchWithTimeout("/api/oauth/status", {
         credentials: "include",
         headers: { Accept: "application/json" },
-        signal,
+        signal: controller.signal,
       });
       const payload: unknown = await response.json();
+      if (
+        controller.signal.aborted ||
+        sequence !== statusRequestSequenceRef.current
+      ) return;
       if (
         !response.ok ||
         !payload ||
@@ -81,6 +104,23 @@ export function OAuthAccount() {
         throw new Error("OAuth status unavailable");
       }
       const value = payload as Record<string, unknown>;
+      const accountVersion =
+        typeof value.accountVersion === "string" &&
+        /^[a-f0-9]{16}$/.test(value.accountVersion)
+          ? value.accountVersion
+          : null;
+      const nextAccountVersion = value.authorized === true
+        ? accountVersion
+        : null;
+      const accountChanged =
+        activeAccountVersionRef.current !== nextAccountVersion;
+      if (accountChanged) {
+        clearSelfProfileContexts();
+        setPortrait(null);
+        setPortraitState("idle");
+      }
+      activeAccountVersionRef.current = nextAccountVersion;
+      setActiveZhihuAccountVersion(nextAccountVersion);
       const profileValue =
         value.profile && typeof value.profile === "object"
           ? (value.profile as Record<string, unknown>)
@@ -89,9 +129,10 @@ export function OAuthAccount() {
         value.error && typeof value.error === "object"
           ? (value.error as Record<string, unknown>)
           : null;
-      setStatus({
+      const nextStatus: OAuthStatus = {
         configured: value.configured === true,
-        authorized: value.authorized === true,
+        authorized: nextAccountVersion !== null,
+        accountVersion: nextAccountVersion,
         stateVerified:
           typeof value.stateVerified === "boolean" ? value.stateVerified : null,
         profile: profileValue
@@ -107,23 +148,135 @@ export function OAuthAccount() {
           typeof errorValue.message === "string"
             ? { code: errorValue.code, message: errorValue.message }
             : null,
+      };
+      setStatus((current) => {
+        if (
+          current?.accountVersion &&
+          current.accountVersion !== nextStatus.accountVersion
+        ) {
+          clearSelfProfileContexts();
+        }
+        if (
+          current?.accountVersion &&
+          current.accountVersion === nextStatus.accountVersion
+        ) {
+          return {
+            ...nextStatus,
+            profile: {
+              name: nextStatus.profile?.name ?? current.profile?.name ?? null,
+              avatarUrl:
+                nextStatus.profile?.avatarUrl ??
+                current.profile?.avatarUrl ??
+                null,
+            },
+          };
+        }
+        return nextStatus;
       });
       setUnavailable(false);
       setLogoutFailed(false);
     } catch (error) {
-      if (signal?.aborted) return;
+      if (
+        controller.signal.aborted ||
+        sequence !== statusRequestSequenceRef.current
+      ) return;
       setUnavailable(true);
+    } finally {
+      if (statusRequestControllerRef.current === controller) {
+        statusRequestControllerRef.current = null;
+      }
     }
   }, [isOfficialOrigin]);
 
   useEffect(() => {
     if (!isOfficialOrigin) return undefined;
-    const controller = new AbortController();
-    void loadStatus(controller.signal);
-    return () => controller.abort();
+    let lastRefreshAt = 0;
+    const refresh = () => {
+      const now = Date.now();
+      if (now - lastRefreshAt < 500) return;
+      lastRefreshAt = now;
+      void loadStatus();
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      statusRequestSequenceRef.current += 1;
+      statusRequestControllerRef.current?.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [isOfficialOrigin, loadStatus]);
 
+  useEffect(() => {
+    if (
+      !isOfficialOrigin ||
+      status?.authorized !== true ||
+      !status.accountVersion ||
+      safeAvatarUrl(status.profile?.avatarUrl)
+    ) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    void fetchZhihuPublicProfile(status.accountVersion, controller.signal)
+      .then((profile) => {
+        if (!profile) return;
+        setStatus((current) =>
+          current?.accountVersion === status.accountVersion
+            ? {
+                ...current,
+                profile: {
+                  name: profile.name ?? current.profile?.name ?? null,
+                  avatarUrl: profile.avatarUrl ?? current.profile?.avatarUrl ?? null,
+                },
+              }
+            : current
+        );
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [isOfficialOrigin, status?.accountVersion, status?.authorized, status?.profile?.avatarUrl]);
+
+  useEffect(() => {
+    if (!isOfficialOrigin || status?.authorized !== true) {
+      setPortrait(null);
+      setPortraitState("idle");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setPortraitState("loading");
+    void fetchZhihuPortrait(controller.signal)
+      .then((value) => {
+        if (
+          !status.accountVersion ||
+          value.accountVersion !== status.accountVersion ||
+          activeAccountVersionRef.current !== status.accountVersion
+        ) {
+          throw new Error("portrait account changed");
+        }
+        setPortrait(value);
+        setPortraitState("idle");
+      })
+      .catch(() => {
+        if (
+          controller.signal.aborted ||
+          activeAccountVersionRef.current !== status.accountVersion
+        ) return;
+        setPortrait(null);
+        setPortraitState("unavailable");
+      });
+    return () => controller.abort();
+  }, [isOfficialOrigin, status?.accountVersion, status?.authorized]);
+
   async function logout() {
+    logoutInProgressRef.current = true;
+    statusRequestSequenceRef.current += 1;
+    statusRequestControllerRef.current?.abort();
     setBusy(true);
     setLogoutFailed(false);
     try {
@@ -136,15 +289,22 @@ export function OAuthAccount() {
       setStatus({
         configured: true,
         authorized: false,
+        accountVersion: null,
         stateVerified: null,
         profile: null,
         error: null,
       });
+      setPortrait(null);
+      setPortraitState("idle");
+      activeAccountVersionRef.current = null;
+      setActiveZhihuAccountVersion(null);
+      clearSelfProfileContexts();
       setUnavailable(false);
       setCallbackFailed(false);
     } catch {
       setLogoutFailed(true);
     } finally {
+      logoutInProgressRef.current = false;
       setBusy(false);
     }
   }
@@ -214,10 +374,20 @@ export function OAuthAccount() {
     : isTemporaryConnection
       ? "知乎账号已连接，仅适合临时联调"
       : "知乎账号已连接";
+  const portraitWords = portrait?.keywords
+    .slice(0, 2)
+    .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
+  const portraitDetail = portraitState === "loading"
+    ? "正在同步兴趣画像"
+    : portraitWords.length
+      ? "兴趣画像已校准"
+      : portraitState === "unavailable"
+        ? "兴趣画像暂不可用"
+        : null;
   return (
     <div
       className="oauth-account oauth-account--connected"
-      aria-label={connectionLabel}
+      aria-label={`${connectionLabel}${portraitWords.length ? `，兴趣底色 ${portraitWords.join("、")}` : ""}`}
     >
       {avatarUrl ? (
         <img className="oauth-account__avatar" src={avatarUrl} alt="" />
@@ -226,8 +396,15 @@ export function OAuthAccount() {
       )}
       <span className="oauth-account__name">
         <span>{status.profile?.name || "已连接知乎"}</span>
-        {connectionWarning ? (
-          <small className="oauth-account__warning">{connectionWarning}</small>
+        {connectionWarning || portraitDetail ? (
+          <small className={connectionWarning ? "oauth-account__warning" : "oauth-account__portrait"}>
+            {connectionWarning ?? portraitDetail}
+            {!connectionWarning && portraitWords.length > 0 ? (
+              <span className="oauth-account__portrait-words">
+                {` · ${portraitWords.join(" / ")}`}
+              </span>
+            ) : null}
+          </small>
         ) : null}
       </span>
       <button

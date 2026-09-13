@@ -1,19 +1,43 @@
-import { useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CASTS } from "./cast";
-import { AppChrome } from "./AppChrome";
-import { GalaxyShowcase } from "./GalaxyShowcase";
+import { Nebula } from "./Nebula";
+import { OAuthAccount } from "./OAuthAccount";
 import { WaveStage } from "./WaveStage";
 
-const FLOW_STEPS = [
-  { title: "看见分布", copy: "把数百条回答压成一张立场星图" },
-  { title: "留下坐标", copy: "点赞认同的观点，星位随之移动" },
-  { title: "带走人格", copy: "沉淀为可分享的观点人格卡" },
-];
+const QUESTION_PRESETS = [
+  {
+    id: "career-35",
+    serial: "01",
+    kind: "示例星云",
+    title: "35 岁程序员该不该转行？",
+    detail: "48 个观点",
+  },
+  {
+    id: "ai-math",
+    serial: "02",
+    kind: "真实讨论",
+    title: "AI 是否正在毁掉数学？",
+    detail: "31 个观点",
+  },
+] as const;
 
-export function Home() {
+function PersonaHome() {
   const navigate = useNavigate();
   const waveFrameRef = useRef<HTMLIFrameElement>(null);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
+  const matchingQuestions = normalizedQuery
+    ? QUESTION_PRESETS.filter(({ title }) =>
+        title.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+      )
+    : QUESTION_PRESETS;
+
+  function openQuestion(preset: string) {
+    navigate(`/?preset=${encodeURIComponent(preset)}&confirm=1`, {
+      state: { fromPersonaHome: true },
+    });
+  }
 
   useEffect(() => {
     try {
@@ -33,55 +57,70 @@ export function Home() {
   }, [navigate]);
 
   return (
-    <div className="home-shell">
-      <WaveStage className="home-shell__stage" iframeRef={waveFrameRef} />
-      <div className="home-shell__veil" aria-hidden="true" />
-      <AppChrome />
-      <main className="home-landing">
-        <section className="home-hero">
-          <p className="home-hero__eyebrow">知乎讨论 · 观点光谱 · 可探索星图</p>
-          <h1 className="home-hero__title">
-            把一场讨论，
-            <br />
-            变成一张可漫游的<span>观点地图</span>
-          </h1>
-          <p className="home-hero__lede">
-            每颗星对应一条真实或示例回答，位置代表立场，距离呈现分歧。
-            沿光谱阅读、点赞比较，最后找到自己在讨论中的坐标。
-          </p>
-          <ol className="home-flow" aria-label="体验流程">
-            {FLOW_STEPS.map((step, index) => (
-              <li key={step.title} className="home-flow__item">
-                <span className="home-flow__index" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="home-flow__copy">
-                  <b>{step.title}</b>
-                  <small>{step.copy}</small>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <GalaxyShowcase />
-
-        <section className="home-secondary" aria-label="人格卡入口">
-          <div className="home-secondary__copy">
-            <p className="home-secondary__eyebrow">九派人格书架</p>
-            <h2>先翻翻人格卡，再进星云点赞</h2>
-            <p>下方波浪带可试读九种观点人格。进入星云后，点赞会让星位更贴近你的立场。</p>
-          </div>
-          <Link to="/nebula?preset=ai-math" className="home-cta">
-            <span className="home-cta__glyph" aria-hidden="true">✦</span>
-            <span className="home-cta__copy">
-              <b>进入观点星云</b>
-              <small>从 AI 与数学的真实讨论开始</small>
+    <main className="persona-home">
+      <WaveStage iframeRef={waveFrameRef} />
+      <OAuthAccount />
+      <section className="question-dock" aria-label="搜索观点星云">
+        <div className="question-dock__topics" aria-label="已发布问题">
+          {matchingQuestions.map((question, index) => (
+            <button
+              key={question.id}
+              type="button"
+              className={`question-ticket question-ticket--${index + 1}`}
+              onClick={() => openQuestion(question.id)}
+            >
+              <span className="question-ticket__meta">
+                {question.serial} · {question.kind}
+              </span>
+              <b>{question.title}</b>
+              <small>{question.detail} · 点击进入</small>
+            </button>
+          ))}
+        </div>
+        <form
+          className="question-search"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const target = matchingQuestions[0];
+            if (target) openQuestion(target.id);
+          }}
+        >
+          <span className="question-search__galaxy" aria-hidden="true">
+            <i className="question-search__orbit question-search__orbit--outer" />
+            <i className="question-search__orbit question-search__orbit--inner" />
+            <i className="question-search__core">✦</i>
+          </span>
+          <label className="question-search__field">
+            <span>
+              星图检索 · {String(matchingQuestions.length).padStart(2, "0")} 座星云
             </span>
-            <span className="home-cta__arrow" aria-hidden="true">→</span>
-          </Link>
-        </section>
-      </main>
-    </div>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="输入问题，寻找观点星系"
+              aria-label="搜索已发布的问题"
+            />
+          </label>
+          <button type="submit" disabled={matchingQuestions.length === 0}>
+            <span>进入银河</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <p className="question-dock__hint" role="status">
+          {matchingQuestions.length
+            ? "从一个问题出发，看见观点的星系"
+            : "还没有发布这个问题的观点星云"}
+        </p>
+      </section>
+    </main>
   );
+}
+
+export function Home() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("confirm") === "1" ||
+    searchParams.get("explore") === "1"
+    ? <Nebula entryMode />
+    : <PersonaHome />;
 }

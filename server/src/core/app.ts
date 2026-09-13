@@ -20,6 +20,11 @@ import type { ZhihuProfile } from "../types.js";
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 const OAUTH_PROFILE_TTL_SECONDS = 10 * 60;
+const OAUTH_PROFILE_FAILURE_TTL_SECONDS = 60;
+
+type OAuthProfileCacheValue =
+  | ZhihuProfile
+  | { unavailable: true };
 
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest(
@@ -59,6 +64,32 @@ function zhihuErrorStatus(error: ZhihuApiError): number {
   return 502;
 }
 
+function mergeOAuthProfiles(
+  storedProfile: ZhihuProfile | null,
+  recoveredProfile: ZhihuProfile | null,
+): ZhihuProfile | null {
+  if (!storedProfile && !recoveredProfile) return null;
+  const profile: ZhihuProfile = {
+    name: recoveredProfile?.name ?? storedProfile?.name ?? null,
+    avatarUrl: recoveredProfile?.avatarUrl ?? storedProfile?.avatarUrl ?? null,
+    headline: recoveredProfile?.headline ?? storedProfile?.headline ?? null,
+    url: recoveredProfile?.url ?? storedProfile?.url ?? null,
+  };
+  return profile.name || profile.avatarUrl || profile.headline || profile.url
+    ? profile
+    : null;
+}
+
+function isUnavailableProfile(
+  value: OAuthProfileCacheValue,
+): value is { unavailable: true } {
+  return "unavailable" in value && value.unavailable === true;
+}
+
+function publicAccountVersion(accountFingerprint: string): string {
+  return accountFingerprint.slice(0, 16);
+}
+
 export function createHandler(deps: HandlerDeps): (request: Request) => Promise<Response> {
   const { config, sessions, contentCache = null } = deps;
   const client = config.dataApiConfigured
@@ -66,22 +97,42 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
     : null;
   const portraitInflight = new Map<string, Promise<Portrait>>();
   const profileInflight = new Map<string, Promise<ZhihuProfile | null>>();
+  const profileFailureUntil = new Map<string, number>();
 
   async function resolveOAuthProfile(
     oauthToken: string,
     storedProfile: ZhihuProfile | null,
+    accountFingerprint: string,
   ): Promise<ZhihuProfile | null> {
     if (storedProfile?.avatarUrl || !config.dataApiConfigured) {
       return storedProfile;
     }
 
-    const accountFingerprint = await sha256Hex(oauthToken);
     const cacheKey = `oauth-profile:${accountFingerprint}`;
+    const existingRequest = profileInflight.get(cacheKey);
+    if (existingRequest) {
+      return mergeOAuthProfiles(storedProfile, await existingRequest);
+    }
+    if ((profileFailureUntil.get(cacheKey) ?? 0) > Date.now()) {
+      return storedProfile;
+    }
     if (contentCache) {
       try {
-        const cached = await contentCache.get<ZhihuProfile>(cacheKey);
-        if (cached && cached.ageMs <= OAUTH_PROFILE_TTL_SECONDS * 1000) {
-          return cached.value;
+        const cached = await contentCache.get<OAuthProfileCacheValue>(cacheKey);
+        if (cached && isUnavailableProfile(cached.value)) {
+          if (cached.ageMs <= OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000) {
+            profileFailureUntil.set(
+              cacheKey,
+              Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
+            );
+            return storedProfile;
+          }
+        } else if (
+          cached &&
+          !isUnavailableProfile(cached.value) &&
+          cached.ageMs <= OAUTH_PROFILE_TTL_SECONDS * 1000
+        ) {
+          return mergeOAuthProfiles(storedProfile, cached.value);
         }
       } catch {
         // Profile cache outages must not hide an otherwise valid login.
@@ -90,20 +141,37 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
 
     let request = profileInflight.get(cacheKey);
     if (!request) {
-      request = fetchProfile(config.accessSecret, oauthToken)
-        .catch(() => null)
+      request = (async () => {
+        const profile = await fetchProfile(config.accessSecret, oauthToken)
+          .catch(() => null);
+        if (profile) {
+          profileFailureUntil.delete(cacheKey);
+        } else {
+          profileFailureUntil.set(
+            cacheKey,
+            Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
+          );
+        }
+        if (contentCache) {
+          try {
+            await contentCache.set(
+              cacheKey,
+              profile ?? { unavailable: true },
+              profile
+                ? OAUTH_PROFILE_TTL_SECONDS
+                : OAUTH_PROFILE_FAILURE_TTL_SECONDS,
+            );
+          } catch {
+            // Profile recovery still succeeds when cache publication fails.
+          }
+        }
+        return profile;
+      })()
         .finally(() => profileInflight.delete(cacheKey));
       profileInflight.set(cacheKey, request);
     }
     const profile = await request;
-    if (profile && contentCache) {
-      await contentCache.set(
-        cacheKey,
-        profile,
-        OAUTH_PROFILE_TTL_SECONDS,
-      ).catch(() => undefined);
-    }
-    return profile ?? storedProfile;
+    return mergeOAuthProfiles(storedProfile, profile);
   }
 
   return async function handler(request: Request): Promise<Response> {
@@ -122,22 +190,50 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
             ...publicStatus(config),
             authorized: false,
             profile: null,
+            accountVersion: null,
             stateVerified: null,
             expiresAt: null,
             error: null,
           });
         }
-        const profile = session.token
-          ? await resolveOAuthProfile(session.token, session.profile)
-          : session.profile;
+        const accountFingerprint = session.token
+          ? await sha256Hex(session.token)
+          : null;
         return jsonResponse(200, {
           ok: true,
           ...publicStatus(config),
           authorized: Boolean(session.token),
-          profile,
+          profile: session.profile,
+          accountVersion: accountFingerprint
+            ? publicAccountVersion(accountFingerprint)
+            : null,
           stateVerified: session.stateVerified,
           expiresAt: session.expiresAt ? new Date(session.expiresAt).toISOString() : null,
           error: session.error,
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/oauth/profile") {
+        const session = await sessions.load(request);
+        if (!session?.token) {
+          return jsonResponse(401, {
+            ok: false,
+            error: {
+              code: "NOT_AUTHORIZED",
+              message: "请先完成知乎登录",
+            },
+          });
+        }
+        const accountFingerprint = await sha256Hex(session.token);
+        const profile = await resolveOAuthProfile(
+          session.token,
+          session.profile,
+          accountFingerprint,
+        );
+        return jsonResponse(200, {
+          ok: true,
+          accountVersion: publicAccountVersion(accountFingerprint),
+          profile,
         });
       }
 
@@ -279,6 +375,20 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         const accountFingerprint = await sha256Hex(oauthToken);
         const cacheKey = `portrait:${accountFingerprint}`;
         const failureCacheKey = `portrait-failure:${accountFingerprint}`;
+        const respondWithPortrait = (portrait: Portrait, cached: boolean) =>
+          withCookie(
+            jsonResponse(200, {
+              ok: true,
+              cached,
+              accountVersion: publicAccountVersion(accountFingerprint),
+              data: portrait,
+            }),
+            setCookie,
+          );
+        const existingPortraitPromise = portraitInflight.get(cacheKey);
+        if (existingPortraitPromise) {
+          return respondWithPortrait(await existingPortraitPromise, false);
+        }
         if (contentCache) {
           try {
             const cached = await contentCache.get<Portrait>(cacheKey);
@@ -289,14 +399,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
                 ? PARTIAL_PORTRAIT_TTL_SECONDS
                 : PORTRAIT_TTL_SECONDS;
             if (cached && cached.ageMs <= cacheTtl * 1000) {
-              return withCookie(
-                jsonResponse(200, {
-                  ok: true,
-                  cached: true,
-                  data: cached.value,
-                }),
-                setCookie,
-              );
+              return respondWithPortrait(cached.value, true);
             }
           } catch {
             // Cache outages must not block fresh user-data reads.
@@ -319,48 +422,46 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
 
         let portraitPromise = portraitInflight.get(cacheKey);
         if (!portraitPromise) {
-          portraitPromise = buildPortrait(client, oauthToken).finally(() => {
+          portraitPromise = (async () => {
+            try {
+              const portrait = await buildPortrait(client, oauthToken);
+              if (contentCache) {
+                await Promise.allSettled([
+                  contentCache.set(
+                    cacheKey,
+                    portrait,
+                    portrait.warnings.length
+                      ? PARTIAL_PORTRAIT_TTL_SECONDS
+                      : PORTRAIT_TTL_SECONDS,
+                  ),
+                  contentCache.set(
+                    failureCacheKey,
+                    false,
+                    PARTIAL_PORTRAIT_TTL_SECONDS,
+                  ),
+                ]);
+              }
+              return portrait;
+            } catch (error) {
+              if (error instanceof PortraitUnavailableError) {
+                try {
+                  await contentCache?.set(
+                    failureCacheKey,
+                    true,
+                    PARTIAL_PORTRAIT_TTL_SECONDS,
+                  );
+                } catch {
+                  // Preserve the original upstream error when cache storage fails.
+                }
+              }
+              throw error;
+            }
+          })().finally(() => {
             portraitInflight.delete(cacheKey);
           });
           portraitInflight.set(cacheKey, portraitPromise);
         }
-        let portrait: Portrait;
-        try {
-          portrait = await portraitPromise;
-        } catch (error) {
-          if (error instanceof PortraitUnavailableError) {
-            try {
-              await contentCache?.set(
-                failureCacheKey,
-                true,
-                PARTIAL_PORTRAIT_TTL_SECONDS,
-              );
-            } catch {
-              // Preserve the original upstream error when cache storage fails.
-            }
-          }
-          throw error;
-        }
-        if (contentCache) {
-          await Promise.allSettled([
-            contentCache.set(
-              cacheKey,
-              portrait,
-              portrait.warnings.length
-                ? PARTIAL_PORTRAIT_TTL_SECONDS
-                : PORTRAIT_TTL_SECONDS,
-            ),
-            contentCache.set(
-              failureCacheKey,
-              false,
-              PARTIAL_PORTRAIT_TTL_SECONDS,
-            ),
-          ]);
-        }
-        return withCookie(
-          jsonResponse(200, { ok: true, cached: false, data: portrait }),
-          setCookie,
-        );
+        return respondWithPortrait(await portraitPromise, false);
       }
 
       if (request.method === "GET" && url.pathname === "/api/zhihu/hot") {
@@ -405,7 +506,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         ok: false,
         error: {
           code: "INTERNAL",
-          message: error instanceof Error ? error.message : "服务器内部错误",
+          message: "服务器内部错误",
         },
       });
     }

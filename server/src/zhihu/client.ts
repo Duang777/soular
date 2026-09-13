@@ -12,7 +12,7 @@ import type {
   ZhiDaResponse,
   ZhihuEnvelope,
 } from "../types.js";
-import type { AsyncCache } from "../core/storage.js";
+import type { AsyncCache, CacheEntry } from "../core/storage.js";
 
 const DATA_BASE = "https://developer.zhihu.com";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -25,7 +25,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const HOT_LIST_TTL_SECONDS = 10 * 60;
+const HOT_LIST_TTL_SECONDS = 6 * 60 * 60;
+const HOT_LIST_LIMIT = 30;
 const SEARCH_TTL_SECONDS = 5 * 60;
 const QUESTION_ANSWERS_TTL_SECONDS = 10 * 60;
 
@@ -204,16 +205,26 @@ export class ZhihuClient {
     if (existing) return existing;
 
     const pending = (async () => {
-      const stale = this.cache ? (await this.cache.get<T>(key)) ?? null : null;
-      if (stale && stale.ageMs <= ttlSeconds * 1000) return stale.value;
+      let stale: CacheEntry<T> | null = null;
       try {
-        const value = await load();
-        await this.cache?.set(key, value, ttlSeconds);
-        return value;
+        stale = this.cache ? (await this.cache.get<T>(key)) ?? null : null;
+      } catch {
+        // Cache availability must not determine whether a fresh request can run.
+      }
+      if (stale && stale.ageMs <= ttlSeconds * 1000) return stale.value;
+      let value: T;
+      try {
+        value = await load();
       } catch (error) {
         if (stale) return stale.value;
         throw error;
       }
+      try {
+        await this.cache?.set(key, value, ttlSeconds);
+      } catch {
+        // A successful upstream response remains usable when cache storage fails.
+      }
+      return value;
     })().finally(() => {
       this.inflight.delete(key);
     });
@@ -229,17 +240,18 @@ export class ZhihuClient {
     return `${pathname}?${params.toString()}`;
   }
 
-  hotList(limit = 30): Promise<HotListData> {
-    const normalizedLimit = clamp(limit, 1, 30, 30);
-    const query: Query = { Limit: normalizedLimit };
-    return this.cached(
+  async hotList(limit = HOT_LIST_LIMIT): Promise<HotListData> {
+    const normalizedLimit = clamp(limit, 1, HOT_LIST_LIMIT, HOT_LIST_LIMIT);
+    const query: Query = { Limit: HOT_LIST_LIMIT };
+    const result = await this.cached(
       this.queryKey("/api/v1/content/hot_list", query),
       HOT_LIST_TTL_SECONDS,
       async () => normalizeHotListData(
         await this.envelope<HotListData>("/api/v1/content/hot_list", query),
-        normalizedLimit,
+        HOT_LIST_LIMIT,
       ),
     );
+    return { ...result, Items: result.Items.slice(0, normalizedLimit) };
   }
 
   globalSearch(

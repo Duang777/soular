@@ -2,6 +2,7 @@ import type { ZhihuProfile } from "../types.js";
 
 const OPENAPI_BASE = "https://openapi.zhihu.com";
 const REQUEST_TIMEOUT_MS = 20_000;
+const PROFILE_REQUEST_TIMEOUT_MS = 6_000;
 
 export class ZhihuOAuthError extends Error {
   code: string;
@@ -51,6 +52,16 @@ function payloadError(payload: unknown, fallback: string): ZhihuOAuthError {
   const code =
     asString(record?.code) ?? asString(record?.Code) ?? "OAUTH_FAILED";
   return new ZhihuOAuthError(code, String(message).slice(0, 200));
+}
+
+function shouldRetryWithOAuthBearer(
+  response: Response,
+  payload: unknown,
+): boolean {
+  if (response.status === 401 || response.status === 403) return true;
+  const record = asRecord(payload);
+  const code = String(record?.code ?? record?.Code ?? "");
+  return /^40[13]/.test(code);
 }
 
 export interface TokenExchangeInput {
@@ -164,6 +175,7 @@ export async function fetchProfile(
 ): Promise<ZhihuProfile | null> {
   const safeAccessSecret = assertSafe(accessSecret, "Access Secret");
   const safeOAuthToken = assertSafe(oauthToken, "OAuth token");
+  const signal = AbortSignal.timeout(PROFILE_REQUEST_TIMEOUT_MS);
   const primaryResponse = await fetch(`${OPENAPI_BASE}/user`, {
     method: "GET",
     headers: {
@@ -172,12 +184,18 @@ export async function fetchProfile(
       "X-Request-Timestamp": String(Math.floor(Date.now() / 1000)),
       "Content-Type": "application/json",
     },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal,
   });
   const primaryPayload: unknown =
     await primaryResponse.json().catch(() => null);
   const primaryProfile = profileFromPayload(primaryPayload);
   if (primaryProfile) return primaryProfile;
+  if (!shouldRetryWithOAuthBearer(primaryResponse, primaryPayload)) {
+    if (!primaryResponse.ok) {
+      throw payloadError(primaryPayload, "用户资料接口请求失败");
+    }
+    return null;
+  }
 
   const oauthResponse = await fetch(`${OPENAPI_BASE}/user`, {
     method: "GET",
@@ -185,7 +203,7 @@ export async function fetchProfile(
       Authorization: `Bearer ${safeOAuthToken}`,
       "Content-Type": "application/json",
     },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal,
   });
   const oauthPayload: unknown = await oauthResponse.json().catch(() => null);
   return profileFromPayload(oauthPayload);

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+  <title id="title">思想银河人格星云封面</title>
+  <desc id="description">一只稚拙手绘的人格猫，卷曲的尾巴延伸成承载不同观点星点的银河轨道。</desc>
+  <rect width="1600" height="900" fill="#fff"/>
+
+  <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <!-- The cat and the nebula are one connected silhouette: its tail becomes the orbit. -->
+    <path d="M685 642 C625 664 553 654 519 603 C485 551 489 471 515 416"
+      stroke-width="11"/>
+    <path d="M515 416 C475 362 481 275 530 231 C582 185 679 180 750 221"
+      stroke-width="9"/>
+    <path d="M750 221 C822 176 925 195 967 250 C1003 299 996 371 964 414"
+      stroke-width="12"/>
+    <path d="M964 414 C989 475 972 566 915 617 C856 668 746 675 685 642"
+      stroke-width="8"/>
+
+    <!-- Crooked ears -->
+    <path d="M523 268 L514 154 L613 211" stroke-width="10"/>
+    <path d="M531 241 L539 188 L584 221" stroke-width="5"/>
+    <path d="M881 207 L974 143 L958 279" stroke-width="12"/>
+    <path d="M910 221 L953 178 L945 246" stroke-width="6"/>
+
+    <!-- Uneven, curious face -->
+    <path d="M585 342 C603 315 646 312 666 343 C680 368 665 402 635 405 C603 407 574 378 585 342"
+      stroke-width="8"/>
+    <path d="M785 337 C807 303 852 308 868 341 C880 367 860 398 829 397 C797 396 773 370 785 337"
+      stroke-width="11"/>
+    <path d="M625 350 C631 341 644 342 649 353 C653 364 647 378 636 377 C624 376 619 363 625 350"
+      fill="#000" stroke-width="4"/>
+    <path d="M820 348 C824 337 839 337 845 348 C850 360 843 374 831 373 C819 372 815 359 820 348"
+      fill="#000" stroke-width="4"/>
+    <path d="M706 402 L734 390 L751 412 L727 427 Z" stroke-width="8"/>
+    <path d="M727 428 C716 447 691 452 675 440" stroke-width="7"/>
+    <path d="M729 428 C746 449 777 451 791 433" stroke-width="9"/>
+    <path d="M613 442 C574 429 548 426 518 430" stroke-width="5"/>
+    <path d="M610 463 C566 462 543 470 511 485" stroke-width="8"/>
+    <path d="M808 438 C850 422 884 421 916 427" stroke-width="6"/>
+    <path d="M813 461 C851 460 887 470 916 490" stroke-width="9"/>
+
+    <!-- A tiny tie turns the character into a personality-card figure. -->
+    <path d="M693 539 L730 521 L765 543 L735 572 Z" stroke-width="9"/>
+    <path d="M692 540 L646 518 L652 576 L735 572" stroke-width="7"/>
+    <path d="M765 543 L818 515 L813 577 L735 572" stroke-width="11"/>
+    <path d="M666 598 C684 624 697 635 710 650" stroke-width="6"/>
+    <path d="M804 598 C790 624 776 638 759 653" stroke-width="8"/>
+
+    <!-- The tail opens into a deliberately broken, wobbly opinion galaxy. -->
+    <path d="M914 617 C1005 659 1150 653 1248 593 C1351 529 1376 419 1304 342"
+      stroke-width="12"/>
+    <path d="M1286 325 C1211 251 1065 218 934 246 C811 273 741 349 770 417"
+      stroke-width="8"/>
+    <path d="M788 438 C831 491 941 519 1041 496 C1127 477 1176 423 1148 382"
+      stroke-width="10"/>
+    <path d="M1135 368 C1107 338 1047 328 994 342 C954 353 928 378 936 402"
+      stroke-width="6"/>
+
+    <!-- Viewpoints remain simple repeated marks within the single galaxy form. -->
+    <path d="M1195 268 L1205 287 L1227 290 L1210 306 L1214 328 L1194 317 L1175 328 L1179 306 L1163 291 L1185 287 Z"
+      stroke-width="7"/>
+    <path d="M1322 394 L1330 409 L1347 412 L1334 425 L1337 443 L1321 434 L1305 443 L1309 425 L1296 413 L1313 409 Z"
+      stroke-width="5"/>
+    <path d="M1210 566 L1218 579 L1234 582 L1222 593 L1224 609 L1210 601 L1196 609 L1199 593 L1188 583 L1203 579 Z"
+      stroke-width="8"/>
+
+    <path d="M1082 242 C1095 229 1119 234 1126 250 C1132 266 1121 285 1103 285 C1083 285 1068 258 1082 242"
+      stroke-width="9"/>
+    <path d="M1290 516 C1301 503 1323 507 1329 522 C1334 538 1322 553 1307 552 C1290 551 1278 530 1290 516"
+      stroke-width="6"/>
+    <path d="M1085 523 C1096 510 1115 513 1122 527 C1128 541 1117 557 1101 557 C1084 556 1074 537 1085 523"
+      stroke-width="10"/>
+    <path d="M915 286 C925 276 942 280 946 292 C949 306 939 317 926 315 C914 313 906 297 915 286"
+      stroke-width="5"/>
+    <path d="M872 486 C883 474 901 478 906 491 C910 504 900 518 886 517 C871 516 862 498 872 486"
+      stroke-width="8"/>
+    <path d="M1261 640 C1270 630 1286 632 1292 645 C1296 657 1287 670 1274 670 C1261 668 1253 651 1261 640"
+      stroke-width="6"/>
+
+    <!-- A few imperfect motion marks keep the drawing lively without adding scenery. -->
+    <path d="M453 347 C432 337 416 324 402 307" stroke-width="7"/>
+    <path d="M451 380 C425 378 405 380 386 386" stroke-width="5"/>
+    <path d="M1008 664 C1018 683 1028 697 1044 709" stroke-width="8"/>
+  </g>
+</svg>

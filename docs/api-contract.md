@@ -99,8 +99,10 @@ GitHub Pages 仅作公开页面镜像，不作为 OAuth 个性化能力的正式
 }
 ```
 
-缓存：按参数缓存 10 分钟；上游失败时可返回 KV 中的旧数据。服务端在写入缓存前校验
-`Items` 并裁剪到请求上限，所有知乎上游响应的读取上限为 5 MiB。
+缓存：服务端固定请求并缓存一份 `Limit=30` 的热榜 6 小时，再按前端 `limit` 本地切片；
+不同展示条数不会生成新的上游缓存键。上游失败时可返回 KV 中的旧数据。服务端在写入缓存前
+校验 `Items` 并裁剪到 30 条，所有知乎上游响应的读取上限为 5 MiB。KV 读写按
+best-effort 处理：缓存故障不会阻止上游请求，也不会覆盖已经成功取得的结果。
 
 服务端不提供 `/api/zhihu/search` 搜索代理。站内搜索只查询已发布快照；任意关键词搜索
 通过前端生成的知乎搜索链接完成，避免匿名请求消耗共享配额。
@@ -151,6 +153,7 @@ https://soular.top/?oauth=success
   "redirectUri": "https://soular.top/auth/callback",
   "authorized": false,
   "profile": null,
+  "accountVersion": null,
   "stateVerified": null,
   "expiresAt": null,
   "error": null
@@ -159,10 +162,21 @@ https://soular.top/?oauth=success
 
 首页根据该接口展示“知乎登录”、已连接账号或重试状态。`profile` 获取失败时仍保留
 已授权状态，不伪造昵称或头像。知乎 `/user` 没有稳定响应 schema，服务端兼容嵌套或
-顶层用户对象以及 `avatar_url`、`avatar_path` 等已观测字段。已有 Session 的
-`profile` 为空或缺少头像时，状态接口会按 OAuth Token 指纹补取并缓存 10 分钟，
-不改写 Session，也不要求用户重新授权。资料请求先使用开放平台双凭证头；若响应中
-没有用户对象，再对同一官方 `/user` 地址使用标准 OAuth Bearer 方式回退一次。
+顶层用户对象以及 `avatar_url`、`avatar_path` 等已观测字段。状态接口只读取 Session，
+不等待资料补取。`accountVersion` 是 OAuth Token 指纹的短版本，只用于浏览器拒绝拼接
+不同登录账号的资料与画像。
+
+### GET `/api/oauth/profile`
+
+需要有效 Session。已有 Session 的 `profile` 为空或缺少头像时，前端通过该接口补取
+公开资料，不阻塞 `/api/oauth/status`。结果按 OAuth Token 指纹缓存 10 分钟；空结果
+和失败在 KV 与当前 Worker 实例内退避 60 秒。补取结果只覆盖非空字段，不会丢失 Session
+中已有的昵称、简介或主页地址。同一实例中的并发补取会复用包含缓存发布在内的完整
+in-flight Promise，因此同一批请求只写一次缓存。
+
+资料请求使用 6 秒统一总预算，先尝试开放平台双凭证头；只有明确的 401、403 或鉴权
+错误码才对同一官方 `/user` 地址使用标准 OAuth Bearer 回退。限流、服务端错误、超时
+和无效响应不会触发第二次请求。
 
 ### POST `/api/oauth/logout`
 
@@ -174,32 +188,45 @@ https://soular.top/?oauth=success
 需要 Session Cookie 和有效知乎 OAuth Token。
 
 缓存：按 OAuth Token 指纹隔离 10 分钟，避免同一浏览器切换账号后复用旧画像。
-公开接口不提供缓存绕过参数；同一运行实例中的并发画像请求合并为一次上游调用。
+公开接口不提供缓存绕过参数；同一运行实例中的并发画像请求合并为一次上游调用和一次
+缓存发布。KV 读取或写入失败时继续使用可用的上游结果。
 
 画像缓存未命中时，服务端读取创作、关注、收藏夹和近期收藏，并从首个公开收藏夹
 最多采样一条内容用于关键词计算。收藏夹为空时跳过；单项失败写入 `warnings`，
 不阻断其他画像数据，部分成功结果只缓存 60 秒。四项主要数据源全部失败时返回
 `PORTRAIT_UNAVAILABLE`，并对相同账号记录 60 秒失败退避，不缓存空画像。
 
-`data` 主要结构：
+响应顶层同时返回与状态接口相同的 `accountVersion`。正式前端在确认用户已授权后调用
+该接口，只有账号版本一致时才接收结果；标签重新可见时会重新校验登录账号。首页只显示
+画像校准状态和最多两个兴趣词；
+进入观点星云时，React 只向 iframe 发送最多六个关键词及分数、证据总数和部分数据标记。
+创作、关注、收藏明细不进入 iframe、URL 或持久化浏览器存储。画像接口失败不得阻断
+静态星云、本地表态、人格卡或无画像匹配。
+
+响应主要结构：
 
 ```json
 {
-  "generatedAt": "2026-09-12T00:00:00.000Z",
-  "stats": {
-    "contents": 0,
-    "followees": 0,
-    "favlists": 0,
-    "collections": 0,
-    "likesReceived": 0,
-    "contentKinds": {}
-  },
-  "keywords": [{ "word": "数据分析", "score": 12.3 }],
-  "topContents": [],
-  "favlists": [],
-  "followees": [],
-  "recentCollections": [],
-  "warnings": []
+  "ok": true,
+  "cached": true,
+  "accountVersion": "0123456789abcdef",
+  "data": {
+    "generatedAt": "2026-09-12T00:00:00.000Z",
+    "stats": {
+      "contents": 0,
+      "followees": 0,
+      "favlists": 0,
+      "collections": 0,
+      "likesReceived": 0,
+      "contentKinds": {}
+    },
+    "keywords": [{ "word": "数据分析", "score": 12.3 }],
+    "topContents": [],
+    "favlists": [],
+    "followees": [],
+    "recentCollections": [],
+    "warnings": []
+  }
 }
 ```
 
@@ -263,6 +290,7 @@ public/nebula-scene/presets.js
 - 评论节点 `comments`
 - 小圈子 `circles`
 - 用户默认星位 `me`
+- 可选星图向导内容 `guide`：当前支持预生成争议摘要 `headline`
 
 新快照必须离线生成、人工验收后随前端发布。页面运行时只读取本地静态模块，不提供或调用
 匿名 AI 星图生成接口，也不直接调用知乎或直答。点赞记录按快照 id 与 version 隔离。用户可在
@@ -331,13 +359,22 @@ if (!response.ok || !payload.ok) {
 浏览器中直接调用知乎开放平台，也不要持有 `ZHIHU_ACCESS_SECRET`、
 `ZHIHU_OAUTH_APP_KEY` 或 OAuth Token。
 
-正式站的 React 外壳从 `/api/oauth/status` 读取已登录用户的公开昵称和头像，并通过
-`nebula-user-profile` 消息传给观点星云 iframe。父子页都必须校验消息来源；头像仅接受
-HTTPS `zhimg.com` 子域名。消息不得包含 OAuth Token、Session ID 或其他账号字段。
-未登录、资料读取失败、GitHub Pages 镜像和本地预览继续使用本地“我”占位头像。
+正式站的 React 外壳从 `/api/oauth/status` 读取授权状态和已有公开资料，必要时通过
+`/api/oauth/profile` 补取昵称和头像，并从 `/api/me/portrait` 提取有限的画像信号，
+通过 `nebula-user-profile` 消息传给观点星云
+iframe。父子页都必须校验消息来源；头像仅接受 HTTPS `zhimg.com` 子域名。消息不得包含
+账号指纹、OAuth Token、Session ID、原始创作、关注或收藏明细，只允许携带不透明的
+身份修订号供 iframe 在切号时清理旧头像、碰撞、圈子和聚焦状态。未登录、资料读取失败、
+GitHub Pages 镜像和本地预览继续使用本地“我”占位头像和无画像匹配。
 
-观点星云内的搜索只查询本地快照目录；热榜使用上述只读接口并在当前探索面板中展示
-结果；推荐暂不请求上游，只显示开发状态和知乎首页入口。用户选择热榜条目时才打开知乎
-原文。服务端不公开回答采集或观点光谱生成接口，前端也不得绕过静态快照的人工验收
-流程。动态接口不可用时，前端显示功能开发状态，不暴露上游技术错误，并提供对应的
-知乎搜索、首页或热榜直达链接。
+画像关键词不决定用户在单个问题中的立场或人格派别。人格仍由该星云中的有效点赞计算；
+关键词只显示为兴趣底色，并以 18% 的次级权重参与同频、互补候选排序，本题立场权重为
+82%。画像信号只随当前标签页的临时人格上下文传到卡片页，不写入公开分享 URL；该上下文
+绑定账号版本，卡片页在挂载、重新获得焦点或重新可见时复查授权状态，版本不一致便清理。
+
+观点星云内的搜索只查询本地快照目录、回答者和观点摘要；推荐根据当前星云中的点赞立场
+在本地选择同频观点，尚未点赞时返回光谱两端与中点的代表观点。热榜使用上述只读接口并
+在当前探索面板中展示结果，上游不可用时回退到已发布星云。用户选择热榜条目时才打开
+知乎原文。服务端不公开回答采集或观点光谱生成接口，前端也不得绕过静态快照的人工验收
+流程。动态接口不可用时，前端显示非技术性降级文案，并提供对应的知乎搜索、首页或热榜
+直达链接。

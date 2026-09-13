@@ -6,32 +6,33 @@ const originalFetch = globalThis.fetch;
 
 try {
   let requests = 0;
+  const hotListResponse = () => new Response(JSON.stringify({
+    Code: 0,
+    Data: {
+      Total: 1000,
+      Items: Array.from({ length: 1000 }, (_, index) => ({
+        Title: `热榜 ${index}`,
+        Url: `https://www.zhihu.com/question/${index + 1}`,
+        ThumbnailUrl: "",
+        Summary: "",
+      })),
+    },
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
   globalThis.fetch = async () => {
     requests += 1;
-    return new Response(JSON.stringify({
-      Code: 0,
-      Data: {
-        Total: 1000,
-        Items: Array.from({ length: 1000 }, (_, index) => ({
-          Title: `热榜 ${index}`,
-          Url: `https://www.zhihu.com/question/${index + 1}`,
-          ThumbnailUrl: "",
-          Summary: "",
-        })),
-      },
-    }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return hotListResponse();
   };
 
   const client = new ZhihuClient("test-secret");
   const hotLists = await Promise.all([
     client.hotList(8),
-    client.hotList(8),
+    client.hotList(12),
   ]);
-  assert.equal(requests, 1, "同一查询的并发请求必须合并");
-  assert.deepEqual(hotLists.map((value) => value.Items.length), [8, 8]);
+  assert.equal(requests, 1, "不同展示条数必须复用同一份热榜请求");
+  assert.deepEqual(hotLists.map((value) => value.Items.length), [8, 12]);
 
   let cacheReads = 0;
   requests = 0;
@@ -46,6 +47,30 @@ try {
   await Promise.all(Array.from({ length: 1000 }, () => cachedClient.hotList(8)));
   assert.equal(cacheReads, 1, "同键并发请求必须合并缓存读取");
   assert.equal(requests, 1, "同键并发请求必须只访问一次上游");
+
+  requests = 0;
+  const cacheReadFailureClient = new ZhihuClient("test-secret", {
+    async get() {
+      throw new Error("cache read unavailable");
+    },
+    async set() {},
+  });
+  const readFailureResult = await cacheReadFailureClient.hotList(8);
+  assert.equal(readFailureResult.Items.length, 8);
+  assert.equal(requests, 1, "缓存读取失败时必须继续请求上游");
+
+  requests = 0;
+  const cacheWriteFailureClient = new ZhihuClient("test-secret", {
+    async get() {
+      return null;
+    },
+    async set() {
+      throw new Error("cache write unavailable");
+    },
+  });
+  const writeFailureResult = await cacheWriteFailureClient.hotList(8);
+  assert.equal(writeFailureResult.Items.length, 8);
+  assert.equal(requests, 1, "缓存写入失败不得覆盖成功的上游结果");
 
   requests = 0;
   globalThis.fetch = async () => {
@@ -89,7 +114,7 @@ try {
   assert.match(storedKey, /^cache:[0-9a-f]{64}$/);
   assert.ok(new TextEncoder().encode(storedKey).length <= 512);
 
-  const legacyRawKey = "/api/v1/content/hot_list?Limit=8";
+  const legacyRawKey = "/api/v1/content/hot_list?Limit=30";
   const legacyStoredKey = `cache:${encodeURIComponent(legacyRawKey)}`;
   const reads: string[] = [];
   const migrationKv: KVNamespaceLike = {

@@ -1,4 +1,5 @@
 import type { Cast } from "./cast";
+import type { NebulaPortraitSignal } from "./zhihuPortrait";
 
 export type Person = {
   name: string;
@@ -17,6 +18,8 @@ export type SelfProfile = {
   stance: number;
   likedCount: number;
   claim: string;
+  accountVersion?: string;
+  interest?: NebulaPortraitSignal;
 };
 
 export const DEFAULT_NEBULA_PRESET = "career-35";
@@ -24,6 +27,34 @@ export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
   "career-35": "1",
   "ai-math": "20260912",
 };
+const MAX_TRANSIENT_SELF_PROFILES = 24;
+const transientSelfProfiles = new Map<string, unknown>();
+
+export function stageTransientSelfProfile(key: string, value: unknown): void {
+  if (!/^[a-z0-9-]{1,64}$/.test(key)) return;
+  transientSelfProfiles.delete(key);
+  transientSelfProfiles.set(key, value);
+  while (transientSelfProfiles.size > MAX_TRANSIENT_SELF_PROFILES) {
+    const oldestKey = transientSelfProfiles.keys().next().value;
+    if (typeof oldestKey !== "string") break;
+    transientSelfProfiles.delete(oldestKey);
+  }
+}
+
+export function clearSelfProfileContexts(): void {
+  transientSelfProfiles.clear();
+  if (typeof window === "undefined") return;
+  try {
+    const storedKeys: string[] = [];
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+      if (key?.startsWith("jiupai:nebula:self:")) storedKeys.push(key);
+    }
+    storedKeys.forEach((key) => window.sessionStorage.removeItem(key));
+  } catch {
+    // Storage may be disabled; the in-memory contexts are already cleared.
+  }
+}
 
 export function nebulaPresetVersion(preset: string): string | null {
   return NEBULA_PRESET_VERSIONS[preset] ?? null;
@@ -175,6 +206,36 @@ export function selfProfileFromValue(
   ) {
     return null;
   }
+  let interest: NebulaPortraitSignal | undefined;
+  if (record.interest && typeof record.interest === "object" && !Array.isArray(record.interest)) {
+    const rawInterest = record.interest as Record<string, unknown>;
+    const keywords = Array.isArray(rawInterest.keywords)
+      ? rawInterest.keywords
+          .filter((item): item is Record<string, unknown> =>
+            Boolean(item) && typeof item === "object" && !Array.isArray(item)
+          )
+          .map((item) => ({
+            word: typeof item.word === "string" ? item.word.trim() : "",
+            score: typeof item.score === "number" && Number.isFinite(item.score)
+              ? Math.max(0, item.score)
+              : 0,
+          }))
+          .filter(({ word }) => word.length > 0 && word.length <= 24)
+          .slice(0, 6)
+      : [];
+    if (
+      keywords.length > 0 &&
+      typeof rawInterest.evidenceCount === "number" &&
+      Number.isSafeInteger(rawInterest.evidenceCount) &&
+      rawInterest.evidenceCount >= 0
+    ) {
+      interest = {
+        keywords,
+        evidenceCount: rawInterest.evidenceCount,
+        partial: rawInterest.partial === true,
+      };
+    }
+  }
   return {
     preset,
     version,
@@ -182,6 +243,12 @@ export function selfProfileFromValue(
     stance: Math.max(-1, Math.min(1, record.stance)),
     likedCount: record.likedCount,
     claim: clipProfileClaim(record.claim),
+    accountVersion:
+      typeof record.accountVersion === "string" &&
+      /^[a-f0-9]{16}$/.test(record.accountVersion)
+        ? record.accountVersion
+        : undefined,
+    interest,
   };
 }
 
@@ -198,4 +265,19 @@ export function stagedSelfProfile(
   } catch {
     return null;
   }
+}
+
+export function transientSelfProfile(
+  preset: string,
+  version: string,
+  cast: string,
+  profileKey: string,
+): SelfProfile | null {
+  if (!profileKey) return null;
+  return selfProfileFromValue(
+    transientSelfProfiles.get(profileKey),
+    preset,
+    version,
+    cast,
+  );
 }

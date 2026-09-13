@@ -90,7 +90,7 @@ export function startNodeServer(
           preflight ??
           withCors(webRequest, await handler(webRequest), process.env.FRONTEND_ORIGIN);
         await writeWebResponse(response, webResponse);
-      } catch (error) {
+      } catch {
         if (!response.headersSent) {
           response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
         }
@@ -99,7 +99,7 @@ export function startNodeServer(
             ok: false,
             error: {
               code: "FATAL",
-              message: error instanceof Error ? error.message : "服务器内部错误",
+              message: "服务器内部错误",
             },
           }),
         );

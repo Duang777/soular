@@ -29,6 +29,35 @@ const config = buildRuntimeConfig({
 assert.equal(config.oauthConfigured, true);
 assert.equal(config.dataApiConfigured, true);
 
+class CountingCache extends InMemoryCache {
+  private readonly writes = new Map<string, number>();
+  writeDelayMs = 0;
+
+  override async set<T>(
+    key: string,
+    value: T,
+    ttlSeconds: number,
+  ): Promise<void> {
+    this.writes.set(key, (this.writes.get(key) ?? 0) + 1);
+    if (this.writeDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, this.writeDelayMs));
+    }
+    await super.set(key, value, ttlSeconds);
+  }
+
+  resetWrites(): void {
+    this.writes.clear();
+  }
+
+  writesWithPrefix(prefix: string): number {
+    let total = 0;
+    for (const [key, count] of this.writes) {
+      if (key.startsWith(prefix)) total += count;
+    }
+    return total;
+  }
+}
+
 const authorizeUrl = new URL(
   buildAuthorizeUrl(config.appId, config.redirectUri!, "test-state"),
 );
@@ -40,14 +69,35 @@ assert.equal(authorizeUrl.searchParams.get("response_type"), "code");
 assert.equal(authorizeUrl.searchParams.get("state"), "test-state");
 
 const originalFetch = globalThis.fetch;
-const requests: Array<{ url: string; headers: Headers; body: string }> = [];
+const requests: Array<{
+  url: string;
+  headers: Headers;
+  body: string;
+  signal: AbortSignal | null;
+}> = [];
+let profileResponseMode: "full" | "avatar-only" | "empty" | "server-error" = "full";
+
+async function expectedAccountVersion(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("").slice(0, 16);
+}
 
 try {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     const headers = new Headers(init?.headers);
     const body = String(init?.body ?? "");
-    requests.push({ url, headers, body });
+    requests.push({
+      url,
+      headers,
+      body,
+      signal: init?.signal instanceof AbortSignal ? init.signal : null,
+    });
 
     if (url.endsWith("/access_token")) {
       return Response.json({
@@ -59,20 +109,36 @@ try {
     }
 
     if (url.endsWith("/user")) {
+      const oauthToken = headers.get("X-OAuth-Token");
+      if (profileResponseMode === "server-error" && oauthToken) {
+        return Response.json(
+          { code: 50001, message: "upstream unavailable" },
+          { status: 503 },
+        );
+      }
       if (
         headers.get("Authorization") === "Bearer test-access-secret" &&
-        headers.get("X-OAuth-Token") === "test-oauth-token"
+        oauthToken
       ) {
         return Response.json(
           { code: 40100, message: "OAuth bearer required" },
           { status: 401 },
         );
       }
-      assert.equal(
-        headers.get("Authorization"),
-        "Bearer test-oauth-token",
+      assert.match(
+        headers.get("Authorization") ?? "",
+        /^Bearer test-oauth-token/,
       );
       assert.equal(headers.get("X-OAuth-Token"), null);
+      if (profileResponseMode === "empty") {
+        return Response.json({ code: 20000, data: {} });
+      }
+      if (profileResponseMode === "avatar-only") {
+        return Response.json({
+          code: 20000,
+          avatar_path: "https://picx.zhimg.com/test-avatar.png",
+        });
+      }
       return Response.json({
         code: 20000,
         fullname: "测试用户",
@@ -111,10 +177,26 @@ try {
     "Bearer test-oauth-token",
   );
   assert.equal(requests[2]?.headers.get("X-OAuth-Token"), null);
+  assert.equal(
+    requests[1]?.signal,
+    requests[2]?.signal,
+    "profile fallback must share one total timeout budget",
+  );
+  profileResponseMode = "server-error";
+  requests.length = 0;
+  await assert.rejects(
+    fetchProfile(config.accessSecret, token.accessToken),
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    1,
+    "profile server errors must not trigger an OAuth bearer retry",
+  );
+  profileResponseMode = "full";
 
   requests.length = 0;
   const sessions = new SessionStore(new InMemorySessionBackend(), true);
-  const contentCache = new InMemoryCache();
+  const contentCache = new CountingCache();
   const handler = createHandler({
     config,
     sessions,
@@ -130,6 +212,19 @@ try {
     ((await anonymousStatusResponse.json()) as { authorized: boolean }).authorized,
     false,
   );
+
+  const failingSessions = new SessionStore(new InMemorySessionBackend(), true);
+  failingSessions.load = async () => {
+    throw new Error("sensitive storage detail");
+  };
+  const internalErrorResponse = await createHandler({
+    config,
+    sessions: failingSessions,
+  })(new Request("https://soular.top/api/oauth/status"));
+  assert.deepEqual(await internalErrorResponse.json(), {
+    ok: false,
+    error: { code: "INTERNAL", message: "服务器内部错误" },
+  });
 
   const unsolicitedCallback = await handler(
     new Request(
@@ -198,10 +293,15 @@ try {
   );
   const status = await statusResponse.json() as {
     authorized: boolean;
+    accountVersion: string | null;
     stateVerified: boolean;
     profile: { name: string } | null;
   };
   assert.equal(status.authorized, true);
+  assert.equal(
+    status.accountVersion,
+    await expectedAccountVersion("test-oauth-token"),
+  );
   assert.equal(status.stateVerified, true);
   assert.equal(status.profile?.name, "测试用户");
 
@@ -213,8 +313,14 @@ try {
   if (!sessionWithoutProfile) {
     throw new Error("Expected an OAuth session for profile recovery");
   }
-  sessionWithoutProfile.profile = null;
+  sessionWithoutProfile.profile = {
+    name: "测试用户",
+    avatarUrl: null,
+    headline: "保留的简介",
+    url: "https://www.zhihu.com/people/stored-user",
+  };
   await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "avatar-only";
   requests.length = 0;
 
   const recoveredStatusResponse = await handler(
@@ -223,12 +329,43 @@ try {
     }),
   );
   const recoveredStatus = await recoveredStatusResponse.json() as {
-    profile: { name: string; avatarUrl: string } | null;
+    profile: { name: string; avatarUrl: string | null } | null;
   };
   assert.equal(recoveredStatus.profile?.name, "测试用户");
+  assert.equal(recoveredStatus.profile?.avatarUrl, null);
   assert.equal(
-    recoveredStatus.profile?.avatarUrl,
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    0,
+    "status must not block on profile recovery",
+  );
+
+  const recoveredProfileResponse = await handler(
+    new Request("https://soular.top/api/oauth/profile", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  const recoveredProfile = await recoveredProfileResponse.json() as {
+    accountVersion: string;
+    profile: {
+      name: string;
+      avatarUrl: string;
+      headline: string;
+      url: string;
+    } | null;
+  };
+  assert.equal(
+    recoveredProfile.accountVersion,
+    await expectedAccountVersion("test-oauth-token"),
+  );
+  assert.equal(recoveredProfile.profile?.name, "测试用户");
+  assert.equal(
+    recoveredProfile.profile?.avatarUrl,
     "https://picx.zhimg.com/test-avatar.png",
+  );
+  assert.equal(recoveredProfile.profile?.headline, "保留的简介");
+  assert.equal(
+    recoveredProfile.profile?.url,
+    "https://www.zhihu.com/people/stored-user",
   );
   assert.equal(
     requests.filter(({ url }) => url.endsWith("/user")).length,
@@ -236,14 +373,14 @@ try {
   );
   requests.length = 0;
 
-  const cachedRecoveredStatusResponse = await handler(
-    new Request("https://soular.top/api/oauth/status", {
+  const cachedRecoveredProfileResponse = await handler(
+    new Request("https://soular.top/api/oauth/profile", {
       headers: { Cookie: callbackCookie },
     }),
   );
   assert.equal(
     (
-      (await cachedRecoveredStatusResponse.json()) as {
+      (await cachedRecoveredProfileResponse.json()) as {
         profile: { avatarUrl: string } | null;
       }
     ).profile?.avatarUrl,
@@ -253,6 +390,84 @@ try {
     requests.filter(({ url }) => url.endsWith("/user")).length,
     0,
   );
+
+  sessionWithoutProfile.token = "test-oauth-token-empty";
+  sessionWithoutProfile.profile = {
+    name: "保留用户",
+    avatarUrl: null,
+    headline: "保留简介",
+    url: null,
+  };
+  await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "empty";
+  requests.length = 0;
+  const emptyProfileResponse = await handler(
+    new Request("https://soular.top/api/oauth/profile", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  assert.equal(
+    (
+      (await emptyProfileResponse.json()) as {
+        profile: { name: string } | null;
+      }
+    ).profile?.name,
+    "保留用户",
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    2,
+  );
+  requests.length = 0;
+  await handler(
+    new Request("https://soular.top/api/oauth/profile", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    0,
+    "empty profile recovery must use the failure cooldown",
+  );
+
+  sessionWithoutProfile.token = "test-oauth-token-profile-concurrent";
+  sessionWithoutProfile.profile = {
+    name: "并发测试用户",
+    avatarUrl: null,
+    headline: null,
+    url: null,
+  };
+  await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "full";
+  requests.length = 0;
+  contentCache.resetWrites();
+  contentCache.writeDelayMs = 5;
+  const concurrentProfileResponses = await Promise.all(
+    Array.from({ length: 20 }, () =>
+      handler(
+        new Request("https://soular.top/api/oauth/profile", {
+          headers: { Cookie: callbackCookie },
+        }),
+      )
+    ),
+  );
+  assert.ok(concurrentProfileResponses.every((response) => response.status === 200));
+  assert.equal(
+    contentCache.writesWithPrefix("oauth-profile:"),
+    1,
+    "并发资料请求必须共享一次缓存发布",
+  );
+  contentCache.writeDelayMs = 0;
+
+  profileResponseMode = "full";
+  sessionWithoutProfile.token = "test-oauth-token";
+  sessionWithoutProfile.profile = {
+    name: "测试用户",
+    avatarUrl: "https://picx.zhimg.com/test-avatar.png",
+    headline: "测试简介",
+    url: "https://www.zhihu.com/people/test-user",
+  };
+  await sessions.save(sessionWithoutProfile);
 
   const failedReloginStart = await handler(
     new Request("https://soular.top/api/oauth/start", {
@@ -418,8 +633,13 @@ try {
   );
   assert.equal(portraitResponse.status, 200);
   const portraitPayload = await portraitResponse.json() as {
+    accountVersion: string;
     data: { warnings: string[] };
   };
+  assert.equal(
+    portraitPayload.accountVersion,
+    await expectedAccountVersion("test-oauth-token"),
+  );
   assert.equal(portraitPayload.data.warnings.length, 0);
   assert.deepEqual(
     [...userApiPaths].sort(),
@@ -493,6 +713,8 @@ try {
   await sessions.save(accountBSession);
   userApiPaths.clear();
   userApiRequestCount = 0;
+  contentCache.resetWrites();
+  contentCache.writeDelayMs = 5;
   const concurrentPortraitResponses = await Promise.all([
     handler(
       new Request("https://soular.top/api/me/portrait", {
@@ -508,6 +730,17 @@ try {
   assert.ok(concurrentPortraitResponses.every((response) => response.status === 200));
   assert.equal(userApiPaths.size, 5);
   assert.equal(userApiRequestCount, 5);
+  assert.equal(
+    contentCache.writesWithPrefix("portrait:"),
+    1,
+    "并发画像请求必须共享一次正缓存发布",
+  );
+  assert.equal(
+    contentCache.writesWithPrefix("portrait-failure:"),
+    1,
+    "并发画像请求必须共享一次失败标记清理",
+  );
+  contentCache.writeDelayMs = 0;
 
   accountBSession.token = "test-oauth-token-d";
   await sessions.save(accountBSession);

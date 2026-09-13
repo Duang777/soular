@@ -119,12 +119,14 @@ export function buildNebulaShelfUrl(locationLike, baseUrl, path) {
 }
 
 export function listNebulaPresets() {
-  return [...PRESETS.values()].map(({ id, version, serial, kind, question, axis }) => ({
+  return [...PRESETS.values()].map(({ id, version, serial, kind, question, axis, people }) => ({
     id,
     version,
     serial,
     kind,
     question,
     axis,
+    answerCount: Array.isArray(people) ? people.length : 0,
+    teaser: Array.isArray(people) && typeof people[0]?.[3] === "string" ? people[0][3] : "",
   }));
 }

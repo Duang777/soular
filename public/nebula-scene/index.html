@@ -86,11 +86,42 @@
         color: var(--mute);
       }
       .question b { color: var(--cream); font-weight: 500; }
+      .scene-back {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        display: none;
+        min-height: 40px;
+        align-items: center;
+        gap: 7px;
+        padding: 0 2px;
+        border: 0;
+        border-bottom: 1px solid rgba(231, 201, 140, 0.32);
+        background: transparent;
+        color: rgba(243, 245, 250, 0.72);
+        font: 500 11px/1 var(--font);
+        transform: translateX(-50%);
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      body.entry-exploring .scene-back { display: inline-flex; }
+      .scene-back span {
+        color: var(--gold);
+        font-size: 15px;
+        transition: transform 0.16s ease;
+      }
+      .scene-back:hover { color: var(--cream); border-bottom-color: var(--gold); }
+      .scene-back:hover span { transform: translateX(-3px); }
+      .scene-back:active { transform: translateX(-50%) scale(0.97); }
+      .scene-back:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 5px;
+      }
 
       .axis {
         position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 0;
+        left: 0;
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -98,8 +129,8 @@
         letter-spacing: 0.08em;
         color: var(--mute);
       }
-      .axis-left { left: 20px; align-items: flex-start; text-align: left; }
-      .axis-right { right: 20px; align-items: flex-end; text-align: right; }
+      .axis-left { align-items: flex-end; text-align: right; transform: translate(-100%, -50%); }
+      .axis-right { align-items: flex-start; text-align: left; transform: translate(0, -50%); }
       .axis .pole {
         font-size: 13px;
         font-weight: 600;
@@ -115,7 +146,15 @@
         .scene-brand { gap: 7px; }
         .scene-brand img { width: 32px; height: 32px; }
         .question { display: none; }
-        .axis { top: auto; bottom: 74px; transform: none; }
+        .scene-back {
+          top: -2px;
+          left: auto;
+          right: 0;
+          min-height: 38px;
+          transform: none;
+        }
+        .scene-back:active { transform: scale(0.97); }
+        .axis { bottom: auto; }
         .axis .sub { display: none; }
       }
 
@@ -130,6 +169,453 @@
         color: var(--faint);
         white-space: nowrap;
       }
+
+      /* ===== 首页：问题场 → 确认 → 原地生成 ===== */
+      .entry-flow {
+        position: fixed;
+        inset: 0;
+        z-index: 14;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(33, 75, 92, 0.18), transparent 34%),
+          linear-gradient(180deg, rgba(5, 9, 13, 0.2), rgba(5, 9, 13, 0.72));
+        transition: opacity 0.5s ease;
+      }
+      .entry-flow[hidden], .entry-flow.is-done { opacity: 0; pointer-events: none; }
+      .entry-flow[data-state="confirm"],
+      .entry-flow[data-state="generating"] {
+        background: rgba(6, 11, 15, 0.82);
+        backdrop-filter: blur(1.2px) saturate(0.72);
+      }
+      .entry-atmosphere {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+        pointer-events: none;
+      }
+      .entry-flow[data-state="confirm"] .entry-atmosphere,
+      .entry-flow[data-state="generating"] .entry-atmosphere { opacity: 1; }
+      .entry-spark {
+        position: absolute;
+        color: rgba(243, 240, 233, 0.58);
+        font-style: normal;
+        font-size: 9px;
+        animation: entry-star-breathe 4.8s ease-in-out infinite;
+      }
+      .entry-spark--1 { top: 18%; left: 28%; color: rgba(231, 201, 140, 0.74); }
+      .entry-spark--2 { top: 29%; left: 39%; animation-delay: -1.2s; }
+      .entry-spark--3 { top: 16%; right: 31%; font-size: 12px; animation-delay: -2.6s; }
+      .entry-spark--4 { right: 22%; bottom: 24%; color: rgba(231, 201, 140, 0.66); animation-delay: -3.4s; }
+      .entry-spark--5 { bottom: 20%; left: 24%; font-size: 11px; animation-delay: -0.7s; }
+      .entry-spark--6 { right: 43%; bottom: 14%; animation-delay: -2s; }
+      @keyframes entry-star-breathe {
+        0%, 100% { opacity: 0.28; transform: scale(0.82); }
+        50% { opacity: 0.9; transform: scale(1.08); }
+      }
+      .entry-brand {
+        position: absolute;
+        top: max(20px, env(safe-area-inset-top));
+        left: 24px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--cream);
+      }
+      .entry-brand img { width: 38px; height: 38px; }
+      .entry-brand b { display: block; font-size: 17px; letter-spacing: 0.08em; }
+      .entry-brand small {
+        display: block;
+        margin-top: 4px;
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+      }
+      .entry-home-back {
+        position: absolute;
+        top: max(22px, env(safe-area-inset-top));
+        right: 24px;
+        z-index: 3;
+        display: none;
+        min-height: 44px;
+        align-items: center;
+        gap: 7px;
+        padding: 0;
+        border: 0;
+        color: var(--mute);
+        background: transparent;
+        font: 500 12px/1 var(--font);
+        cursor: pointer;
+      }
+      .entry-home-back span {
+        color: var(--gold);
+        font-size: 16px;
+        transition: transform 0.16s ease;
+      }
+      .entry-home-back:hover { color: var(--hi); }
+      .entry-home-back:hover span { transform: translateX(-3px); }
+      .entry-home-back:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 5px;
+      }
+      .entry-center {
+        position: absolute;
+        z-index: 2;
+        top: 50%;
+        left: 50%;
+        width: min(560px, calc(100vw - 48px));
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+      .entry-eyebrow {
+        margin: 0 0 14px;
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+      }
+      .entry-center h1 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 66px);
+        font-weight: 560;
+        letter-spacing: 0.03em;
+        line-height: 1.12;
+      }
+      .entry-lead {
+        max-width: 470px;
+        margin: 18px auto 0;
+        color: var(--mute);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+      .entry-search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 48px;
+        width: min(440px, 100%);
+        min-height: 48px;
+        margin: 26px auto 0;
+        border: 1px solid var(--line-2);
+        background: rgba(14, 16, 22, 0.88);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+      }
+      .entry-search input {
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        padding: 0 16px;
+        background: transparent;
+        color: var(--cream);
+        font: inherit;
+      }
+      .entry-search button {
+        border: 0;
+        border-left: 1px solid var(--line);
+        background: transparent;
+        color: var(--gold);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .entry-search-status {
+        min-height: 20px;
+        margin: 10px 0 0;
+        color: var(--faint);
+        font-size: 11px;
+      }
+      .entry-topics { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+      .entry-topic {
+        position: absolute;
+        width: min(270px, 23vw);
+        min-height: 112px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(14, 18, 25, 0.82);
+        color: var(--cream);
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
+        text-align: left;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+      }
+      .entry-topic:hover, .entry-topic:focus-visible {
+        z-index: 2;
+        outline: none;
+        border-color: rgba(231, 201, 140, 0.66);
+        transform: translateY(-5px);
+      }
+      .entry-topic[hidden] { display: none; }
+      .entry-topic:nth-child(1) { top: 18%; left: 4%; }
+      .entry-topic:nth-child(2) { top: 18%; right: 4%; }
+      .entry-topic:nth-child(3) { top: 46%; left: 1.5%; }
+      .entry-topic:nth-child(4) { top: 46%; right: 1.5%; }
+      .entry-topic:nth-child(5) { bottom: 9%; left: 8%; }
+      .entry-topic:nth-child(6) { right: 8%; bottom: 9%; }
+      .entry-topic-serial {
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+      }
+      .entry-topic b {
+        display: -webkit-box;
+        margin-top: 10px;
+        overflow: hidden;
+        font-size: 14px;
+        font-weight: 560;
+        line-height: 1.5;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .entry-topic small {
+        display: block;
+        margin-top: 10px;
+        color: var(--faint);
+        font-size: 10px;
+      }
+      .entry-confirm { display: none; }
+      .entry-flow[data-state="confirm"] .entry-discover { display: none; }
+      .entry-flow[data-state="confirm"] .entry-confirm { display: block; }
+      .entry-flow[data-state="confirm"] .entry-home-back { display: inline-flex; }
+      .entry-flow[data-state="confirm"] .entry-topic {
+        isolation: isolate;
+        width: min(320px, 26vw);
+        min-height: 126px;
+        padding: 34px 28px 22px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        opacity: 0.82;
+        text-align: center;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: -2;
+        width: 108px;
+        height: 46px;
+        border-radius: 50%;
+        background: rgba(168, 183, 192, 0.26);
+        box-shadow:
+          -86px 16px 0 4px rgba(139, 156, 166, 0.18),
+          -48px -11px 0 12px rgba(185, 197, 202, 0.17),
+          48px -14px 0 16px rgba(178, 191, 197, 0.19),
+          92px 12px 0 2px rgba(128, 146, 158, 0.16),
+          0 20px 0 22px rgba(143, 160, 170, 0.2);
+        filter: blur(8px);
+        transform: translate(-50%, -50%);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic::after {
+        content: "";
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        z-index: -1;
+        width: 74px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(237, 232, 214, 0.14);
+        box-shadow:
+          -55px 9px 0 2px rgba(231, 226, 211, 0.09),
+          -25px -17px 0 8px rgba(235, 231, 218, 0.11),
+          34px -15px 0 9px rgba(231, 226, 209, 0.1),
+          62px 6px 0 1px rgba(224, 218, 198, 0.08);
+        filter: blur(5px);
+        transform: translate(-50%, -50%);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(even) {
+        text-align: center;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic-serial::before {
+        content: "✦";
+        display: inline-block;
+        margin-right: 8px;
+        color: rgba(243, 240, 233, 0.52);
+        font-size: 10px;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:hover,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible,
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected {
+        opacity: 1;
+        transform: translateY(-4px);
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:hover::before,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible::before,
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected::before {
+        opacity: 1;
+        transform: translate(-50%, calc(-50% - 3px)) scale(1.04);
+      }
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected .entry-topic-serial::before {
+        color: var(--gold);
+        text-shadow: 0 0 10px rgba(231, 201, 140, 0.66);
+      }
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected b { color: var(--cream); }
+      .entry-confirm { width: min(860px, calc(100vw - 360px)); }
+      .entry-confirm h1 { font-size: clamp(28px, 4vw, 52px); line-height: 1.24; }
+      .entry-confirm-meta {
+        margin: 22px 0 0;
+        color: var(--mute);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+      .entry-confirm-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      .entry-primary, .entry-secondary, .entry-skip {
+        min-height: 46px;
+        padding: 0 20px;
+        border: 1px solid var(--line-2);
+        border-radius: 8px;
+        font: inherit;
+        cursor: pointer;
+      }
+      .entry-primary { border-color: transparent; background: var(--cta); color: var(--cta-ink); font-weight: 650; }
+      .entry-secondary, .entry-skip { background: rgba(14, 16, 22, 0.82); color: var(--txt); }
+      .entry-primary:focus-visible,
+      .entry-secondary:focus-visible,
+      .entry-skip:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 3px;
+      }
+      .entry-generation {
+        position: absolute;
+        top: 72%;
+        left: 50%;
+        display: none;
+        grid-template-columns: 58px minmax(0, 1fr);
+        width: min(560px, calc(100vw - 40px));
+        align-items: center;
+        gap: 16px;
+        transform: translateX(-50%);
+        text-align: left;
+        filter: drop-shadow(0 2px 14px rgba(4, 7, 10, 0.72));
+        pointer-events: auto;
+      }
+      .entry-flow[data-state="generating"] { background: rgba(6, 11, 15, 0.24); pointer-events: none; }
+      .entry-flow[data-state="generating"] { backdrop-filter: none; }
+      .entry-flow[data-state="generating"] .entry-brand,
+      .entry-flow[data-state="generating"] .entry-center,
+      .entry-flow[data-state="generating"] .entry-topics { display: none; }
+      .entry-flow[data-state="generating"] .entry-generation { display: grid; }
+      .entry-generation-signal {
+        position: relative;
+        display: grid;
+        width: 54px;
+        height: 54px;
+        place-items: center;
+      }
+      .entry-generation-signal i {
+        position: absolute;
+        border: 1px solid rgba(231, 201, 140, 0.34);
+        border-radius: 50%;
+      }
+      .entry-generation-signal i:first-child {
+        width: 48px;
+        height: 22px;
+        animation: entry-generation-orbit-a 3.8s linear infinite;
+      }
+      .entry-generation-signal i:nth-child(2) {
+        width: 30px;
+        height: 46px;
+        border-color: rgba(176, 204, 210, 0.28);
+        animation: entry-generation-orbit-b 5.2s linear infinite;
+      }
+      .entry-generation-signal span {
+        position: relative;
+        z-index: 1;
+        color: var(--cream);
+        font-size: 12px;
+        text-shadow: 0 0 9px rgba(231, 201, 140, 0.72);
+      }
+      .entry-generation-copy { min-width: 0; }
+      .entry-generation-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .entry-generation b {
+        color: var(--cream);
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+      }
+      .entry-generation-percent {
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+      }
+      .entry-generation p {
+        margin: 7px 0 12px;
+        color: rgba(243, 240, 233, 0.62);
+        font-size: 11px;
+      }
+      .entry-progress {
+        height: 2px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .entry-progress i {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: var(--gold);
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+      .entry-generation-steps {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+        margin-top: 7px;
+      }
+      .entry-generation-steps i {
+        height: 1px;
+        background: rgba(243, 240, 233, 0.12);
+        transition: background 0.22s ease;
+      }
+      .entry-generation-steps i.is-active { background: rgba(231, 201, 140, 0.72); }
+      .entry-skip {
+        grid-column: 2;
+        min-height: 36px;
+        margin-top: -2px;
+        padding: 0;
+        justify-self: end;
+        border: 0;
+        color: rgba(243, 240, 233, 0.48);
+        background: transparent;
+        font-size: 10px;
+      }
+      .entry-skip:hover { color: var(--cream); }
+      .entry-skip:active { transform: scale(0.97); }
+      @keyframes entry-generation-orbit-a {
+        from { transform: rotate(-18deg); }
+        to { transform: rotate(342deg); }
+      }
+      @keyframes entry-generation-orbit-b {
+        from { transform: rotate(24deg); }
+        to { transform: rotate(-336deg); }
+      }
+      body.entry-active .hud,
+      body.entry-active .explore-shell,
+      body.entry-active .cards-quick-entry,
+      body.entry-active .circle-chip,
+      body.entry-active .focus-banner,
+      body.entry-active .verdict,
+      body.entry-active #tip { visibility: hidden; opacity: 0; pointer-events: none; }
+      body.entry-active #scene { pointer-events: none; cursor: default; }
 
       #tip {
         position: fixed;
@@ -297,24 +783,38 @@
         width: 58px;
         height: 58px;
         padding: 0;
-        border: 1px solid rgba(143, 216, 220, 0.28);
-        border-radius: 14px;
-        background: rgba(10, 14, 22, 0.88);
+        border: 1.5px solid rgba(143, 216, 220, 0.7);
+        border-radius: 18px 15px 20px 16px / 16px 20px 15px 19px;
+        background: #0c1720;
         color: #f4f0df;
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
-        -webkit-backdrop-filter: blur(12px);
-        backdrop-filter: blur(12px);
+        box-shadow:
+          4px 5px 0 #05090d,
+          0 16px 34px rgba(0, 0, 0, 0.46),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
         cursor: pointer;
-        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .explore-toggle::after {
+        content: "";
+        position: absolute;
+        inset: 4px 5px 5px 4px;
+        border: 1px dashed rgba(164, 220, 222, 0.24);
+        border-radius: 14px 12px 16px 12px / 12px 16px 11px 15px;
+        transform: rotate(-1.2deg);
+        pointer-events: none;
       }
       .explore-toggle:hover {
-        transform: translateY(-2px);
-        border-color: rgba(23, 114, 246, 0.48);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.48);
+        transform: translate(-1px, -2px) rotate(-0.8deg);
+        border-color: rgba(231, 193, 127, 0.82);
+        box-shadow:
+          6px 7px 0 #05090d,
+          0 20px 40px rgba(0, 0, 0, 0.52),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
       }
       .explore-toggle[aria-expanded="true"] {
-        border-color: rgba(231, 193, 127, 0.62);
+        border-color: rgba(231, 193, 127, 0.86);
         color: #e7c17f;
+        box-shadow: 3px 4px 0 #05090d, 0 14px 36px rgba(0, 0, 0, 0.5);
       }
       .self-draw-entry {
         position: absolute;
@@ -327,13 +827,11 @@
         width: 182px;
         height: 58px;
         padding: 0 12px;
-        border: 1px solid rgba(231, 193, 127, 0.38);
-        border-radius: 12px;
-        background: rgba(10, 14, 22, 0.88);
+        border: 1px solid rgba(231, 193, 127, 0.62);
+        border-radius: 8px;
+        background: #171a20;
         color: #f4f0df;
-        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
-        -webkit-backdrop-filter: blur(12px);
-        backdrop-filter: blur(12px);
+        box-shadow: 4px 5px 0 #05090d, 0 14px 32px rgba(0, 0, 0, 0.46);
         cursor: pointer;
         text-align: left;
       }
@@ -341,6 +839,14 @@
         border-color: #e7c17f;
         background: #202329;
         transform: translateY(-2px);
+      }
+      .self-draw-entry:disabled,
+      .dock-action:disabled,
+      .pcard-me-btn:disabled,
+      .tip-like:disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+        transform: none;
       }
       .self-draw-entry > i {
         color: #e7c17f;
@@ -363,6 +869,88 @@
       }
       .self-draw-entry > span:last-child {
         color: #e7c17f;
+        font-size: 14px;
+        text-align: right;
+      }
+      .cards-quick-entry {
+        position: fixed;
+        z-index: 15;
+        right: 20px;
+        bottom: max(52px, calc(env(safe-area-inset-bottom) + 44px));
+        display: grid;
+        grid-template-columns: 66px minmax(0, 1fr) 16px;
+        align-items: center;
+        gap: 10px;
+        width: 238px;
+        height: 58px;
+        padding: 6px 12px 6px 9px;
+        border: 1px solid rgba(143, 216, 220, 0.48);
+        border-radius: 8px;
+        background: #111a20;
+        color: #f4f0df;
+        box-shadow: -4px 5px 0 #05090d, 0 14px 32px rgba(0, 0, 0, 0.46);
+        cursor: pointer;
+        text-align: left;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+      .cards-quick-entry:hover {
+        transform: translateY(-2px);
+        border-color: rgba(143, 216, 220, 0.82);
+        background: #16232a;
+      }
+      .cards-quick-entry:active { transform: scale(0.98); }
+      .cards-quick-entry.is-launching {
+        border-color: rgba(231, 193, 127, 0.78);
+        color: #e7c17f;
+      }
+      .cards-quick-deck {
+        position: relative;
+        display: block;
+        width: 62px;
+        height: 44px;
+      }
+      .cards-quick-sheet {
+        position: absolute;
+        top: 5px;
+        display: grid;
+        width: 34px;
+        height: 38px;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid rgba(143, 216, 220, 0.46);
+        border-radius: 5px 4px 6px 4px;
+        background: #091117;
+        box-shadow: 1px 2px 0 rgba(3, 7, 10, 0.8);
+        transform-origin: center bottom;
+        transition: transform 0.18s ease;
+      }
+      .cards-quick-sheet img {
+        width: 25px;
+        height: 25px;
+        border: 1px solid rgba(231, 201, 140, 0.42);
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .cards-quick-sheet:nth-child(1) { left: 1px; transform: rotate(-8deg); opacity: 0.72; }
+      .cards-quick-sheet:nth-child(2) { left: 14px; transform: rotate(1deg); opacity: 0.86; }
+      .cards-quick-sheet:nth-child(3) { left: 27px; transform: rotate(8deg); }
+      .cards-quick-entry:hover .cards-quick-sheet:nth-child(1) { transform: translateX(-3px) rotate(-11deg); }
+      .cards-quick-entry:hover .cards-quick-sheet:nth-child(2) { transform: translateY(-2px) rotate(0); }
+      .cards-quick-entry:hover .cards-quick-sheet:nth-child(3) { transform: translateX(3px) rotate(11deg); }
+      .cards-quick-copy {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+      .cards-quick-copy b { font-size: 11px; letter-spacing: 0; }
+      .cards-quick-copy small {
+        color: rgba(196, 207, 211, 0.58);
+        font-size: 8px;
+        line-height: 1.3;
+        letter-spacing: 0;
+      }
+      .cards-quick-arrow {
+        color: #9fd8db;
         font-size: 14px;
         text-align: right;
       }
@@ -743,6 +1331,7 @@
         background: #13232b;
         color: #f3eee0;
       }
+      .zh-link:active { transform: scale(0.97); }
       .zh-link:focus-visible {
         z-index: 1;
         outline: 2px solid rgba(159, 216, 219, 0.78);
@@ -925,6 +1514,14 @@
         height: 13px;
         color: rgba(159, 216, 219, 0.48);
       }
+      .discovery-result-avatar {
+        display: block;
+        width: 22px;
+        height: 22px;
+        border: 1px solid rgba(143, 216, 220, 0.34);
+        border-radius: 50%;
+        object-fit: cover;
+      }
       .explore-menu.has-discovery > .explore-section-label,
       .explore-menu.has-discovery > .dock-action,
       .explore-menu.has-discovery > .dock-settings {
@@ -967,6 +1564,17 @@
         transform: translateX(2px);
         border-color: rgba(23, 114, 246, 0.5);
         color: #73aaf8;
+      }
+      .dock-action:active { transform: scale(0.985); }
+      .dock-action.is-locked {
+        color: rgba(224, 232, 232, 0.72);
+      }
+      .dock-action.is-locked .dock-action-icon {
+        border-style: dashed;
+        color: rgba(231, 193, 127, 0.68);
+      }
+      .dock-action.is-locked .dock-action-copy span {
+        color: rgba(231, 193, 127, 0.58);
       }
       .dock-action-copy b {
         display: block;
@@ -1239,6 +1847,7 @@
         to { opacity: 0.55; transform: translateY(5px) scale(0.998); }
       }
       body.is-cards-open .explore-shell,
+      body.is-cards-open .cards-quick-entry,
       body.is-cards-open .circle-chip,
       body.is-cards-open .focus-banner,
       body.is-cards-open .verdict { display: none !important; }
@@ -1637,6 +2246,24 @@
       }
       .pcard-me-btn:hover { transform: translate(-1px, -1px); border-color: rgba(231, 193, 127, 0.8); }
       .pcard-me-btn:active { transform: translate(1px, 1px); }
+      .cards-section {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        margin-top: 10px;
+        border-bottom: 1px solid rgba(143, 216, 220, 0.12);
+        color: rgba(200, 209, 212, 0.58);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0;
+      }
+      .cards-section b {
+        color: #9fd8db;
+        font-family: var(--mono);
+        font-size: 8px;
+        font-weight: 500;
+      }
       .cards-empty {
         padding: 54px 0;
         color: rgba(180, 193, 197, 0.46);
@@ -1737,6 +2364,163 @@
       }
       .modal-title { margin-top: 7px; font-size: 22px; font-weight: 650; letter-spacing: 0; color: var(--hi); }
       .modal-sub { margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: var(--mute); }
+      .modal-personalization {
+        margin: 7px 0 0;
+        color: rgba(230, 193, 127, 0.78);
+        font-size: 10.5px;
+        line-height: 1.55;
+      }
+      .guide-modal {
+        width: min(560px, 92vw);
+      }
+      .guide-modal .modal-x {
+        width: 44px;
+        height: 44px;
+      }
+      .guide-picks {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 16px;
+      }
+      .guide-pick {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(143, 216, 220, 0.14);
+        border-radius: 10px;
+        background: rgba(143, 216, 220, 0.04);
+        color: var(--hi);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-pick:hover,
+      .guide-pick:focus-visible {
+        border-color: rgba(143, 180, 255, 0.58);
+        background: rgba(143, 180, 255, 0.08);
+      }
+      .guide-pick b {
+        display: block;
+        font-size: 11px;
+        font-weight: 620;
+      }
+      .guide-pick span {
+        display: block;
+        margin-top: 3px;
+        color: var(--txt-faint);
+        font-size: 9.5px;
+        line-height: 1.45;
+      }
+      .guide-pick em {
+        color: var(--lav);
+        font-family: var(--mono);
+        font-size: 8px;
+        font-style: normal;
+      }
+      .guide-body {
+        margin: 0 24px 18px;
+        color: var(--txt);
+        font-size: 11.5px;
+        line-height: 1.65;
+      }
+      .guide-body strong {
+        color: var(--hi);
+        font-weight: 620;
+      }
+      .guide-quiz {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 14px;
+      }
+      .guide-quiz-q {
+        color: var(--lav);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-quiz-choices {
+        display: grid;
+        gap: 6px;
+      }
+      .guide-quiz-btn {
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--mid-btn);
+        color: var(--hi);
+        font: inherit;
+        font-size: 11px;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-quiz-btn:hover,
+      .guide-quiz-btn:focus-visible {
+        border-color: rgba(143, 180, 255, 0.58);
+      }
+      .guide-input {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 20px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line);
+      }
+      .guide-input label {
+        color: var(--txt-faint);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 8px;
+      }
+      .guide-input-row input {
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        outline: 0;
+        background: var(--mid-deep);
+        color: var(--hi);
+        font: inherit;
+        font-size: 11px;
+      }
+      .guide-input-row input:focus {
+        border-color: rgba(143, 180, 255, 0.72);
+        box-shadow: 0 0 0 3px rgba(143, 180, 255, 0.12);
+      }
+      .guide-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .guide-suggestion {
+        min-height: 44px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--txt-dim);
+        font: inherit;
+        font-size: 9.5px;
+        cursor: pointer;
+      }
+      .guide-suggestion:hover,
+      .guide-suggestion:focus-visible {
+        color: var(--hi);
+        border-color: rgba(143, 216, 220, 0.42);
+      }
+      .match-mode {
+        margin: 0 24px 16px;
+      }
+      .match-mode .seg-btn {
+        justify-content: center;
+        min-height: 44px;
+      }
       .clash-card {
         position: relative;
         margin: 0;
@@ -1856,117 +2640,6 @@
         box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
       }
       .gbtn--primary:hover { transform: translateY(-1px); box-shadow: 0 11px 26px rgba(0, 0, 0, 0.48); }
-      .guide-picks {
-        display: grid;
-        gap: 8px;
-        margin: 0 24px 16px;
-      }
-      .guide-pick {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        min-height: 44px;
-        padding: 10px 12px;
-        border: 1px solid rgba(143, 216, 220, 0.14);
-        border-radius: 10px;
-        background: rgba(143, 216, 220, 0.04);
-        color: #edf1f1;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-      }
-      .guide-pick:hover { border-color: rgba(23, 114, 246, 0.55); background: rgba(23, 114, 246, 0.06); }
-      .guide-pick b { display: block; font-size: 11px; font-weight: 620; }
-      .guide-pick span { display: block; margin-top: 3px; color: rgba(180, 193, 197, 0.58); font-size: 9.5px; line-height: 1.45; }
-      .guide-pick em {
-        flex: none;
-        color: rgba(143, 216, 220, 0.62);
-        font-family: var(--mono);
-        font-size: 8px;
-        font-style: normal;
-      }
-      .guide-body {
-        margin: 0 24px 18px;
-        color: rgba(204, 212, 214, 0.72);
-        font-size: 11.5px;
-        line-height: 1.65;
-      }
-      .guide-body strong { color: #f3eee0; font-weight: 620; }
-      .guide-quiz {
-        display: grid;
-        gap: 8px;
-        margin: 0 24px 14px;
-      }
-      .guide-quiz-q {
-        color: rgba(143, 216, 220, 0.58);
-        font-family: var(--mono);
-        font-size: 8px;
-      }
-      .guide-quiz-choices { display: grid; gap: 6px; }
-      .guide-quiz-btn {
-        min-height: 44px;
-        padding: 10px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 9px;
-        background: #111820;
-        color: #edf1f1;
-        font: inherit;
-        font-size: 11px;
-        text-align: left;
-        cursor: pointer;
-      }
-      .guide-quiz-btn:hover { border-color: rgba(23, 114, 246, 0.55); }
-      .guide-input {
-        display: grid;
-        gap: 8px;
-        margin: 0 24px 20px;
-        padding-top: 12px;
-        border-top: 1px dashed rgba(143, 216, 220, 0.12);
-      }
-      .guide-input label {
-        color: rgba(180, 193, 197, 0.48);
-        font-family: var(--mono);
-        font-size: 8px;
-      }
-      .guide-input-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 44px;
-        gap: 8px;
-      }
-      .guide-input-row input {
-        min-height: 44px;
-        padding: 0 12px;
-        border: 1px solid rgba(143, 216, 220, 0.14);
-        border-radius: 9px;
-        background: #080e13;
-        color: #edf1f1;
-        font: inherit;
-        font-size: 11px;
-      }
-      .guide-input-row input:focus {
-        outline: 0;
-        border-color: rgba(23, 114, 246, 0.72);
-        box-shadow: 0 0 0 3px rgba(23, 114, 246, 0.1);
-      }
-      .guide-suggestions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .guide-suggestion {
-        min-height: 32px;
-        padding: 0 10px;
-        border: 1px solid rgba(143, 216, 220, 0.14);
-        border-radius: 999px;
-        background: transparent;
-        color: rgba(180, 193, 197, 0.62);
-        font: inherit;
-        font-size: 9.5px;
-        cursor: pointer;
-      }
-      .guide-suggestion:hover { color: #edf1f1; border-color: rgba(143, 216, 220, 0.42); }
       .gbtn--primary:disabled {
         cursor: wait;
         opacity: 0.72;
@@ -2139,18 +2812,107 @@
         .pcard::before { display: none; }
       }
       @media (max-width: 720px) {
+        .entry-brand { top: max(16px, env(safe-area-inset-top)); left: 16px; }
+        .entry-brand img { width: 32px; height: 32px; }
+        .entry-home-back {
+          top: max(12px, env(safe-area-inset-top));
+          right: 16px;
+          font-size: 11px;
+        }
+        .entry-center { top: 39%; width: calc(100vw - 32px); }
+        .entry-center h1 { font-size: clamp(30px, 10vw, 42px); }
+        .entry-lead { margin-top: 14px; font-size: 12px; }
+        .entry-search { margin-top: 18px; }
+        .entry-topics {
+          top: auto;
+          bottom: max(16px, env(safe-area-inset-bottom));
+          display: flex;
+          gap: 10px;
+          padding: 0 16px;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+        }
+        .entry-topic {
+          position: static;
+          flex: 0 0 min(78vw, 270px);
+          width: auto;
+          min-height: 108px;
+          scroll-snap-align: start;
+        }
+        .entry-flow[data-state="confirm"] .entry-topics {
+          display: flex;
+          visibility: visible;
+          min-height: 112px;
+          padding-top: 20px;
+        }
+        .entry-flow[data-state="confirm"] .entry-topic,
+        .entry-flow[data-state="confirm"] .entry-topic:nth-child(even) {
+          flex: 0 0 min(76vw, 270px);
+          min-height: 92px;
+          padding: 18px 22px 14px;
+          text-align: center;
+        }
+        .entry-flow[data-state="confirm"] .entry-topic::before { transform: translate(-50%, -50%) scale(0.86); }
+        .entry-flow[data-state="confirm"] .entry-topic::after { transform: translate(-50%, -50%) scale(0.82); }
+        .entry-confirm-actions { flex-direction: column; }
+        .entry-primary, .entry-secondary { width: 100%; }
+        .entry-generation {
+          top: auto;
+          bottom: max(24px, env(safe-area-inset-bottom));
+          grid-template-columns: 46px minmax(0, 1fr);
+          gap: 12px;
+          width: calc(100vw - 32px);
+        }
+        .entry-generation-signal {
+          width: 44px;
+          height: 44px;
+        }
+        .entry-generation-signal i:first-child { width: 40px; height: 19px; }
+        .entry-generation-signal i:nth-child(2) { width: 25px; height: 38px; }
+        .entry-skip { grid-column: 1 / -1; justify-self: center; }
+        .gbtn--text,
+        .tip-like,
+        .v-clear,
+        #error .retry-btn,
+        .cards-search { min-height: 44px; }
+        .v-clear { min-width: 44px; }
+        .modal-x { width: 44px; min-width: 44px; height: 44px; }
+        .pcard-source {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          min-height: 44px;
+        }
         .explore-shell {
           left: 14px;
           bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
-          width: min(242px, calc(100vw - 28px));
+          width: min(232px, calc(100vw - 158px));
           height: 54px;
         }
         .explore-toggle { width: 54px; height: 54px; }
         .self-draw-entry {
           left: 64px;
-          width: min(178px, calc(100vw - 92px));
+          width: min(168px, calc(100vw - 222px));
           height: 54px;
         }
+        .cards-quick-entry {
+          right: 14px;
+          bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
+          grid-template-columns: 42px minmax(0, 1fr);
+          gap: 6px;
+          width: 116px;
+          height: 54px;
+          padding: 5px 8px;
+        }
+        .cards-quick-deck { width: 40px; height: 40px; }
+        .cards-quick-sheet { top: 6px; width: 27px; height: 32px; }
+        .cards-quick-sheet img { width: 20px; height: 20px; }
+        .cards-quick-sheet:nth-child(1) { left: 0; }
+        .cards-quick-sheet:nth-child(2) { left: 6px; }
+        .cards-quick-sheet:nth-child(3) { left: 12px; }
+        .cards-quick-copy b { font-size: 10px; }
+        .cards-quick-copy small { font-size: 7.5px; }
+        .cards-quick-arrow { display: none; }
         .blindbox-lid { left: 8px; width: 38px; }
         .zh-orbit-ring { left: 7px; width: 38px; }
         .explore-nudge { left: 64px; bottom: 13px; font-size: 9px; }
@@ -2180,7 +2942,7 @@
           min-height: 44px;
           padding: 0 2px;
         }
-        .axis { bottom: 82px !important; }
+        .axis { bottom: auto !important; }
         .hint { display: none; }
         .circle-chip {
           right: 12px;
@@ -2197,7 +2959,7 @@
         }
         .focus-mark { width: 26px; height: 26px; border-radius: 7px; font-size: 13px; }
         #focusText { font-size: 11.5px; line-height: 1.6; }
-        .focus-exit { width: 32px; min-width: 32px; height: 32px; }
+        .focus-exit { width: 44px; min-width: 44px; height: 44px; }
         .verdict { font-size: 11.5px; padding: 8px 14px; }
         .cards-bar {
           grid-template-columns: 44px minmax(0, 1fr);
@@ -2238,7 +3000,7 @@
         }
         .pcard-position span { margin-bottom: 6px; text-align: left; }
         .pcard-claim { font-size: 11.5px; }
-        .modal { width: min(420px, 94vw); }
+        .modal { width: min(420px, calc(100vw - 32px)); }
         .modal-head {
           grid-template-columns: 34px minmax(0, 1fr);
           gap: 11px;
@@ -2252,7 +3014,10 @@
         .gbtn--text { grid-column: auto; justify-self: center; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back { transition: none !important; }
+        .entry-flow, .entry-topic { transition: none !important; }
+        .entry-spark,
+        .entry-generation-signal i { animation: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -2264,7 +3029,10 @@
         function $(id) { return document.getElementById(id); }
         function hideLoading() {
           var el = $("loading");
-          if (el) el.classList.add("hide");
+          if (el) {
+            el.classList.add("hide");
+            el.setAttribute("aria-hidden", "true");
+          }
         }
         function showError(detail) {
           var el = $("error");
@@ -2318,6 +3086,61 @@
   <body>
     <canvas id="scene"></canvas>
 
+    <section class="entry-flow" id="entryFlow" data-state="discover" aria-label="选择要探索的问题" hidden>
+      <div class="entry-atmosphere" aria-hidden="true">
+        <i class="entry-spark entry-spark--1">✦</i>
+        <i class="entry-spark entry-spark--2">✧</i>
+        <i class="entry-spark entry-spark--3">✦</i>
+        <i class="entry-spark entry-spark--4">✧</i>
+        <i class="entry-spark entry-spark--5">✦</i>
+        <i class="entry-spark entry-spark--6">✧</i>
+      </div>
+      <div class="entry-brand">
+        <img src="../brand/soular-mark.svg?v=3" alt="" />
+        <div><b>思想银河</b><small>SOULAR · QUESTION FIELD</small></div>
+      </div>
+      <button class="entry-home-back" id="entryHomeBack" type="button">
+        <span aria-hidden="true">←</span> 返回人格卡
+      </button>
+      <div class="entry-center entry-discover">
+        <p class="entry-eyebrow">连接思想 · 看见观点的星系</p>
+        <h1>选择一个问题<br />进入思想银河</h1>
+        <p class="entry-lead">从讨论的全貌出发，找到你认同、反对，以及尚未遇见的声音。</p>
+        <form class="entry-search" id="entrySearch">
+          <input id="entryQuery" type="search" maxlength="80" autocomplete="off" aria-label="搜索已发布的观点星云" placeholder="搜索已发布的问题…" />
+          <button type="submit" aria-label="搜索">⌕</button>
+        </form>
+        <p class="entry-search-status" id="entrySearchStatus" role="status">或从周围的问题开始探索</p>
+      </div>
+      <div class="entry-center entry-confirm">
+        <p class="entry-eyebrow">即将展开 · <span id="entryConfirmSerial">01</span></p>
+        <h1 id="entryConfirmQuestion"></h1>
+        <p class="entry-confirm-meta" id="entryConfirmMeta"></p>
+        <div class="entry-confirm-actions">
+          <button class="entry-primary" id="entryGenerate" type="button">开始生成思想银河</button>
+          <button class="entry-secondary" id="entryBack" type="button">返回问题搜索</button>
+        </div>
+      </div>
+      <div class="entry-topics" id="entryTopics" aria-label="已发布的观点星云"></div>
+      <div class="entry-generation" id="entryGeneration" role="status" aria-live="polite">
+        <div class="entry-generation-signal" aria-hidden="true">
+          <i></i><i></i><span>✦</span>
+        </div>
+        <div class="entry-generation-copy">
+          <div class="entry-generation-head">
+            <b id="entryGenerationTitle">正在读取观点坐标</b>
+            <span class="entry-generation-percent" id="entryGenerationPercent">00%</span>
+          </div>
+          <p id="entryGenerationText">正在确认这道问题中的代表观点</p>
+          <div class="entry-progress" aria-hidden="true"><i id="entryProgress"></i></div>
+          <div class="entry-generation-steps" id="entryGenerationSteps" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+        <button class="entry-skip" id="entrySkip" type="button">跳过生成动画</button>
+      </div>
+    </section>
+
     <div class="hud">
       <div class="hud-top">
         <div class="scene-brand">
@@ -2327,6 +3150,9 @@
             <div class="title">观点星云</div>
           </div>
         </div>
+        <button class="scene-back" id="sceneBack" type="button">
+          <span aria-hidden="true">←</span> 返回问题
+        </button>
         <div class="question">热门问题 · <b id="presetQuestion">35 岁程序员该不该转行？</b><br />每个发光头像，都是一种立场</div>
       </div>
       <div class="axis axis-left">
@@ -2460,7 +3286,7 @@
           </span>
           <span class="dock-action-copy">
             <b>观点碰撞</b>
-            <span>匹配立场距离最远的回答者</span>
+            <span id="clashHint">发现同频或互补的回答者</span>
           </span>
           <span class="dock-arrow" aria-hidden="true">›</span>
         </button>
@@ -2475,24 +3301,14 @@
           </span>
           <span class="dock-action-copy">
             <b>聚焦小圈子</b>
-            <span>发现互相点赞的同路人</span>
+            <span id="circleHint">发现互相点赞的同路人</span>
           </span>
           <span class="dock-arrow" aria-hidden="true">›</span>
         </button>
         <div class="dock-settings">
           <div class="dock-settings-head">
-            <b>观测模式</b>
-            <small>OBSERVATORY</small>
-          </div>
-          <div class="seg" role="tablist" aria-label="视图模式">
-            <button type="button" class="seg-btn is-active" id="modeDense">
-              <span class="view-glyph view-glyph--dense" aria-hidden="true"></span>
-              <span>密集头像</span>
-            </button>
-            <button type="button" class="seg-btn" id="modeCards">
-              <span class="view-glyph view-glyph--cards" aria-hidden="true"></span>
-              <span>光谱阅读</span>
-            </button>
+            <b>星图显示</b>
+            <small>DISPLAY</small>
           </div>
           <label class="switch-row" id="commentToggleRow">
             <span class="switch-copy">
@@ -2523,6 +3339,19 @@
         <span aria-hidden="true">→</span>
       </button>
     </div>
+
+    <button type="button" class="cards-quick-entry" id="cardsQuickEntry">
+      <span class="cards-quick-deck" aria-hidden="true">
+        <span class="cards-quick-sheet"><img data-cards-quick-avatar alt="" /></span>
+        <span class="cards-quick-sheet"><img data-cards-quick-avatar alt="" /></span>
+        <span class="cards-quick-sheet"><img data-cards-quick-avatar alt="" /></span>
+      </span>
+      <span class="cards-quick-copy">
+        <b>观点卡片</b>
+        <small><span id="cardsQuickCount">0</span> 位回答者 · 展开阅读</small>
+      </span>
+      <span class="cards-quick-arrow" aria-hidden="true">→</span>
+    </button>
 
     <div class="verdict" id="verdict">
       <span class="v-spark">✦</span>
@@ -2571,6 +3400,42 @@
     </div>
 
     <!-- Icons adapted from Its Hover (Apache-2.0): https://github.com/itshover/itshover -->
+    <div class="modal-mask" id="guide" aria-hidden="true">
+      <div class="modal guide-modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+        <button type="button" class="modal-x" id="guideX" aria-label="关闭星图向导">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon icon-sparkles" viewBox="0 0 24 24">
+              <path class="sparkle-bottom" d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-top" d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-main" d="M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6z"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">星图向导 · LOCAL GUIDE</div>
+            <div class="modal-title" id="guideTitle">先读懂这片星云</div>
+            <p class="modal-sub" id="guideHeadline"></p>
+          </div>
+        </div>
+        <div class="guide-picks" id="guidePicks"></div>
+        <div class="guide-body" id="guideBody" aria-live="polite"></div>
+        <div class="guide-quiz" id="guideQuiz" hidden></div>
+        <div class="guide-input">
+          <label for="guideAsk">试着问我（本地匹配，不调用大模型）</label>
+          <div class="guide-input-row">
+            <input id="guideAsk" type="search" maxlength="80" autocomplete="off" placeholder="例如：代表性观点 / 我是什么立场" />
+            <button type="button" class="gbtn gbtn--ghost" id="guideAskBtn" aria-label="提交问题">问</button>
+          </div>
+          <div class="guide-suggestions" id="guideSuggestions"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-mask" id="clash">
       <div class="modal" role="dialog" aria-modal="true" aria-label="观点碰撞">
         <button type="button" class="modal-x" id="clashX" aria-label="关闭">
@@ -2588,10 +3453,19 @@
             </svg>
           </span>
           <div>
-            <div class="modal-kicker">观点碰撞 · OPPOSITE MATCH</div>
+            <div class="modal-kicker">观点碰撞 · VIEWPOINT MATCH</div>
             <div class="modal-title">听听对立面怎么想</div>
             <p class="modal-sub">已找到与你立场距离最远的一种声音。</p>
+            <p class="modal-personalization" id="clashReason">当前根据本题表态进行匹配。</p>
           </div>
+        </div>
+        <div class="seg match-mode" role="tablist" aria-label="观点匹配方式">
+          <button type="button" class="seg-btn" id="matchSame" role="tab" aria-selected="false">
+            同频观点
+          </button>
+          <button type="button" class="seg-btn is-active" id="matchOpposite" role="tab" aria-selected="true">
+            互补观点
+          </button>
         </div>
         <div class="clash-card">
           <div class="clash-head">
@@ -2604,7 +3478,7 @@
           <div class="clash-claim" id="clashClaim"></div>
           <div class="clash-scale">
             <div class="clash-distance">
-              <span>你们的立场距离</span>
+              <span id="clashMetricLabel">你们的立场距离</span>
               <b id="clashDistance"></b>
             </div>
             <div class="clash-track">
@@ -2639,43 +3513,7 @@
       </div>
     </div>
 
-    <div class="modal-mask" id="guide">
-      <div class="modal guide-modal" role="dialog" aria-modal="true" aria-label="星图向导">
-        <button type="button" class="modal-x" id="guideX" aria-label="关闭">
-          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-        <div class="modal-head">
-          <span class="modal-signal" aria-hidden="true">
-            <svg class="ui-icon icon-sparkles" viewBox="0 0 24 24">
-              <path class="sparkle-bottom" d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
-              <path class="sparkle-top" d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
-              <path class="sparkle-main" d="M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6z"></path>
-            </svg>
-          </span>
-          <div>
-            <div class="modal-kicker">星图向导 · LOCAL GUIDE</div>
-            <div class="modal-title">先读懂这片星云</div>
-            <p class="modal-sub" id="guideHeadline"></p>
-          </div>
-        </div>
-        <div class="guide-picks" id="guidePicks"></div>
-        <div class="guide-body" id="guideBody"></div>
-        <div class="guide-quiz" id="guideQuiz" hidden></div>
-        <div class="guide-input">
-          <label for="guideAsk">试着问我（本地匹配，不调用大模型）</label>
-          <div class="guide-input-row">
-            <input id="guideAsk" type="search" maxlength="80" autocomplete="off" placeholder="例如：代表性观点 / 我是什么立场" />
-            <button type="button" class="gbtn gbtn--ghost" id="guideAskBtn" aria-label="提交问题">问</button>
-          </div>
-          <div class="guide-suggestions" id="guideSuggestions"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="circle-chip" id="circleChip">
+    <div class="circle-chip" id="circleChip" aria-hidden="true">
       <div class="cc-title"><span class="cc-spark">✦</span> 发现一个小圈子</div>
       <div class="cc-text" id="circleText"></div>
       <div class="cc-actions">
@@ -2684,7 +3522,7 @@
       </div>
     </div>
 
-    <div class="focus-banner" id="focusBanner">
+    <div class="focus-banner" id="focusBanner" aria-hidden="true">
       <span class="focus-mark" aria-hidden="true">◎</span>
       <span id="focusText"></span>
       <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
@@ -2830,6 +3668,13 @@
       const personAvatarPath = (index) => PRESET.avatarBase
         ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
         : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
+      const cardsQuickEntryEl = document.getElementById("cardsQuickEntry");
+      const cardsQuickPreviewIndexes = [0, Math.floor(PEOPLE.length / 2), PEOPLE.length - 1];
+      document.querySelectorAll("[data-cards-quick-avatar]").forEach((avatar, index) => {
+        avatar.src = personAvatarPath(cardsQuickPreviewIndexes[index]);
+      });
+      document.getElementById("cardsQuickCount").textContent = PEOPLE.length;
+      cardsQuickEntryEl.setAttribute("aria-label", `阅读 ${PEOPLE.length} 张观点卡片`);
 
       document.title = `${PRESET.question} · 思想银河`;
       document.getElementById("presetQuestion").textContent = PRESET.question;
@@ -2864,6 +3709,15 @@
       const presetPickerEl = document.getElementById("presetPicker");
       const presetPickerTriggerEl = document.getElementById("presetPickerTrigger");
       const presetPickerOptionsEl = document.getElementById("presetPickerOptions");
+      const entryFlowEl = document.getElementById("entryFlow");
+      const entryTopicsEl = document.getElementById("entryTopics");
+      const entryQueryEl = document.getElementById("entryQuery");
+      const entrySearchStatusEl = document.getElementById("entrySearchStatus");
+      const entryMode = sceneParams.get("entry");
+      const entryEnabled =
+        entryMode === "discover" ||
+        entryMode === "confirm" ||
+        entryMode === "explore";
       document.getElementById("presetPickerSerial").textContent = PRESET.serial;
       document.getElementById("presetPickerCurrent").textContent = PRESET.question;
       const availablePresets = listNebulaPresets();
@@ -2888,7 +3742,102 @@
         kind.textContent = preset.kind === "real" ? "真实" : "示例";
         option.append(serial, question, kind);
         presetPickerOptionsEl.appendChild(option);
+
+        const entryTopic = document.createElement("button");
+        entryTopic.type = "button";
+        entryTopic.className = "entry-topic";
+        entryTopic.dataset.entryPreset = preset.id;
+        entryTopic.dataset.searchText = `${preset.question} ${preset.axis.left} ${preset.axis.center} ${preset.axis.right}`.toLowerCase();
+        entryTopic.setAttribute("aria-label", `探索问题：${preset.question}`);
+        const entrySerial = document.createElement("span");
+        entrySerial.className = "entry-topic-serial";
+        entrySerial.textContent = `${preset.serial} · ${preset.kind === "real" ? "真实讨论" : "示例星云"}`;
+        const entryQuestion = document.createElement("b");
+        entryQuestion.textContent = preset.question;
+        const entryMeta = document.createElement("small");
+        entryMeta.textContent = `${preset.answerCount} 个代表观点 · ${preset.axis.left} ↔ ${preset.axis.right}`;
+        entryTopic.append(entrySerial, entryQuestion, entryMeta);
+        entryTopicsEl.appendChild(entryTopic);
       });
+      const entryTopicEls = [...entryTopicsEl.querySelectorAll("[data-entry-preset]")];
+      function setEntryState(state) {
+        entryFlowEl.dataset.state = state;
+        entryTopicEls.forEach((topic) => {
+          const selected = topic.dataset.entryPreset === PRESET.id;
+          topic.classList.toggle("is-selected", selected);
+          topic.setAttribute("aria-pressed", String(selected));
+        });
+      }
+      function showEntryConfirm() {
+        document.getElementById("entryConfirmSerial").textContent =
+          `${PRESET.serial} / ${String(availablePresets.length).padStart(2, "0")}`;
+        document.getElementById("entryConfirmQuestion").textContent = PRESET.question;
+        document.getElementById("entryConfirmMeta").textContent =
+          `${PEOPLE.length} 个代表观点正在等待展开 · ${PRESET.axis.left} ↔ ${PRESET.axis.right}`;
+        setEntryState("confirm");
+        document.getElementById("entryGenerate").focus();
+      }
+      function selectEntryPreset(presetId) {
+        if (presetId === PRESET.id) {
+          showEntryConfirm();
+          return;
+        }
+        if (window.parent !== window.self) {
+          window.parent.postMessage(
+            { type: "nebula-preset-change", preset: presetId, entry: "confirm" },
+            location.origin,
+          );
+          return;
+        }
+        const next = new URL(location.href);
+        next.searchParams.set("preset", presetId);
+        next.searchParams.set("entry", "confirm");
+        location.href = next.href;
+      }
+      entryTopicsEl.addEventListener("click", (event) => {
+        const topic = event.target.closest("[data-entry-preset]");
+        if (topic) selectEntryPreset(topic.dataset.entryPreset);
+      });
+      function filterEntryTopics() {
+        const query = entryQueryEl.value.trim().toLowerCase();
+        let visible = 0;
+        entryTopicEls.forEach((topic) => {
+          const match = !query || topic.dataset.searchText.includes(query);
+          topic.hidden = !match;
+          if (match) visible += 1;
+        });
+        entrySearchStatusEl.textContent = query
+          ? visible ? `找到 ${visible} 个已发布星云` : "这个话题还没有已发布星云"
+          : "或从周围的问题开始探索";
+      }
+      document.getElementById("entrySearch").addEventListener("submit", (event) => {
+        event.preventDefault();
+        filterEntryTopics();
+        const visibleTopic = entryTopicEls.find((topic) => !topic.hidden);
+        if (visibleTopic && entryQueryEl.value.trim()) visibleTopic.focus();
+      });
+      entryQueryEl.addEventListener("input", filterEntryTopics);
+      function returnToPersonaHome() {
+        if (window.parent !== window.self) {
+          window.parent.postMessage({ type: "nebula-entry-back" }, location.origin);
+          return;
+        }
+        const next = new URL(location.href);
+        next.searchParams.set("entry", "discover");
+        location.href = next.href;
+      }
+      document.getElementById("entryBack").addEventListener("click", returnToPersonaHome);
+      document.getElementById("entryHomeBack").addEventListener("click", returnToPersonaHome);
+      if (entryMode === "explore") {
+        entryFlowEl.hidden = true;
+        entryFlowEl.setAttribute("aria-hidden", "true");
+        document.body.classList.add("entry-exploring");
+      } else if (entryEnabled) {
+        entryFlowEl.hidden = false;
+        document.body.classList.add("entry-active");
+        if (entryMode === "confirm") showEntryConfirm();
+        else setEntryState("discover");
+      }
       const presetOptionEls = [...presetPickerOptionsEl.querySelectorAll("[role='option']")];
       let activePresetIndex = Math.max(0, presetOptionEls.findIndex((option) => option.getAttribute("aria-selected") === "true"));
       const captureMode = sceneParams.has("capture");
@@ -2930,7 +3879,9 @@
       controls.minPolarAngle = Math.PI * 0.32;
       controls.maxPolarAngle = Math.PI * 0.82;
       controls.rotateSpeed = 0.55;
-      controls.autoRotate = !reduceMotion;
+      controls.enabled = entryMode === "explore" || !entryEnabled;
+      controls.autoRotate =
+        (entryMode === "explore" || !entryEnabled) && !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
       controls.addEventListener("start", () => {
@@ -2945,11 +3896,16 @@
 
       const composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
+      const bloomDefaults = {
+        strength: lowPower ? 0.18 : 0.26,
+        radius: lowPower ? 0.18 : 0.26,
+        threshold: lowPower ? 0.86 : 0.82,
+      };
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        lowPower ? 0.26 : 0.4,
-        lowPower ? 0.32 : 0.48,
-        lowPower ? 0.82 : 0.74
+        bloomDefaults.strength,
+        bloomDefaults.radius,
+        bloomDefaults.threshold
       );
       composer.addPass(bloom);
       composer.addPass(new OutputPass());
@@ -3095,6 +4051,7 @@
           uniforms: {
             uTime: { value: 0 },
             uOpacity: { value: opacity },
+            uPointScale: { value: 1 },
             uPixelRatio: { value: renderer.getPixelRatio() },
             uPointer: { value: galaxyPointer },
             uPointerStrength: { value: 0 },
@@ -3107,6 +4064,7 @@
             varying vec3 vColor;
             varying float vAlpha;
             uniform float uTime;
+            uniform float uPointScale;
             uniform float uPixelRatio;
             uniform vec3 uPointer;
             uniform float uPointerStrength;
@@ -3124,9 +4082,9 @@
               vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
               gl_Position = projectionMatrix * mvPosition;
               gl_PointSize = clamp(
-                aSize * uPixelRatio * (520.0 / max(1.0, -mvPosition.z)),
-                1.0,
-                12.0
+                aSize * uPointScale * uPixelRatio * (520.0 / max(1.0, -mvPosition.z)),
+                0.8,
+                9.0
               );
 
               float pulse = 0.72 + 0.28 * sin(uTime * aTwinkle + aPhase);
@@ -3142,11 +4100,11 @@
             void main() {
               vec2 p = gl_PointCoord - vec2(0.5);
               float d = length(p) * 2.0;
-              float halo = smoothstep(1.0, 0.08, d);
-              float core = smoothstep(0.34, 0.0, d);
-              float alpha = halo * (0.54 + core * 0.72) * vAlpha * uOpacity;
-              if (alpha < 0.012) discard;
-              gl_FragColor = vec4(vColor * (0.72 + core * 0.58), alpha);
+              float halo = smoothstep(0.88, 0.22, d);
+              float core = smoothstep(0.26, 0.0, d);
+              float alpha = halo * (0.34 + core * 0.78) * vAlpha * uOpacity;
+              if (alpha < 0.018) discard;
+              gl_FragColor = vec4(vColor * (0.82 + core * 0.4), alpha);
             }
           `,
           transparent: true,
@@ -3154,6 +4112,8 @@
           blending: THREE.AdditiveBlending,
           vertexColors: true,
         });
+        material.userData.entryBaseOpacity = opacity;
+        material.userData.entryLayer = interaction >= 0.5 ? "dust" : "stars";
         galaxyMaterials.push(material);
         return material;
       }
@@ -3225,6 +4185,7 @@
           blending: THREE.AdditiveBlending,
         });
         const sp = new THREE.Sprite(m);
+        m.userData.entryBaseOpacity = opacity;
         sp.position.set(x, y, z);
         sp.scale.setScalar(scale);
         sp.renderOrder = 0;
@@ -3367,6 +4328,10 @@
       // 中间派聚成发光核球，两股臂在中段张开、向两端收束成对立极；立场越近越聚拢（引力）。
       const XSPAN = 6.4;
       const ARM_TWIST = Math.PI * 1.45;
+      const axisLeftEl = document.querySelector(".axis-left");
+      const axisRightEl = document.querySelector(".axis-right");
+      const axisLeftAnchor = new THREE.Vector3(-XSPAN - 0.35, 0, 0);
+      const axisRightAnchor = new THREE.Vector3(XSPAN + 0.35, 0, 0);
       function armPoint(s, tight) {
         const k = tight ? 0.5 : 1;
         const ab = Math.min(Math.abs(s), 1);
@@ -3412,7 +4377,9 @@
       }
 
       const loader = new THREE.TextureLoader();
-      let meAvatarSource = "avatars/me.jpg";
+      const DEFAULT_ME_AVATAR = "avatars/me.jpg";
+      let meAvatarSource = DEFAULT_ME_AVATAR;
+      let userPortrait = null;
       const avatarTargets = [];
       const users = PEOPLE.map(([name, stance, castKey, claim], i) => {
         const [castName, castRole, castColor] = CASTS[castKey];
@@ -3658,8 +4625,238 @@
         points.renderOrder = 1;
         return points;
       }
-      dustGroup.add(buildCoreDust(quality.armDust, 0.036, 0.8));
-      dustGroup.add(buildCoreDust(quality.brightDust, 0.064, 0.72));
+      dustGroup.add(buildCoreDust(quality.armDust, 0.03, 0.68));
+      dustGroup.add(buildCoreDust(quality.brightDust, 0.048, 0.58));
+
+      const entryAnswerUsers = users.filter((user) => !user.isMe);
+      entryAnswerUsers.forEach((user, index) => {
+        user.revealTarget = user.group.position.clone();
+        const side = index % 2 ? 1 : -1;
+        user.revealOrigin = new THREE.Vector3(
+          side * (8.5 + Math.random() * 2.8),
+          (Math.random() - 0.5) * 2.6,
+          (Math.random() - 0.5) * 2.8,
+        );
+        user.revealCenter = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.8,
+          (Math.random() - 0.5) * 0.8,
+          (Math.random() - 0.5) * 0.8,
+        );
+      });
+      let entryGenerationStartedAt = 0;
+      let entryGenerationPhase = -1;
+      let entryFinishTimer = 0;
+      const entryGenerationTitleEl = document.getElementById("entryGenerationTitle");
+      const entryGenerationTextEl = document.getElementById("entryGenerationText");
+      const entryProgressEl = document.getElementById("entryProgress");
+      const entryGenerationPercentEl = document.getElementById("entryGenerationPercent");
+      const entryGenerationStepEls = [...document.querySelectorAll("#entryGenerationSteps i")];
+      const easeInOut = (value) => value < 0.5
+        ? 2 * value * value
+        : 1 - Math.pow(-2 * value + 2, 2) / 2;
+      const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+      function finishEntryGeneration() {
+        entryGenerationStartedAt = 0;
+        window.clearTimeout(entryFinishTimer);
+        delete entryFlowEl.dataset.phase;
+        bloom.strength = bloomDefaults.strength;
+        bloom.radius = bloomDefaults.radius;
+        bloom.threshold = bloomDefaults.threshold;
+        galaxyMaterials.forEach((material) => {
+          material.uniforms.uOpacity.value = material.userData.entryBaseOpacity;
+          material.uniforms.uPointScale.value = 1;
+        });
+        fogGroup.children.forEach((sprite) => {
+          sprite.material.opacity = sprite.material.userData.entryBaseOpacity;
+        });
+        userGroup.visible = true;
+        entryAnswerUsers.forEach((user) => {
+          user.group.visible = true;
+          user.group.position.copy(user.revealTarget);
+          user.group.scale.setScalar(1);
+          user.avatar.material.opacity = 1;
+        });
+        meUser.group.visible = true;
+        dustGroup.visible = true;
+        dustGroup.scale.set(1, 1, 1);
+        fogGroup.visible = true;
+        fogGroup.scale.set(1, 1, 1);
+        controls.enabled = true;
+        controls.autoRotate = !reduceMotion;
+        entryFlowEl.classList.add("is-done");
+        entryFlowEl.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("entry-active");
+        document.body.classList.toggle("entry-exploring", entryEnabled);
+        if (entryEnabled && window.parent !== window.self) {
+          window.parent.postMessage(
+            { type: "nebula-entry-explore", preset: PRESET.id },
+            location.origin,
+          );
+        }
+        entryFinishTimer = window.setTimeout(() => {
+          entryFlowEl.hidden = true;
+          entryFinishTimer = 0;
+        }, reduceMotion ? 0 : 500);
+      }
+
+      function setEntryGenerationCopy(phase) {
+        if (entryGenerationPhase === phase) return;
+        entryGenerationPhase = phase;
+        entryFlowEl.dataset.phase = String(phase);
+        entryGenerationStepEls.forEach((step, index) => {
+          step.classList.toggle("is-active", index <= phase);
+        });
+        const copy = [
+          ["正在读取观点坐标", `确认 ${PEOPLE.length} 个代表观点`],
+          ["两侧观点正在汇入", "不同声音沿各自轨迹靠近"],
+          ["立场轴已经建立", `${PRESET.axis.left}与${PRESET.axis.right}开始分离`],
+          ["观点光谱正在展开", "星云沿讨论分歧向两侧生长"],
+          ["正在点亮回答者", "让每个观点回到它的发言者"],
+        ][phase];
+        entryGenerationTitleEl.textContent = copy[0];
+        entryGenerationTextEl.textContent = copy[1];
+      }
+
+      function updateEntryGeneration(now) {
+        if (!entryGenerationStartedAt) return;
+        const elapsed = (now - entryGenerationStartedAt) / 1000;
+        const progress = clamp01(elapsed / 12);
+        entryProgressEl.style.transform = `scaleX(${progress})`;
+        entryGenerationPercentEl.textContent = `${String(Math.round(progress * 100)).padStart(2, "0")}%`;
+        setEntryGenerationCopy(elapsed < 1.4 ? 0 : elapsed < 4 ? 1 : elapsed < 6.2 ? 2 : elapsed < 8.5 ? 3 : 4);
+
+        const backgroundReveal = 0.14 + easeInOut(clamp01(elapsed / 10)) * 0.86;
+        const dustReveal = easeInOut(clamp01((elapsed - 4.2) / 3.8));
+        galaxyMaterials.forEach((material) => {
+          const layerReveal = material.userData.entryLayer === "dust"
+            ? dustReveal
+            : backgroundReveal;
+          material.uniforms.uOpacity.value =
+            material.userData.entryBaseOpacity * layerReveal;
+          material.uniforms.uPointScale.value = material.userData.entryLayer === "dust"
+            ? 0.62 + dustReveal * 0.24
+            : 0.76 + progress * 0.16;
+        });
+        fogGroup.children.forEach((sprite) => {
+          sprite.material.opacity =
+            sprite.material.userData.entryBaseOpacity * (0.18 + dustReveal * 0.52);
+        });
+
+        userGroup.visible = elapsed >= 1.2;
+        dustGroup.visible = elapsed >= 4.2;
+        fogGroup.visible = elapsed >= 3.8;
+        meUser.group.visible = false;
+        const spectrum = easeInOut(clamp01((elapsed - 6) / 2));
+        dustGroup.scale.set(0.08 + spectrum * 0.92, 0.35 + spectrum * 0.65, 0.35 + spectrum * 0.65);
+        fogGroup.scale.setScalar(0.45 + spectrum * 0.55);
+
+        entryAnswerUsers.forEach((user, index) => {
+          const flightDelay = index / Math.max(1, entryAnswerUsers.length - 1) * 1.1;
+          const gather = easeInOut(clamp01((elapsed - 1 - flightDelay) / 2.7));
+          const separate = easeInOut(clamp01((elapsed - 4 - flightDelay * 0.35) / 1.8));
+          if (elapsed < 4 + flightDelay * 0.35) {
+            user.group.position.lerpVectors(user.revealOrigin, user.revealCenter, gather);
+          } else {
+            user.group.position.lerpVectors(user.revealCenter, user.revealTarget, separate);
+          }
+          const avatarDelay = index / Math.max(1, entryAnswerUsers.length - 1) * 2.2;
+          const avatarReveal = easeInOut(clamp01((elapsed - 8 - avatarDelay) / 1.4));
+          const seedScale = 0.32 + separate * 0.14;
+          user.group.scale.setScalar(elapsed < 8 ? seedScale : 0.46 + avatarReveal * 0.54);
+          user.avatar.material.opacity = avatarReveal;
+          user.glow.material.opacity = elapsed < 8
+            ? 0.2 + separate * 0.1
+            : 0.3 - avatarReveal * 0.12;
+          if (user.star) user.star.material.opacity = avatarReveal * 0.9;
+        });
+
+        if (elapsed >= 12) finishEntryGeneration();
+      }
+
+      function prepareEntryGenerationScene() {
+        window.clearTimeout(entryFinishTimer);
+        entryFinishTimer = 0;
+        entryGenerationStartedAt = 0;
+        entryFlowEl.classList.remove("is-done");
+        entryFlowEl.hidden = false;
+        entryFlowEl.setAttribute("aria-hidden", "false");
+        document.body.classList.remove("entry-exploring");
+        entryGenerationPhase = -1;
+        entryProgressEl.style.transform = "scaleX(0)";
+        entryGenerationPercentEl.textContent = "00%";
+        entryGenerationStepEls.forEach((step) => step.classList.remove("is-active"));
+        bloom.strength = lowPower ? 0.08 : 0.12;
+        bloom.radius = 0.12;
+        bloom.threshold = 0.9;
+        galaxyMaterials.forEach((material) => {
+          const initialOpacity = material.userData.entryLayer === "dust" ? 0 : 0.14;
+          material.uniforms.uOpacity.value =
+            material.userData.entryBaseOpacity * initialOpacity;
+          material.uniforms.uPointScale.value =
+            material.userData.entryLayer === "dust" ? 0.62 : 0.76;
+        });
+        fogGroup.children.forEach((sprite) => {
+          sprite.material.opacity = sprite.material.userData.entryBaseOpacity * 0.18;
+        });
+        entryAnswerUsers.forEach((user) => {
+          user.group.position.copy(user.revealOrigin);
+          user.group.scale.setScalar(0.32);
+          user.avatar.material.opacity = 0;
+          user.glow.material.opacity = 0.2;
+          if (user.star) user.star.material.opacity = 0;
+        });
+        userGroup.visible = false;
+        dustGroup.visible = false;
+        dustGroup.scale.set(0.08, 0.35, 0.35);
+        fogGroup.visible = false;
+        fogGroup.scale.setScalar(0.45);
+        meUser.group.visible = false;
+        controls.enabled = false;
+        controls.autoRotate = false;
+        composer.render();
+      }
+
+      function startEntryGeneration() {
+        prepareEntryGenerationScene();
+        setEntryState("generating");
+        if (reduceMotion) {
+          finishEntryGeneration();
+          return;
+        }
+        setEntryGenerationCopy(0);
+        entryGenerationStartedAt = performance.now();
+      }
+
+      function showEntryConfirmFromScene() {
+        window.clearTimeout(entryFinishTimer);
+        entryFinishTimer = 0;
+        entryGenerationStartedAt = 0;
+        entryFlowEl.hidden = false;
+        entryFlowEl.classList.remove("is-done");
+        entryFlowEl.setAttribute("aria-hidden", "false");
+        document.body.classList.remove("entry-exploring");
+        document.body.classList.add("entry-active");
+        userGroup.visible = false;
+        dustGroup.visible = false;
+        fogGroup.visible = false;
+        meUser.group.visible = false;
+        controls.enabled = false;
+        controls.autoRotate = false;
+        showEntryConfirm();
+      }
+
+      if (entryEnabled) {
+        if (entryMode !== "explore") {
+          userGroup.visible = false;
+          dustGroup.visible = false;
+          fogGroup.visible = false;
+          meUser.group.visible = false;
+        }
+        document.getElementById("entryGenerate").addEventListener("click", startEntryGeneration);
+        document.getElementById("entrySkip").addEventListener("click", finishEntryGeneration);
+        document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
+      }
 
       let loaded = 0;
       function loadUserAvatar(u, file, onSettled, onApplied) {
@@ -3707,13 +4904,53 @@
           return "";
         }
       }
+      function replaceUserAvatarWithPlaceholder(u) {
+        const ringColor = u.followed ? "#e7c98c" : u.ringColor;
+        const holder = placeholderTexture(u.name, ringColor);
+        u.avatar.material.map.dispose();
+        u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
+        u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
+        u.avatar.material.needsUpdate = true;
+      }
       function setMeAvatar(value) {
-        const avatarUrl = safeUserAvatarUrl(value);
-        if (!avatarUrl || avatarUrl === meAvatarSource) return;
+        const avatarUrl = safeUserAvatarUrl(value) || DEFAULT_ME_AVATAR;
+        if (avatarUrl === meAvatarSource) return;
+        meAvatarSource = avatarUrl;
+        replaceUserAvatarWithPlaceholder(meUser);
+        renderCardsIfOpen();
         loadUserAvatar(meUser, avatarUrl, null, () => {
-          meAvatarSource = avatarUrl;
           renderCardsIfOpen();
         });
+      }
+      function normalizeUserPortrait(value) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+        const keywords = Array.isArray(value.keywords)
+          ? value.keywords
+              .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+              .map((item) => ({
+                word: typeof item.word === "string" ? item.word.trim() : "",
+                score: typeof item.score === "number" && Number.isFinite(item.score)
+                  ? Math.max(0, item.score)
+                  : 0,
+              }))
+              .filter((item) => item.word && item.word.length <= 24)
+              .slice(0, 6)
+          : [];
+        const evidenceCount = Number.isSafeInteger(value.evidenceCount) && value.evidenceCount >= 0
+          ? value.evidenceCount
+          : 0;
+        return keywords.length
+          ? { keywords, evidenceCount, partial: value.partial === true }
+          : null;
+      }
+      function portraitInterest() {
+        return userPortrait
+          ? {
+              keywords: userPortrait.keywords.map(({ word, score }) => ({ word, score })),
+              evidenceCount: userPortrait.evidenceCount,
+              partial: userPortrait.partial,
+            }
+          : undefined;
       }
       function finishOne() {
         loaded += 1;
@@ -3725,6 +4962,7 @@
 
       // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
       const PRESET_VERSION = String(PRESET.version || "1");
+      const PERSONA_MIN_LIKES = 3;
       const LEGACY_LIKE_VERSIONS = { "career-35": "1", "ai-math": "20260912" };
       const LIKE_KEY = getNebulaLikeStorageKey(PRESET);
       const LEGACY_LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
@@ -3752,6 +4990,10 @@
       let verdictText = "";
       const verdictEl = document.getElementById("verdict");
       const verdictTextEl = document.getElementById("verdictText");
+
+      function personaUnlocked() {
+        return liked.size >= PERSONA_MIN_LIKES;
+      }
 
       function computeStance(ids) {
         const n = ids.length;
@@ -3791,6 +5033,7 @@
             stance: 0,
             likedCount: 0,
             claim: `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`,
+            interest: portraitInterest(),
           };
         }
 
@@ -3819,7 +5062,8 @@
           cast,
           stance: Number(stance.avg.toFixed(4)),
           likedCount: stance.n,
-          claim: `你点赞的 ${stance.n} 个观点中，${matched} 个最接近「${castName}」特征：${castRole}。`,
+          claim: `本题 ${stance.n} 次表态中，${matched} 次呈现「${castName}」特征：${castRole}。`,
+          interest: portraitInterest(),
         };
       }
 
@@ -3855,9 +5099,26 @@
           verdictEl.classList.remove("show");
         }
         const profile = inferSelfProfile();
-        document.getElementById("selfDrawHint").textContent = v
-          ? `已根据 ${v.n} 个点赞匹配${CASTS[profile.cast][0]}`
-          : "点赞后更贴近你的立场";
+        const unlocked = personaUnlocked();
+        const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+        const drawEntry = document.getElementById("selfDrawEntry");
+        drawEntry.disabled = !unlocked;
+        drawEntry.setAttribute("aria-disabled", String(!unlocked));
+        document.getElementById("selfDrawHint").textContent = unlocked
+          ? `已根据 ${v.n} 个点赞匹配${CASTS[profile.cast][0]}${userPortrait ? " · 画像校准" : ""}`
+          : `再表态 ${remaining} 次解锁人格`;
+        const clashButton = document.getElementById("clashBtn");
+        const circleButton = document.getElementById("circleBtn");
+        clashButton.classList.toggle("is-locked", !unlocked);
+        circleButton.classList.toggle("is-locked", !unlocked);
+        clashButton.setAttribute("aria-disabled", String(!unlocked));
+        circleButton.setAttribute("aria-disabled", String(!unlocked));
+        document.getElementById("clashHint").textContent = unlocked
+          ? "发现同频或互补的回答者"
+          : `再表态 ${remaining} 次解锁匹配`;
+        document.getElementById("circleHint").textContent = unlocked
+          ? "发现互相点赞的同路人"
+          : `再表态 ${remaining} 次解锁圈子`;
       }
 
       users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
@@ -3865,6 +5126,7 @@
 
       function toggleLike(i) {
         if (!Number.isInteger(i) || i < 0 || i >= N) return false;
+        const wasUnlocked = personaUnlocked();
         if (liked.has(i)) liked.delete(i);
         else liked.add(i);
         saveLikesLocally();
@@ -3872,6 +5134,14 @@
         if (u) setHeart(u, liked.has(i));
         applyStance(true);
         renderCardsIfOpen();
+        if (!wasUnlocked && personaUnlocked()) {
+          showToast("已完成 3 次表态，你的人格与同频发现已解锁");
+          if (CLUSTERS.length) queueNextChip(4200);
+        }
+        if (wasUnlocked && !personaUnlocked()) {
+          hideChip();
+          if (focusSet) exitFocus();
+        }
         return liked.has(i);
       }
       function resetLikes() {
@@ -3881,6 +5151,8 @@
           localStorage.removeItem(LEGACY_LIKE_KEY);
         } catch { /* ignore */ }
         users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
+        hideChip();
+        if (focusSet) exitFocus();
         applyStance(true);
         renderCardsIfOpen();
       }
@@ -3905,12 +5177,33 @@
       }
 
       let hostReady = false;
+      let userIdentityRevision = null;
       const openAcks = new Set();
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
         if (e.data && e.data.type === "nebula-user-profile") {
+          const identityRevision =
+            Number.isSafeInteger(e.data.identityRevision) &&
+            e.data.identityRevision >= 0
+              ? e.data.identityRevision
+              : 0;
+          const identityChanged =
+            userIdentityRevision !== null &&
+            userIdentityRevision !== identityRevision;
+          userIdentityRevision = identityRevision;
           setMeAvatar(e.data.profile && e.data.profile.avatarUrl);
+          userPortrait = normalizeUserPortrait(e.data.portrait);
+          if (identityChanged) {
+            hideChip();
+            chipCluster = null;
+            chipQueue = rankedCircles();
+            manualCircleIdx = 0;
+            if (clashEl.classList.contains("show")) closeClash();
+            if (focusSet) exitFocus();
+          }
+          applyStance(false);
+          renderCardsIfOpen();
         }
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
@@ -4021,7 +5314,26 @@
           existing.sort((left, right) => {
             return timestamp(left) - timestamp(right) || left.localeCompare(right);
           });
-          const key = `${Date.now().toString(36)}-${crypto.randomUUID()}`;
+          let uuid;
+          if (typeof crypto.randomUUID === "function") {
+            uuid = crypto.randomUUID();
+          } else {
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+            const hex = Array.from(
+              bytes,
+              (byte) => byte.toString(16).padStart(2, "0"),
+            );
+            uuid = [
+              hex.slice(0, 4).join(""),
+              hex.slice(4, 6).join(""),
+              hex.slice(6, 8).join(""),
+              hex.slice(8, 10).join(""),
+              hex.slice(10).join(""),
+            ].join("-");
+          }
+          const key = `${Date.now().toString(36)}-${uuid}`;
           sessionStorage.setItem(`${prefix}${kind}:${key}`, JSON.stringify(value));
           while (existing.length >= 24) {
             const storageKey = existing.shift();
@@ -4070,6 +5382,10 @@
         );
       }
       function openSelf() {
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次即可解锁人格`);
+          return;
+        }
         const profile = inferSelfProfile();
         const profileKey = stageStandaloneContext("self", profile);
         requestOpen(
@@ -4138,9 +5454,15 @@
             uiNode("span", "tip-follow tip-me", "我的星位"),
           );
           const actions = uiNode("div", "tip-actions");
-          const button = uiNode("button", "tip-like", "抽我的人格卡 →");
+          const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+          const button = uiNode(
+            "button",
+            "tip-like",
+            personaUnlocked() ? "查看我的人格卡 →" : `再表态 ${remaining} 次解锁`,
+          );
           button.type = "button";
           button.dataset.go = "self";
+          button.disabled = !personaUnlocked();
           actions.appendChild(button);
           tip.replaceChildren(row, claim, actions);
         } else if (u.kind === "comment") {
@@ -4286,6 +5608,22 @@
         }
       }
 
+      function updateAxisLabels() {
+        nebula.updateMatrixWorld();
+        const place = (element, anchor, side) => {
+          const projected = nebula.localToWorld(anchor.clone()).project(camera);
+          const width = element.offsetWidth || 96;
+          const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+          const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+          const minX = side === "left" ? width + 14 : 14;
+          const maxX = side === "left" ? window.innerWidth - 14 : window.innerWidth - width - 14;
+          element.style.left = `${Math.max(minX, Math.min(maxX, x))}px`;
+          element.style.top = `${Math.max(82, Math.min(window.innerHeight - 82, y))}px`;
+        };
+        place(axisLeftEl, axisLeftAnchor, "left");
+        place(axisRightEl, axisRightAnchor, "right");
+      }
+
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -4350,6 +5688,7 @@
 
         users.forEach((u) => animateNode(u, t, u.baseAvatar, u.baseGlow));
         cusers.forEach((u) => animateNode(u, t, 0.48, 0.62));
+        updateEntryGeneration(performance.now());
 
         // 「我」沿光谱漂移到由点赞计算出的立场。
         meUser.group.position.x += (meUser.baseX - meUser.group.position.x) * 0.08;
@@ -4362,6 +5701,7 @@
         }
 
         controls.update();
+        updateAxisLabels();
         updateTipPosition();
         composer.render();
         scheduleFrame();
@@ -4481,47 +5821,164 @@
         });
       }
 
+      function discoveryArrow() {
+        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const path = document.createElementNS(arrow.namespaceURI, "path");
+        arrow.classList.add("ui-icon");
+        arrow.setAttribute("viewBox", "0 0 24 24");
+        arrow.setAttribute("aria-hidden", "true");
+        path.setAttribute("d", "m9 18 6-6-6-6");
+        arrow.appendChild(path);
+        return arrow;
+      }
+
+      function appendLocalDiscoveryResult({
+        rank,
+        titleText,
+        metaText,
+        avatarIndex = null,
+        onClick,
+      }) {
+        const row = document.createElement("li");
+        const button = document.createElement("button");
+        const marker = Number.isInteger(avatarIndex)
+          ? document.createElement("img")
+          : document.createElement("span");
+        const copy = document.createElement("span");
+        const title = document.createElement("b");
+        const meta = document.createElement("small");
+
+        button.type = "button";
+        button.className = "discovery-result";
+        button.setAttribute("aria-label", titleText);
+        button.addEventListener("click", onClick);
+        if (Number.isInteger(avatarIndex)) {
+          marker.className = "discovery-result-avatar";
+          marker.src = personAvatarPath(avatarIndex);
+          marker.alt = "";
+        } else {
+          marker.className = "discovery-rank";
+          marker.textContent = rank;
+        }
+        copy.className = "discovery-result-copy";
+        title.textContent = titleText;
+        meta.textContent = metaText;
+        copy.append(title, meta);
+        button.append(marker, copy, discoveryArrow());
+        row.appendChild(button);
+        discoveryResultsEl.appendChild(row);
+      }
+
       function renderPublishedPresets(query) {
         const normalizedQuery = plainDiscoveryText(query).toLocaleLowerCase("zh-CN");
         const matches = availablePresets.filter((preset) =>
           `${preset.question} ${preset.id}`.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
         );
+        const personMatches = PEOPLE
+          .map((person, index) => ({ person, index }))
+          .filter(({ person }) =>
+            `${person[0]} ${person[2]} ${person[3]}`.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+          )
+          .slice(0, 6);
         discoveryResultsEl.replaceChildren();
         matches.forEach((preset) => {
-          const row = document.createElement("li");
-          const button = document.createElement("button");
-          const rank = document.createElement("span");
-          const copy = document.createElement("span");
-          const title = document.createElement("b");
-          const meta = document.createElement("small");
-          const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-          const path = document.createElementNS(arrow.namespaceURI, "path");
-
-          button.type = "button";
-          button.className = "discovery-result";
-          button.setAttribute("aria-label", `进入${preset.question}观点星云`);
-          button.addEventListener("click", () => {
+          appendLocalDiscoveryResult({
+            rank: preset.serial,
+            titleText: preset.question,
+            metaText: preset.id === PRESET.id ? "当前观点星云" : "已发布观点星云",
+            onClick: () => {
             if (preset.id === PRESET.id) setExploreOpen(false);
             else activatePreset(preset.id);
+            },
           });
-          rank.className = "discovery-rank";
-          rank.textContent = preset.serial;
-          copy.className = "discovery-result-copy";
-          title.textContent = preset.question;
-          meta.textContent = preset.id === PRESET.id ? "当前观点星云" : "已发布观点星云";
-          copy.append(title, meta);
-          arrow.classList.add("ui-icon");
-          arrow.setAttribute("viewBox", "0 0 24 24");
-          arrow.setAttribute("aria-hidden", "true");
-          path.setAttribute("d", "m9 18 6-6-6-6");
-          arrow.appendChild(path);
-          button.append(rank, copy, arrow);
-          row.appendChild(button);
-          discoveryResultsEl.appendChild(row);
         });
+        personMatches.forEach(({ person, index }) => {
+          appendLocalDiscoveryResult({
+            titleText: `@${person[0]}：${person[3]}`,
+            metaText: `${stanceLabel(person[1])} · 查看观点人格`,
+            avatarIndex: index,
+            onClick: () => {
+              setExploreOpen(false);
+              openPerson(index);
+            },
+          });
+        });
+        const count = matches.length + personMatches.length;
         discoveryStatusEl.textContent = matches.length
-          ? `已找到 ${matches.length} 个已发布星云`
-          : "这个话题还没有星云，可前往知乎搜索";
+          ? `已找到 ${count} 条站内结果`
+          : personMatches.length
+            ? `已找到 ${personMatches.length} 个相关观点`
+            : "站内暂无结果，可继续前往知乎搜索";
+      }
+
+      function recommendationIndexes() {
+        const stance = (computeStance([...liked]) || { avg: 0 }).avg;
+        if (!liked.size) {
+          const rankedByStance = PEOPLE
+            .map((person, index) => ({ index, stance: person[1] }))
+            .sort((left, right) => left.stance - right.stance);
+          const center = rankedByStance
+            .slice()
+            .sort((left, right) =>
+              Math.abs(left.stance) - Math.abs(right.stance) ||
+              left.index - right.index
+            )[0];
+          return [
+            rankedByStance[0]?.index,
+            center?.index,
+            rankedByStance[rankedByStance.length - 1]?.index,
+          ]
+            .filter(Number.isInteger)
+            .filter((index, position, indexes) => indexes.indexOf(index) === position);
+        }
+        return PEOPLE
+          .map((person, index) => ({
+            index,
+            distance: Math.abs(person[1] - stance),
+            liked: liked.has(index),
+          }))
+          .filter((item) => !item.liked)
+          .sort((left, right) => left.distance - right.distance)
+          .slice(0, 5)
+          .map((item) => item.index);
+      }
+
+      function renderRecommendations() {
+        const indexes = recommendationIndexes();
+        discoveryResultsEl.replaceChildren();
+        indexes.forEach((index) => {
+          const [name, stance, , claim] = PEOPLE[index];
+          appendLocalDiscoveryResult({
+            titleText: `@${name}：${claim}`,
+            metaText: liked.size
+              ? `${stanceLabel(stance)} · 与你当前立场接近`
+              : `${stanceLabel(stance)} · 代表观点`,
+            avatarIndex: index,
+            onClick: () => {
+              setExploreOpen(false);
+              openPerson(index);
+            },
+          });
+        });
+        discoveryStatusEl.textContent = liked.size
+          ? `根据 ${liked.size} 次表态推荐 ${indexes.length} 个观点`
+          : "先从光谱两端和中点认识这场讨论";
+      }
+
+      function renderHotFallback() {
+        discoveryResultsEl.replaceChildren();
+        availablePresets.slice(0, 8).forEach((preset) => {
+          appendLocalDiscoveryResult({
+            rank: preset.serial,
+            titleText: preset.question,
+            metaText: `${preset.answerCount || 0} 个观点 · 已发布星云`,
+            onClick: () => {
+              if (preset.id === PRESET.id) setExploreOpen(false);
+              else activatePreset(preset.id);
+            },
+          });
+        });
+        discoveryStatusEl.textContent = "实时热榜暂不可用，先探索已发布星云";
       }
 
       function updateDiscoveryDirect(mode, query = "") {
@@ -4556,8 +6013,7 @@
           return;
         }
         if (mode === "recommend") {
-          discoveryResultsEl.replaceChildren();
-          discoveryStatusEl.textContent = "相关推荐正在开发中，可先前往知乎首页";
+          renderRecommendations();
           return;
         }
 
@@ -4605,11 +6061,7 @@
             requestId !== discoveryRequest ||
             discoveryMode !== mode
           ) return;
-          discoveryStatusEl.textContent = mode === "search"
-            ? "站内搜索正在开发中，可先前往知乎搜索"
-            : mode === "recommend"
-              ? "相关推荐正在开发中，可先前往知乎首页"
-              : "站内热榜正在开发中，可先打开知乎热榜";
+          renderHotFallback();
         } finally {
           if (requestId === discoveryRequest) discoveryPanelEl.removeAttribute("aria-busy");
         }
@@ -4691,8 +6143,7 @@
       const cardsSearchEl = $("cardsSearch");
       const cardsMeMarkerEl = $("cardsMeMarker");
       const cardFilterButtons = [...document.querySelectorAll("[data-card-filter]")];
-      const modeDenseBtn = $("modeDense");
-      const modeCardsBtn = $("modeCards");
+      const cardsQuickEntryBtn = $("cardsQuickEntry");
       let cardsFilter = "all";
       let cardsQuery = "";
       let cardsTransitioning = false;
@@ -4875,7 +6326,7 @@
         meTitle.appendChild(uiNode(
           "span",
           "",
-          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "尚未形成坐标",
+          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "待形成",
         ));
         meCopy.append(meTitle, uiNode("div", "me-strip-desc", meClaim));
         const mePosition = uiNode("div", "me-strip-position");
@@ -4885,23 +6336,44 @@
           uiNode(
             "strong",
             "",
-            `${CASTS[selfProfile.cast][0]} · ${CASTS[selfProfile.cast][1]}`,
+            personaUnlocked()
+              ? `${CASTS[selfProfile.cast][0]} · ${CASTS[selfProfile.cast][1]}`
+              : `人格待解锁 · ${liked.size}/${PERSONA_MIN_LIKES}`,
           ),
           meSpectrum,
         );
-        const meButton = uiNode("button", "pcard-me-btn", "生成人格卡 →");
+        const meButton = uiNode(
+          "button",
+          "pcard-me-btn",
+          personaUnlocked()
+            ? "查看我的人格卡 →"
+            : `再表态 ${PERSONA_MIN_LIKES - liked.size} 次解锁`,
+        );
         meButton.type = "button";
         meButton.dataset.self = "";
+        meButton.disabled = !personaUnlocked();
         head.append(meAvatar, meCopy, mePosition, meButton);
 
         cardsListEl.replaceChildren(head);
         if (visibleAnswers.length) {
+          const section = uiNode("div", "cards-section");
+          section.append(
+            uiNode("span", "", PRESET.peopleLabel || "回答者观点"),
+            uiNode("b", "", visibleAnswers.length),
+          );
           cardsListEl.append(
+            section,
             ...visibleAnswers.map(({ index }) => personCard(index)),
           );
         }
         if (visibleComments.length) {
+          const section = uiNode("div", "cards-section");
+          section.append(
+            uiNode("span", "", "评论区观点"),
+            uiNode("b", "", visibleComments.length),
+          );
           cardsListEl.append(
+            section,
             ...visibleComments.map(({ data, index }) => commentCard(data, index)),
           );
         }
@@ -4926,17 +6398,15 @@
         renderCards();
         cardsTransitioning = true;
         document.body.classList.add("is-view-transitioning");
-        modeCardsBtn.classList.add("is-launching");
+        cardsQuickEntryBtn.classList.add("is-launching");
         setTimeout(() => {
           setExploreOpen(false);
           document.body.classList.add("is-cards-open");
           cardsEl.classList.add("show", "is-entering");
-          modeDenseBtn.classList.remove("is-active");
-          modeCardsBtn.classList.add("is-active");
           notifyHostView("cards");
           setTimeout(() => {
             cardsEl.classList.remove("is-entering");
-            modeCardsBtn.classList.remove("is-launching");
+            cardsQuickEntryBtn.classList.remove("is-launching");
             document.body.classList.remove("is-view-transitioning");
             cardsTransitioning = false;
           }, reduceMotion ? 0 : 290);
@@ -4950,17 +6420,12 @@
         setTimeout(() => {
           document.body.classList.remove("is-cards-open");
           cardsEl.classList.remove("show", "is-leaving");
-          modeCardsBtn.classList.remove("is-active");
-          modeDenseBtn.classList.add("is-active");
           notifyHostView("nebula");
           document.body.classList.remove("is-view-transitioning");
           cardsTransitioning = false;
         }, reduceMotion ? 0 : 180);
       }
-      modeCardsBtn.addEventListener("click", () => {
-        openCards();
-      });
-      modeDenseBtn.addEventListener("click", closeCards);
+      cardsQuickEntryBtn.addEventListener("click", openCards);
       $("cardsClose").addEventListener("click", closeCards);
       cardsSearchEl.addEventListener("input", (e) => {
         cardsQuery = e.target.value.trim().toLowerCase();
@@ -5002,6 +6467,7 @@
 
       // ---- 星图向导 ----
       const guideEl = $("guide");
+      const guideCloseButton = $("guideX");
       const guideHeadlineEl = $("guideHeadline");
       const guidePicksEl = $("guidePicks");
       const guideBodyEl = $("guideBody");
@@ -5084,7 +6550,7 @@
         return { left, middle, right, opposite };
       }
       function renderGuidePick(label, index, note) {
-        const [name, stance, castKey, claim] = PEOPLE[index];
+        const [name, stance, , claim] = PEOPLE[index];
         const button = uiNode("button", "guide-pick");
         button.type = "button";
         button.dataset.person = String(index);
@@ -5113,19 +6579,24 @@
         );
       }
       function renderGuideSelfSection() {
-        const profile = inferSelfProfile();
-        const [castName, castRole] = CASTS[profile.cast];
-        if (liked.size) {
-          const stanceText = myStanceVal > 0 ? "+" : "";
+        const stance = computeStance([...liked]);
+        if (stance) {
+          const stanceText = stance.avg > 0 ? "+" : "";
+          const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+          const detail = personaUnlocked()
+            ? (() => {
+                const profile = inferSelfProfile();
+                const [castName, castRole] = CASTS[profile.cast];
+                return `九派人格暂定为「${castName}」——${castRole}。这来自本次快照内的观点分布，不是你的永久画像。`;
+              })()
+            : `再表态 ${remaining} 次即可解锁本题人格；当前只展示立场坐标。`;
           guideBodyEl.replaceChildren(
             uiNode("strong", "", "根据你的点赞"),
             document.createTextNode(
-              `，当前坐标约为 ${stanceText}${myStanceVal.toFixed(2)}，更接近「${stanceLabel(myStanceVal)}」。`,
+              `，当前坐标约为 ${stanceText}${stance.avg.toFixed(2)}，更接近「${stanceLabel(stance.avg)}」。`,
             ),
             document.createElement("br"),
-            document.createTextNode(
-              `九派人格暂定为「${castName}」——${castRole}。这来自本次快照内的观点分布，不是你的永久画像。`,
-            ),
+            document.createTextNode(detail),
           );
           guideQuizEl.hidden = true;
           return;
@@ -5141,7 +6612,8 @@
       function renderGuideQuizStep() {
         const questions = guideQuizQuestions();
         if (guideQuizStep >= questions.length) {
-          const avg = guideQuizStances.reduce((sum, value) => sum + value, 0) / guideQuizStances.length;
+          const avg = guideQuizStances.reduce((sum, value) => sum + value, 0) /
+            guideQuizStances.length;
           guideQuizEl.hidden = true;
           guideBodyEl.replaceChildren(
             uiNode("strong", "", "建议起点"),
@@ -5152,28 +6624,28 @@
           return;
         }
         const current = questions[guideQuizStep];
+        const choices = uiNode("div", "guide-quiz-choices");
+        current.choices.forEach((choice) => {
+          const button = uiNode("button", "guide-quiz-btn", choice.label);
+          button.type = "button";
+          button.addEventListener("click", () => {
+            guideQuizStances.push(choice.stance);
+            guideQuizStep += 1;
+            renderGuideQuizStep();
+          });
+          choices.appendChild(button);
+        });
         guideQuizEl.hidden = false;
         guideQuizEl.replaceChildren(
           uiNode("div", "guide-quiz-q", `第 ${guideQuizStep + 1} / ${questions.length} 题 · ${current.question}`),
-          (() => {
-            const choices = uiNode("div", "guide-quiz-choices");
-            current.choices.forEach((choice) => {
-              const button = uiNode("button", "guide-quiz-btn", choice.label);
-              button.type = "button";
-              button.addEventListener("click", () => {
-                guideQuizStances.push(choice.stance);
-                guideQuizStep += 1;
-                renderGuideQuizStep();
-              });
-            });
-            return choices;
-          })(),
+          choices,
         );
       }
       function matchGuideIntent(query) {
-        const text = query.trim().toLowerCase();
+        const text = query.trim().toLocaleLowerCase("zh-CN");
         if (!text) return null;
-        if (/代表|典型|主流|左端|转行|警惕|伤害/.test(text)) return "left";
+        if (/代表性观点|主要观点|有哪些代表/.test(text)) return "representatives";
+        if (/左端|转行|警惕|伤害/.test(text)) return "left";
         if (/中间|中立|观望|审慎/.test(text)) return "middle";
         if (/右端|深耕|拥抱|加速|协同/.test(text)) return "right";
         if (/相反|对立|最远|反面/.test(text)) return "opposite";
@@ -5183,20 +6655,18 @@
       }
       function answerGuideIntent(intent) {
         const picks = guideRepresentatives();
-        if (intent === "left") {
-          openPerson(picks.left);
+        if (intent === "representatives") {
+          renderGuidePicks();
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "代表性观点"),
+            document.createTextNode("：已按光谱左端、中点和右端列出三种典型声音，可逐条打开核验。"),
+          );
+          guideQuizEl.hidden = true;
           return;
         }
-        if (intent === "middle") {
-          openPerson(picks.middle);
-          return;
-        }
-        if (intent === "right") {
-          openPerson(picks.right);
-          return;
-        }
-        if (intent === "opposite") {
-          openPerson(picks.opposite);
+        if (intent === "left" || intent === "middle" || intent === "right" || intent === "opposite") {
+          closeGuide(false);
+          openPerson(picks[intent]);
           return;
         }
         if (intent === "self") {
@@ -5227,10 +6697,25 @@
         );
         showToast("暂时只能回答代表性观点、对立观点、立场说明和起点定位。试试下方建议问题。");
       }
-      function openGuide() {
-        guideHeadlineEl.textContent = guideHeadline();
-        renderGuidePicks();
-        renderGuideSelfSection();
+      function trapGuideFocus(event) {
+        if (event.key !== "Tab") return;
+        const focusable = [...guideEl.querySelectorAll("button:not([disabled]), input:not([disabled])")]
+          .filter((element) => element.offsetParent !== null);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (!guideEl.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      function renderGuideSuggestions() {
         guideSuggestionsEl.replaceChildren(
           ...GUIDE_SUGGESTIONS.map((label) => {
             const button = uiNode("button", "guide-suggestion", label);
@@ -5242,30 +6727,46 @@
             return button;
           }),
         );
+      }
+      function openGuide() {
+        guideHeadlineEl.textContent = guideHeadline();
+        renderGuidePicks();
+        renderGuideSelfSection();
+        renderGuideSuggestions();
         guideAskEl.value = "";
         guideEl.classList.add("show");
+        guideEl.setAttribute("aria-hidden", "false");
+        guideCloseButton.focus();
       }
-      function closeGuide() {
+      function resumeCirclePrompt() {
+        if (chipQueue.length) queueNextChip(3000);
+      }
+      function closeGuide(restoreFocus = true) {
         guideEl.classList.remove("show");
+        guideEl.setAttribute("aria-hidden", "true");
+        resumeCirclePrompt();
+        if (restoreFocus) $("exploreToggle").focus();
       }
       $("guideBtn").addEventListener("click", () => {
         setExploreOpen(false);
         openGuide();
       });
-      $("guideX").addEventListener("click", closeGuide);
+      guideCloseButton.addEventListener("click", () => closeGuide());
       guideEl.addEventListener("click", (event) => {
         if (event.target === guideEl) closeGuide();
       });
+      guideEl.addEventListener("keydown", trapGuideFocus);
       guidePicksEl.addEventListener("click", (event) => {
         const button = event.target.closest("[data-person]");
         if (!button) return;
+        closeGuide(false);
         openPerson(Number(button.getAttribute("data-person")));
       });
       $("guideAskBtn").addEventListener("click", () => {
         answerGuideIntent(matchGuideIntent(guideAskEl.value));
       });
       guideAskEl.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.isComposing) {
           event.preventDefault();
           answerGuideIntent(matchGuideIntent(guideAskEl.value));
         }
@@ -5275,23 +6776,86 @@
       const clashEl = $("clash");
       const clashGoBtn = $("clashGo");
       let clashCurrent = -1;
+      let matchMode = "opposite";
       function setClashButtonLabel(label) {
         const slot = clashGoBtn.querySelector(".gbtn-label");
         if (slot) slot.textContent = label;
       }
-      function pickClash(exclude) {
+      function interestMatchForPerson(index) {
+        if (!userPortrait || !PEOPLE[index]) return { score: 0, word: "" };
+        const person = PEOPLE[index];
+        const sourceText = `${person[0] || ""} ${person[3] || ""} ${person[5] || ""}`
+          .toLocaleLowerCase("zh-CN");
+        const maxWeight = Math.max(1, ...userPortrait.keywords.map((item) => item.score));
+        let best = { score: 0, word: "" };
+        userPortrait.keywords.forEach(({ word, score }) => {
+          const normalized = word.toLocaleLowerCase("zh-CN");
+          let relevance = sourceText.includes(normalized) ? 1 : 0;
+          if (!relevance && Array.from(normalized).length >= 3) {
+            const units = [...new Set(Array.from(normalized).filter((char) =>
+              /[a-z0-9\u4e00-\u9fff]/i.test(char)
+            ))];
+            const overlap = units.filter((char) => sourceText.includes(char)).length;
+            if (overlap >= 2) relevance = overlap / units.length * 0.55;
+          }
+          const weighted = relevance * (0.75 + 0.25 * Math.min(1, score / maxWeight));
+          if (weighted > best.score) best = { score: weighted, word };
+        });
+        return best;
+      }
+      function pickMatch(exclude) {
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
-        const ranked = PEOPLE
-          .map((p, i) => ({ i, d: Math.abs(p[1] - my) }))
-          .filter((x) => x.i !== exclude && !liked.has(x.i))
-          .sort((a, b) => b.d - a.d);
-        const pool = ranked.slice(0, 6);
-        return pool[Math.floor(Math.random() * pool.length)].i;
+        const candidates = PEOPLE
+          .map((p, i) => {
+            const interest = interestMatchForPerson(i);
+            const distance = Math.abs(p[1] - my);
+            const stanceScore = matchMode === "same"
+              ? 1 - Math.min(2, distance) / 2
+              : distance / 2;
+            return {
+              i,
+              d: distance,
+              interest,
+              score: stanceScore * 0.82 + interest.score * 0.18,
+            };
+          });
+        const unliked = candidates.filter((item) =>
+          item.i !== exclude && !liked.has(item.i)
+        );
+        const ranked = (unliked.length
+          ? unliked
+          : candidates.filter((item) => item.i !== exclude)
+        )
+          .sort((a, b) =>
+            b.score - a.score ||
+            (matchMode === "same" ? a.d - b.d : b.d - a.d)
+          );
+        const pool = ranked.slice(0, userPortrait ? 3 : 6);
+        return pool.length ? pool[Math.floor(Math.random() * pool.length)].i : 0;
+      }
+      function setMatchMode(mode) {
+        matchMode = mode === "same" ? "same" : "opposite";
+        const same = matchMode === "same";
+        $("matchSame").classList.toggle("is-active", same);
+        $("matchSame").setAttribute("aria-selected", String(same));
+        $("matchOpposite").classList.toggle("is-active", !same);
+        $("matchOpposite").setAttribute("aria-selected", String(!same));
+        $("clashMetricLabel").textContent = same ? "你们的立场相似度" : "你们的立场距离";
+        document.querySelector(".modal-title").textContent = same
+          ? "遇见与你同频的声音"
+          : "听听对立面怎么想";
+        document.querySelector(".modal-sub").textContent = same
+          ? "从未点赞的回答中，寻找立场相近且兴趣相关的一种声音。"
+          : "从未点赞的回答中，寻找立场相远且兴趣相关的一种声音。";
       }
       function openClash() {
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁观点碰撞`);
+          return;
+        }
         clashGoBtn.disabled = false;
         setClashButtonLabel("翻开人格卡");
-        clashCurrent = pickClash(-1);
+        clashCurrent = pickMatch(-1);
         renderClash();
         clashEl.classList.add("show");
       }
@@ -5316,7 +6880,16 @@
         meMk.style.left = pct(my);
         taMk.style.left = pct(stance);
         meMk.title = liked.size ? `你（${my.toFixed(2)}）` : "你（中立，尚未点赞）";
-        $("clashDistance").textContent = `相距 ${Math.round(Math.abs(stance - my) * 50)} / 100`;
+        const distance = Math.abs(stance - my);
+        $("clashDistance").textContent = matchMode === "same"
+          ? `相似 ${Math.round((1 - Math.min(2, distance) / 2) * 100)} / 100`
+          : `相距 ${Math.round(distance * 50)} / 100`;
+        const interest = interestMatchForPerson(i);
+        $("clashReason").textContent = interest.word && interest.score >= 0.34
+          ? `结合你的知乎兴趣「${interest.word}」，优先呈现相关的${matchMode === "same" ? "同频" : "互补"}观点。`
+          : userPortrait
+            ? "兴趣画像已参与排序，本题立场距离仍是主要依据。"
+            : "当前仅根据本题点赞形成的立场距离匹配。";
         matchIndex = i;
         matchUntil = performance.now() + 6000;
       }
@@ -5330,7 +6903,17 @@
       });
       $("clashX").addEventListener("click", closeClash);
       clashEl.addEventListener("click", (e) => { if (e.target === clashEl) closeClash(); });
-      $("clashAgain").addEventListener("click", () => { clashCurrent = pickClash(clashCurrent); renderClash(); });
+      $("matchSame").addEventListener("click", () => {
+        setMatchMode("same");
+        clashCurrent = pickMatch(-1);
+        renderClash();
+      });
+      $("matchOpposite").addEventListener("click", () => {
+        setMatchMode("opposite");
+        clashCurrent = pickMatch(-1);
+        renderClash();
+      });
+      $("clashAgain").addEventListener("click", () => { clashCurrent = pickMatch(clashCurrent); renderClash(); });
       clashGoBtn.addEventListener("click", () => {
         if (clashGoBtn.disabled) return;
         clashGoBtn.disabled = true;
@@ -5362,25 +6945,57 @@
       function renderClusterBlurb(target, c) {
         const detail = c.blurb ||
           `${clusterNames(c)} 都站在${clusterSide(c)}，最近互相点赞了对方的回答。`;
+        const interest = c.members
+          .map((index) => interestMatchForPerson(index))
+          .sort((left, right) => right.score - left.score)[0];
+        const portraitNote = interest?.word && interest.score >= 0.34
+          ? ` 与你的兴趣「${interest.word}」有交集。`
+          : "";
         target.replaceChildren(
           uiNode("b", "", c.label),
-          document.createTextNode(` · ${detail}`),
+          document.createTextNode(` · ${detail}${portraitNote}`),
         );
       }
+      function rankedCircles() {
+        const my = (computeStance([...liked]) || { avg: 0 }).avg;
+        return CLUSTERS.slice().sort((left, right) => {
+          const score = (circle) => {
+            const stance = circle.members.reduce((sum, index) => sum + PEOPLE[index][1], 0) /
+              Math.max(1, circle.members.length);
+            const stanceAffinity = 1 - Math.min(2, Math.abs(stance - my)) / 2;
+            const interestAffinity = Math.max(
+              0,
+              ...circle.members.map((index) => interestMatchForPerson(index).score),
+            );
+            return stanceAffinity * 0.8 + interestAffinity * 0.2;
+          };
+          return score(right) - score(left);
+        });
+      }
       function showChip(c) {
+        if (!personaUnlocked()) return;
         chipCluster = c;
         renderClusterBlurb($("circleText"), c);
         chipEl.classList.add("show");
+        chipEl.setAttribute("aria-hidden", "false");
+      }
+      function hideChip() {
+        chipEl.classList.remove("show");
+        chipEl.setAttribute("aria-hidden", "true");
       }
       function queueNextChip(delay) {
         clearTimeout(chipTimer);
         chipTimer = setTimeout(() => {
-          if (cardsEl.classList.contains("show") || guideEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) return;
+          if (!personaUnlocked()) return;
+          if (cardsEl.classList.contains("show") || guideEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) {
+            resumeCirclePrompt();
+            return;
+          }
           if (chipQueue.length) showChip(chipQueue.shift());
         }, delay);
       }
-      chipQueue = CLUSTERS.slice();
-      queueNextChip(5200);
+      chipQueue = rankedCircles();
+      if (personaUnlocked()) queueNextChip(5200);
 
       function exitFocus() {
         focusSet = null;
@@ -5391,6 +7006,7 @@
           focusLines = null;
         }
         focusBannerEl.classList.remove("show");
+        focusBannerEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("is-focusing");
         commentGroup.visible = includeComments;
       }
@@ -5415,23 +7031,29 @@
         commentGroup.visible = false;
         renderClusterBlurb($("focusText"), c);
         focusBannerEl.classList.add("show");
+        focusBannerEl.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-focusing");
       }
       $("circleFocus").addEventListener("click", () => {
         if (chipCluster) focusCluster(chipCluster);
-        chipEl.classList.remove("show");
+        hideChip();
       });
       $("circleSkip").addEventListener("click", () => {
-        chipEl.classList.remove("show");
+        hideChip();
         if (chipQueue.length) queueNextChip(9000);
       });
       $("circleBtn").addEventListener("click", () => {
         if (!CLUSTERS.length) return;
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁聚焦小圈子`);
+          return;
+        }
         setExploreOpen(false);
         if (focusSet) { exitFocus(); return; }
-        const c = CLUSTERS[manualCircleIdx];
+        const ranked = rankedCircles();
+        const c = ranked[manualCircleIdx % ranked.length];
         manualCircleIdx = (manualCircleIdx + 1) % CLUSTERS.length;
-        chipEl.classList.remove("show");
+        hideChip();
         focusCluster(c);
       });
       $("focusExit").addEventListener("click", exitFocus);
@@ -5447,13 +7069,14 @@
         else if (clashEl.classList.contains("show")) closeClash();
         else if (cardsEl.classList.contains("show")) closeCards();
         else if (focusSet) exitFocus();
-        else if (chipEl.classList.contains("show")) chipEl.classList.remove("show");
+        else if (chipEl.classList.contains("show")) hideChip();
         else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
       });
 
       window.__neb = {
         presetId: () => PRESET.id,
         answerCount: () => N,
+        controlsEnabled: () => controls.enabled,
         meX: () => meUser.group.position.x,
         meBaseX: () => meUser.baseX,
         meAvatarSource: () => meAvatarSource,
@@ -5469,6 +7092,8 @@
         focusSize: () => (focusSet ? focusSet.size : 0),
         clashIndex: () => clashCurrent,
         matchIndex: () => matchIndex,
+        matchMode: () => matchMode,
+        portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
         play: () => { running = true; clock.getDelta(); loop(); },
         heartOn: (i) => !!(users[i] && users[i].heart && users[i].heart.visible),
         ringOpacity: (i) => (users[i] && users[i].ring ? users[i].ring.material.opacity : 0),

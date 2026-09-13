@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Link,
   Navigate,
   useLocation,
   useNavigate,
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { AppChrome } from "./AppChrome";
+import { BrandMark } from "./BrandMark";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
 import {
+  clearSelfProfileContexts,
   DEFAULT_NEBULA_PRESET,
   nebulaPresetVersion,
   personByIndex,
@@ -18,13 +20,23 @@ import {
   selfProfileFromValue,
   stagedPersonByIndex,
   stagedSelfProfile,
+  transientSelfProfile,
 } from "./people";
+import {
+  fetchZhihuAccountStatus,
+  fetchZhihuPortrait,
+  getActiveZhihuAccountVersion,
+  setActiveZhihuAccountVersion,
+  toNebulaPortraitSignal,
+  type NebulaPortraitSignal,
+} from "./zhihuPortrait";
 
 type ShelfPhase = "draw" | "book" | "card";
 type ShelfNavigationState = {
   person?: unknown;
   selfProfile?: unknown;
 };
+const OFFICIAL_ORIGIN = "https://soular.top";
 
 export function ShelfPage() {
   const { cast: castKey = "" } = useParams();
@@ -32,13 +44,14 @@ export function ShelfPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ShelfPhase>("draw");
-
-  if (!CASTS.some((item) => item.key === castKey)) {
-    return <Navigate to="/" replace />;
-  }
+  const [latePortrait, setLatePortrait] = useState<NebulaPortraitSignal | null>(null);
+  const [verifiedAccountVersion, setVerifiedAccountVersion] = useState<
+    string | null | undefined
+  >(undefined);
+  const requestedSelf = searchParams.get("self") === "1";
+  const requestedProfileKey = searchParams.get("profile") ?? "";
+  const validCast = CASTS.some((item) => item.key === castKey);
   const cast = castByKey(castKey);
-  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
-
   const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const presetId = resolveNebulaPreset(requestedPresetId);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;
@@ -50,7 +63,6 @@ export function ShelfPage() {
   const staleVersion = Boolean(
     validRequestedVersion && validRequestedVersion !== currentPresetVersion,
   );
-  const requestedProfileKey = searchParams.get("profile") ?? "";
   const profileKey = /^[a-z0-9-]{1,64}$/.test(requestedProfileKey)
     ? requestedProfileKey
     : "";
@@ -59,17 +71,132 @@ export function ShelfPage() {
     !Array.isArray(location.state)
     ? location.state as ShelfNavigationState
     : {};
+  const storedSelfProfile = transientSelfProfile(
+    presetId,
+    presetVersion,
+    cast.key,
+    profileKey,
+  ) ?? selfProfileFromValue(
+    navigationState.selfProfile,
+    presetId,
+    presetVersion,
+    cast.key,
+  ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey);
+
+  useEffect(() => {
+    setLatePortrait(null);
+    setVerifiedAccountVersion(undefined);
+    if (
+      !validCast ||
+      !requestedSelf ||
+      window.location.origin !== OFFICIAL_ORIGIN
+    ) return undefined;
+
+    let controller: AbortController | null = null;
+    let refreshSequence = 0;
+    const refresh = () => {
+      const sequence = ++refreshSequence;
+      controller?.abort();
+      controller = new AbortController();
+      setLatePortrait(null);
+      setVerifiedAccountVersion(undefined);
+      const signal = controller.signal;
+
+      void (async () => {
+        let status;
+        try {
+          status = await fetchZhihuAccountStatus(signal);
+        } catch {
+          if (signal.aborted || sequence !== refreshSequence) return;
+          setLatePortrait(null);
+          setVerifiedAccountVersion(null);
+          return;
+        }
+        if (signal.aborted || sequence !== refreshSequence) return;
+        const accountVersion = status.authorized
+          ? status.accountVersion
+          : null;
+        const previousAccountVersion = getActiveZhihuAccountVersion();
+        if (
+          (
+            previousAccountVersion !== null &&
+            previousAccountVersion !== accountVersion
+          ) ||
+          (
+            storedSelfProfile?.accountVersion &&
+            storedSelfProfile.accountVersion !== accountVersion
+          )
+        ) {
+          clearSelfProfileContexts();
+        }
+        setActiveZhihuAccountVersion(accountVersion);
+        setVerifiedAccountVersion(accountVersion);
+        if (!accountVersion) return;
+
+        try {
+          const portrait = await fetchZhihuPortrait(signal);
+          if (
+            signal.aborted ||
+            sequence !== refreshSequence ||
+            portrait.accountVersion !== accountVersion
+          ) return;
+          setLatePortrait(toNebulaPortraitSignal(portrait));
+        } catch {
+          if (signal.aborted || sequence !== refreshSequence) return;
+          setLatePortrait(null);
+        }
+      })();
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      refreshSequence += 1;
+      controller?.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [
+    requestedProfileKey,
+    requestedSelf,
+    validCast,
+  ]);
+
+  if (!validCast) {
+    return <Navigate to="/" replace />;
+  }
+  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
+
+  const verifiedSelfProfile = storedSelfProfile
+    ? {
+        ...storedSelfProfile,
+        interest:
+          storedSelfProfile.accountVersion &&
+          storedSelfProfile.accountVersion === verifiedAccountVersion
+            ? storedSelfProfile.interest
+            : undefined,
+      }
+    : null;
   let subject: CardSubject = {
     kind: "self",
     preset: presetId,
     version: presetVersion || undefined,
-    profile: selfProfileFromValue(
-      navigationState.selfProfile,
-      presetId,
-      presetVersion,
-      cast.key,
-    ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey) ?? undefined,
+    profile: verifiedSelfProfile ?? undefined,
   };
+  if (
+    subject.kind === "self" &&
+    subject.profile &&
+    latePortrait &&
+    !subject.profile.interest
+  ) {
+    subject = {
+      ...subject,
+      profile: { ...subject.profile, interest: latePortrait },
+    };
+  }
   let missingPerson = false;
   const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {
@@ -133,24 +260,22 @@ export function ShelfPage() {
     <div className="shelf-root">
       <iframe className="landing-page-frame" src={src} title={`${cast.name} · 思想银河`} />
       <img src={asset("kanshan/wave.gif")} alt="" className="kanshan kanshan-shelf" />
-      <AppChrome
-        backLink={{
-          to: lobbyTarget,
-          label: lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回首页",
-        }}
-        center={`${cast.volume} · ${cast.name}`}
-        showAccount={false}
-        trailing={(
-          <button
-            type="button"
-            className="app-chrome__action app-chrome__action--gold"
-            onClick={() => setPhase("card")}
-          >
-            <span aria-hidden="true">✦</span>
-            {subject.kind === "person" ? "分享观点" : "分享人格卡"}
+      <nav className="shelf-nav" aria-label="书页">
+        <BrandMark className="brand-lockup--shelf" />
+        <div className="shelf-nav__tags">
+          <Link to={lobbyTarget} className="shelf-tag">
+            {lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回首页"}
+          </Link>
+        </div>
+        <p className="shelf-nav__cast">
+          {cast.volume} · {cast.name}
+        </p>
+        <div className="shelf-nav__share">
+          <button type="button" className="shelf-tag shelf-tag--share" onClick={() => setPhase("card")}>
+            <span aria-hidden="true">✦</span> {subject.kind === "person" ? "分享这个观点" : "分享人格卡"}
           </button>
-        )}
-      />
+        </div>
+      </nav>
 
       {phase !== "book" && (
         <CardDraw
