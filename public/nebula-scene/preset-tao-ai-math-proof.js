@@ -3,7 +3,7 @@ export const TAO_AI_MATH_PROOF = {
   version: "20260914",
   serial: "06",
   kind: "real",
-  question: "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+  question: "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
   peopleLabel: "真实回答观点",
   sourceQuestion: "https://www.zhihu.com/question/4991950322",
   searchUrl: "https://www.zhihu.com/question/4991950322",
@@ -24,7 +24,7 @@ export const TAO_AI_MATH_PROOF = {
             "goat",
             "常见误用是直接问 AI 然后甩出一堆伪证，专业问题一问三不知。",
             "https://www.zhihu.com/question/4991950322/answer/1894506210528572231",
-            "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+            "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
             1930
         ],
         [
@@ -33,7 +33,7 @@ export const TAO_AI_MATH_PROOF = {
             "bear",
             "测试表明模型知识量仍有限，复杂群论问题容易答非所问。",
             "https://www.zhihu.com/question/4991950322/answer/1892225934372872275",
-            "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+            "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
             664
         ],
         [
@@ -42,7 +42,7 @@ export const TAO_AI_MATH_PROOF = {
             "fox",
             "AI 擅长机械化计算与推导，能把人力从繁琐步骤里解放出来。",
             "https://www.zhihu.com/question/4991950322/answer/39614187807",
-            "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+            "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
             542
         ]
     ],

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BrandMark } from "./BrandMark";
-import { asset, CASTS, type Cast } from "./cast";
+import { asset, type Cast } from "./cast";
 import {
   DEFAULT_NEBULA_PRESET,
+  nebulaPresetVersion,
   personAvatarFile,
   personByIndex,
   type Person,
   type SelfProfile,
 } from "./people";
+import { buildShareMatchUrl } from "./shareMatch";
 import { WarmStars } from "./WarmStars";
 
 export type CardSubject =
@@ -17,6 +19,7 @@ export type CardSubject =
 
 type DrawMode = "enter" | "revisit";
 type Phase = "shuffle" | "flip" | "reveal";
+type CopyState = "idle" | "done" | "error";
 
 const SHUFFLE_MS = 1900;
 const FLIP_MS = 850;
@@ -64,6 +67,10 @@ function loadImage(src: string) {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+function castPortraitFile(cast: Cast): string {
+  return cast.portrait ?? `personas/${cast.key}.jpg`;
 }
 
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -160,7 +167,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   ctx.fillText(posterEyebrow, W / 2, 132);
 
   if (!person) {
-    const img = await loadImage(asset(`personas/${cast.key}.jpg`));
+    const img = await loadImage(asset(castPortraitFile(cast)));
     const size = 620;
     const ix = (W - size) / 2;
     const iy = 236;
@@ -192,17 +199,22 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     ctx.font = `400 40px ${fontStack}`;
     ctx.fillText(cast.role, W / 2, 1150);
 
-    if (selfProfile) {
+    const personaDescription = selfProfile?.claim ?? cast.description;
+    if (personaDescription) {
       ctx.fillStyle = "rgba(243, 240, 233, 0.72)";
       ctx.font = `400 27px ${fontStack}`;
-      const [line1, line2] = wrapClaim(ctx, selfProfile.claim, 820);
+      const [line1, line2] = wrapClaim(ctx, personaDescription, 820);
       ctx.fillText(line1, W / 2, 1210);
       if (line2) ctx.fillText(line2, W / 2, 1248);
     }
 
     ctx.fillStyle = "rgba(196, 165, 116, 0.9)";
     ctx.font = `600 30px ${fontStack}`;
-    ctx.fillText("✦ 每个发光头像，都是一种立场", W / 2, selfProfile ? 1302 : 1252);
+    ctx.fillText(
+      "✦ 每个发光头像，都是一种立场",
+      W / 2,
+      personaDescription ? 1302 : 1252,
+    );
 
     ctx.fillStyle = "rgba(243, 240, 233, 0.55)";
     ctx.font = `400 26px ${fontStack}`;
@@ -213,7 +225,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   } else {
     const subjectIndex = subject.kind === "person" ? subject.index : 0;
     const [art, ava] = await Promise.all([
-      loadImage(asset(`personas/${cast.key}.jpg`)),
+      loadImage(asset(castPortraitFile(cast))),
       loadImage(asset(personAvatarFile(person, subjectIndex))),
     ]);
 
@@ -312,13 +324,24 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
+export function CardDraw({
+  cast,
+  casts,
+  subject,
+  mode,
+  onEnter,
+  onClose,
+  onExit,
+  onDiscoverPeers,
+}: {
   cast: Cast;
+  casts: readonly Cast[];
   subject: CardSubject;
   mode: DrawMode;
   onEnter: () => void;
   onClose: () => void;
   onExit: () => void;
+  onDiscoverPeers?: () => void;
 }) {
   const reduceMotion = useMemo(prefersReducedMotion, []);
   const person = subject.kind === "person"
@@ -334,7 +357,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
   const personIndex = subject.kind === "person" ? subject.index : 0;
   const personPreset = subject.kind === "person" ? subject.preset : undefined;
-  const resultIndex = Math.max(0, CASTS.findIndex((item) => item.key === cast.key));
+  const resultIndex = Math.max(0, casts.findIndex((item) => item.key === cast.key));
   const startsFlipped = !!person || isPeek;
   const initialPhase: Phase = mode === "revisit" || reduceMotion
     ? "reveal"
@@ -343,12 +366,15 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   const [activeDot, setActiveDot] = useState(initialPhase === "flip" ? resultIndex : 0);
   const [leaving, setLeaving] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [matchCopyState, setMatchCopyState] = useState<CopyState>("idle");
   const [posterState, setPosterState] = useState<"idle" | "working" | "done">("idle");
   const timers = useRef<number[]>([]);
+  const copyResetTimers = useRef({ share: 0, match: 0 });
 
   const personName = person ? `@${person.name}` : cast.name;
-  const artSrc = asset(`personas/${cast.key}.jpg`);
+  const shareLinkLabel = person ? "观点链接" : "人格卡链接";
+  const artSrc = asset(castPortraitFile(cast));
   const personAvatarSrc = person ? asset(personAvatarFile(person, personIndex)) : null;
   const personSourceUrl = safeZhihuUrl(person?.sourceUrl);
 
@@ -373,6 +399,17 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     selfPreset,
     selfVersion,
   ]);
+  const matchShareUrl = useMemo(() => {
+    if (!isSelf || !selfProfile || selfProfile.cast !== cast.key) return null;
+    const preset = selfPreset ?? DEFAULT_NEBULA_PRESET;
+    const version = selfVersion ?? nebulaPresetVersion(preset) ?? "1";
+    return buildShareMatchUrl(window.location.origin, import.meta.env.BASE_URL, {
+      preset,
+      version,
+      cast: selfProfile.cast,
+      stance: selfProfile.stance,
+    });
+  }, [isSelf, selfProfile, cast.key, selfPreset, selfVersion]);
   const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   useEffect(() => {
@@ -388,7 +425,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
         setPhase("reveal");
         return;
       }
-      setActiveDot((prev) => (prev + 1) % CASTS.length);
+      setActiveDot((prev) => (prev + 1) % casts.length);
       const speed = elapsed > SHUFFLE_MS * 0.62 ? 175 : 82;
       timer = window.setTimeout(tick, speed);
     };
@@ -397,7 +434,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [phase, resultIndex]);
+  }, [casts.length, phase, resultIndex]);
 
   useEffect(() => {
     if (phase !== "flip") return undefined;
@@ -420,7 +457,11 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     setPhase("reveal");
   }
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  useEffect(() => () => {
+    timers.current.forEach((timer) => window.clearTimeout(timer));
+    window.clearTimeout(copyResetTimers.current.share);
+    window.clearTimeout(copyResetTimers.current.match);
+  }, []);
 
   async function savePoster() {
     if (posterState === "working") return;
@@ -442,6 +483,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   }
 
   function legacyCopy(text: string): boolean {
+    const activeElement = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.setAttribute("readonly", "");
@@ -458,26 +502,31 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
       ok = false;
     }
     ta.remove();
+    activeElement?.focus({ preventScroll: true });
     return ok;
   }
 
-  async function copyLink() {
-    let ok = false;
-    try {
-      if (window.isSecureContext && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-        ok = true;
-      } else {
-        ok = legacyCopy(shareUrl);
-      }
-    } catch {
-      ok = legacyCopy(shareUrl);
-    }
-    setCopied(ok);
-    if (ok) {
-      const t = window.setTimeout(() => setCopied(false), 2200);
-      timers.current.push(t);
-    }
+  function copyText(
+    text: string,
+    kind: "share" | "match",
+    setState: (state: CopyState) => void,
+  ) {
+    window.clearTimeout(copyResetTimers.current[kind]);
+    const ok = legacyCopy(text);
+    setState(ok ? "done" : "error");
+    copyResetTimers.current[kind] = window.setTimeout(
+      () => setState("idle"),
+      ok ? 2200 : 3600,
+    );
+  }
+
+  function copyLink() {
+    copyText(shareUrl, "share", setCopyState);
+  }
+
+  function copyMatchLink() {
+    if (!matchShareUrl) return;
+    copyText(matchShareUrl, "match", setMatchCopyState);
   }
 
   async function nativeShare() {
@@ -566,6 +615,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 <span className="draw-face__volume">{person ? `${cast.volume} · ${cast.name}` : cast.volume}</span>
                 <strong className="draw-face__name">{personName}</strong>
                 <span className="draw-face__role">{cast.role}</span>
+                {cast.description && !person && (
+                  <span className="draw-face__description">{cast.description}</span>
+                )}
                 {interestWords.length > 0 && (
                   <span className="draw-face__interest">
                     <small>知乎兴趣底色</small>
@@ -597,7 +649,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
         </p>
 
         <div className={`draw-dots${revealed || phase === "flip" ? " is-settled" : ""}`}>
-          {CASTS.map((item, i) => (
+          {casts.map((item, i) => (
             <span
               key={item.key}
               className={`draw-dot${i === activeDot ? " is-active" : ""}${i === resultIndex && revealed ? " is-result" : ""}`}
@@ -612,6 +664,16 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
               {mode === "enter" && (
                 <button type="button" className="draw-btn draw-btn--primary" onClick={handleEnter} disabled={!revealed}>
                   {isSelf ? "翻开我的书" : person ? "翻开 TA 的书" : "翻开这本书"}
+                </button>
+              )}
+              {isSelf && selfProfile && selfProfile.likedCount >= 3 && onDiscoverPeers && (
+                <button
+                  type="button"
+                  className="draw-btn draw-btn--ghost"
+                  onClick={onDiscoverPeers}
+                  disabled={!revealed}
+                >
+                  发现 5 位同频的人
                 </button>
               )}
               <button
@@ -643,8 +705,21 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   {posterState === "working" ? "正在生成海报…" : posterState === "done" ? "海报已保存 ✓" : "保存人格卡海报"}
                 </button>
                 <button type="button" className="draw-btn draw-btn--ghost" onClick={copyLink}>
-                  {copied ? "链接已复制 ✓" : person ? "复制观点链接" : "复制人格卡链接"}
+                  {copyState === "done"
+                    ? "链接已复制 ✓"
+                    : copyState === "error"
+                      ? `复制失败，请长按“${shareLinkLabel}”`
+                      : person ? "复制观点链接" : "复制人格卡链接"}
                 </button>
+                {matchShareUrl && (
+                  <button type="button" className="draw-btn draw-btn--ghost" onClick={copyMatchLink}>
+                    {matchCopyState === "done"
+                      ? "对照链接已复制 ✓"
+                      : matchCopyState === "error"
+                        ? "复制失败，请长按“对照链接”"
+                        : "复制对照链接"}
+                  </button>
+                )}
                 {canNativeShare && (
                   <button type="button" className="draw-btn draw-btn--ghost" onClick={nativeShare}>
                     系统分享
@@ -654,10 +729,21 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   返回
                 </button>
               </div>
-              <p className="share-sheet__url">{shareUrl}</p>
+              <p className="share-sheet__url">
+                <span className="share-sheet__url-label">{shareLinkLabel}</span>
+                <span>{shareUrl}</span>
+              </p>
+              {matchShareUrl && (
+                <p className="share-sheet__url">
+                  <span className="share-sheet__url-label">对照链接</span>
+                  <span>{matchShareUrl}</span>
+                </p>
+              )}
               <p className="share-sheet__tip">
                 {isSelf
-                  ? "朋友打开链接，会先抽到这张人格卡，再翻开你的书"
+                  ? matchShareUrl
+                    ? "人格卡链接展示你的书；对照链接会让朋友先独立表态，再揭晓双方星位"
+                    : "朋友打开链接，会先抽到这张人格卡，再翻开你的书"
                   : person
                     ? personSourceUrl
                       ? `朋友打开链接，会前往知乎查看 ${personName} 的原文`

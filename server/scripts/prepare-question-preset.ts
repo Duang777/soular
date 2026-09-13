@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { loadDotEnv } from "../src/adapters/node-server.js";
 import {
@@ -9,11 +9,13 @@ import { ZhihuClient } from "../src/zhihu/client.js";
 
 if (process.argv.includes("--help")) {
   console.log(
-    "prepare-question-preset --question-url=<url> --preset-id=<id> --serial=05 [--answers=30] [--export-name=AI_MATH_REVOLUTION]",
+    "prepare-question-preset --question-url=<url> --preset-id=<id> --serial=05 [--question=<title>] [--answers=30] [--export-name=AI_MATH_REVOLUTION]",
   );
   process.exit(0);
 }
 
+const SERVER_ROOT = resolve(import.meta.dirname, "..");
+process.chdir(SERVER_ROOT);
 loadDotEnv();
 
 function argument(name: string): string {
@@ -21,6 +23,12 @@ function argument(name: string): string {
   const value = process.argv.find((entry) => entry.startsWith(prefix))?.slice(prefix.length)?.trim();
   if (!value) throw new Error(`缺少 --${name}`);
   return value;
+}
+
+function optionalArgument(name: string): string | undefined {
+  const prefix = `--${name}=`;
+  return process.argv.find((entry) => entry.startsWith(prefix))?.slice(prefix.length)?.trim() ||
+    undefined;
 }
 
 function integerArgument(name: string, fallback: number, min: number, max: number): number {
@@ -39,67 +47,46 @@ if (!secret) throw new Error("缺少 ZHIHU_ACCESS_SECRET，无法分页采集回
 const questionUrl = normalizeZhihuQuestionUrl(argument("question-url"));
 const presetId = argument("preset-id");
 const serial = argument("serial");
-const exportName = process.argv.find((entry) => entry.startsWith("--export-name="))?.slice(14) ??
-  presetId.replace(/(^.)|(-.)/g, (value) => value.toUpperCase().replace("-", "_"));
+const question = optionalArgument("question");
+const exportName = optionalArgument("export-name") ??
+  presetId.replaceAll("-", "_").toUpperCase();
+if (!/^[a-z0-9-]{1,48}$/.test(presetId)) {
+  throw new Error("--preset-id 只允许 1-48 位小写字母、数字和连字符");
+}
+if (!/^\d{2}$/.test(serial)) {
+  throw new Error("--serial 必须是两位数字");
+}
+if (!/^[A-Z][A-Z0-9_]*$/.test(exportName)) {
+  throw new Error("--export-name 必须是合法的大写 JavaScript 标识符");
+}
 const answerLimit = integerArgument("answers", 30, 5, 60);
 const version = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 const client = new ZhihuClient(secret);
 const spectrum = await buildQuestionSpectrum(client, questionUrl, answerLimit);
-const question = spectrum.questionUrl.slice(spectrum.questionUrl.lastIndexOf("/") + 1);
-const avatarDir = resolve(process.cwd(), `../public/nebula-scene/avatars/${presetId}`);
-mkdirSync(avatarDir, { recursive: true });
-
-const people = spectrum.answers.map((answer, index) => {
-  const avatarUrl = answer.url;
-  void avatarUrl;
-  return [
-    `回答 ${String(index + 1).padStart(2, "0")}`,
-    answer.stance,
-    answer.cast,
-    answer.claim,
-    answer.url,
-    `问题 ${question}`,
-    null,
-  ];
-});
-
-const stagingPath = resolve(process.cwd(), `.staging/${presetId}-${version}.json`);
+const stagingPath = resolve(SERVER_ROOT, `.staging/${presetId}-${version}.json`);
+const temporaryPath = `${stagingPath}.${process.pid}.tmp`;
+const warnings = [
+  ...(spectrum.warnings ?? []),
+  "候选数据仅写入 staging；作者、头像、赞同数、标题和立场须人工复核后再发布。",
+];
 mkdirSync(dirname(stagingPath), { recursive: true });
-writeFileSync(
-  stagingPath,
-  `${JSON.stringify({ spectrum, presetId, serial, version, warnings: spectrum.warnings }, null, 2)}\n`,
-);
+try {
+  writeFileSync(
+    temporaryPath,
+    `${JSON.stringify({
+      spectrum,
+      presetId,
+      serial,
+      version,
+      exportName,
+      question: question ?? null,
+      warnings,
+    }, null, 2)}\n`,
+  );
+  renameSync(temporaryPath, stagingPath);
+} finally {
+  rmSync(temporaryPath, { force: true });
+}
 
-const presetPath = resolve(process.cwd(), `../public/nebula-scene/preset-${presetId}.js`);
-const body = `export const ${exportName} = {
-  id: "${presetId}",
-  version: "${version}",
-  serial: "${serial}",
-  kind: "real",
-  question: "待人工补全问题标题",
-  peopleLabel: "真实回答观点（作者信息待补充）",
-  sourceQuestion: "${spectrum.questionUrl}",
-  searchUrl: "${spectrum.questionUrl}",
-  avatarBase: "avatars/${presetId}",
-  axis: ${JSON.stringify({
-    ...spectrum.axis,
-    leftChoice: spectrum.axis.left,
-    rightChoice: spectrum.axis.right,
-    leftTendency: spectrum.axis.left,
-    rightTendency: spectrum.axis.right,
-  }, null, 2).replaceAll("\n", "\n  ")},
-  people: ${JSON.stringify(people, null, 4).replace(/^/gm, "    ").trimStart()},
-  followed: [],
-  comments: [],
-  circles: [],
-  me: {
-    name: "我",
-    castKey: "fox",
-    claim: "点赞真实回答，看看你的观点落在光谱何处。",
-  },
-};
-`;
-writeFileSync(presetPath, body);
-console.log(`prepared ${people.length} answers -> ${presetPath}`);
-console.log(`staging: ${stagingPath}`);
-console.log("请补充作者昵称、头像与问题标题后，再运行 npm run build。");
+console.log(`prepared ${spectrum.answers.length} candidate answers -> ${stagingPath}`);
+console.log("请先补齐并人工复核作者、头像、赞同数、标题和立场，再生成正式快照。");

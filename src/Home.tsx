@@ -45,7 +45,7 @@ const QUESTION_PRESETS = [
     id: "tao-ai-math-proof",
     serial: "06",
     kind: "真实讨论",
-    title: "如何看待陶哲轩等数学家大力推动的 AI 数学证明?",
+    title: "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
     detail: "3 个观点",
   },
 ] as const;
@@ -90,11 +90,11 @@ function PersonaHome() {
       <OAuthAccount />
       <section className="question-dock" aria-label="搜索观点星云">
         <div className="question-dock__topics" aria-label="已发布问题">
-          {matchingQuestions.map((question, index) => (
+          {matchingQuestions.map((question) => (
             <button
               key={question.id}
               type="button"
-              className={`question-ticket question-ticket--${index + 1}`}
+              className="question-ticket"
               onClick={() => openQuestion(question.id)}
             >
               <span className="question-ticket__meta">

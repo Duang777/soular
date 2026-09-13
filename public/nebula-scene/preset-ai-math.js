@@ -114,4 +114,7 @@ export const AI_MATH = {
     castKey: "fox",
     claim: "点赞真实回答，看看你更在意数学共同体，还是研究加速。",
   },
+  guide: {
+    headline: "AI 与数学：数学家担忧研究方法与共同体，支持者看到的是验证、协作与加速。",
+  },
 };

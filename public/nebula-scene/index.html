@@ -44,6 +44,10 @@
       #scene { position: fixed; inset: 0; display: block; touch-action: none; cursor: grab; }
       #scene:active { cursor: grabbing; }
       #scene.hovering { cursor: pointer; }
+      #scene:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: -3px;
+      }
 
       .hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
       .hud-top {
@@ -609,13 +613,22 @@
         to { transform: rotate(-336deg); }
       }
       body.entry-active .hud,
+      body.entry-active .observatory-controls,
       body.entry-active .explore-shell,
+      body.entry-active .persona-quick-entry,
       body.entry-active .cards-quick-entry,
       body.entry-active .circle-chip,
       body.entry-active .focus-banner,
       body.entry-active .verdict,
+      body.entry-active .persona-focus-chip,
       body.entry-active #tip { visibility: hidden; opacity: 0; pointer-events: none; }
       body.entry-active #scene { pointer-events: none; cursor: default; }
+      body.is-circle-open .persona-quick-entry,
+      body.is-circle-open .cards-quick-entry {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
 
       #tip {
         position: fixed;
@@ -750,6 +763,11 @@
         background: var(--cta);
         color: var(--cta-ink);
       }
+      .tip-resource-status {
+        color: var(--txt-faint);
+        font-size: 10px;
+        line-height: 1.4;
+      }
       .tip-tag {
         flex: none;
         display: inline-flex;
@@ -764,6 +782,64 @@
         color: var(--mute);
       }
       .tip-tag.funny { border-color: rgba(231, 201, 140, 0.5); color: var(--gold); }
+
+      .observatory-controls {
+        position: fixed;
+        z-index: 14;
+        left: 50%;
+        bottom: max(52px, calc(env(safe-area-inset-bottom) + 44px));
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 8px;
+        background: #0b1218;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.48);
+        transform: translateX(-50%);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+      }
+      .observatory-control {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: rgba(196, 207, 211, 0.64);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+      }
+      .observatory-control .ui-icon { width: 18px; height: 18px; }
+      @media (hover: hover) {
+        .observatory-control:hover {
+          background: rgba(143, 216, 220, 0.08);
+          color: #d9ebeb;
+        }
+      }
+      .observatory-control:active { transform: scale(0.96); }
+      .observatory-control:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: 2px;
+      }
+      .observatory-control[aria-pressed="true"] {
+        background: #17272e;
+        color: #e7c17f;
+      }
+      .observatory-control[aria-pressed="true"]::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 4px;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: currentColor;
+        transform: translateX(-50%);
+      }
 
       .explore-shell {
         position: fixed;
@@ -870,6 +946,107 @@
       .self-draw-entry > span:last-child {
         color: #e7c17f;
         font-size: 14px;
+        text-align: right;
+      }
+      .persona-quick-entry {
+        position: fixed;
+        z-index: 15;
+        right: 20px;
+        bottom: max(122px, calc(env(safe-area-inset-bottom) + 114px));
+        display: grid;
+        grid-template-columns: 66px minmax(0, 1fr) 16px;
+        align-items: center;
+        gap: 10px;
+        width: 238px;
+        height: 76px;
+        padding: 8px 12px 8px 9px;
+        border: 1px solid rgba(231, 193, 127, 0.7);
+        border-radius: 8px;
+        background: #17191d;
+        color: #f4f0df;
+        box-shadow: -4px 5px 0 #05090d, 0 16px 36px rgba(0, 0, 0, 0.52);
+        cursor: pointer;
+        text-align: left;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+      .persona-quick-entry:hover {
+        transform: translateY(-3px);
+        border-color: #e7c17f;
+        background: #202126;
+      }
+      .persona-quick-entry:active { transform: scale(0.98); }
+      .persona-quick-entry.is-active {
+        border-color: var(--persona, #e7c17f);
+      }
+      .persona-quick-stack {
+        position: relative;
+        display: block;
+        width: 62px;
+        height: 56px;
+      }
+      .persona-quick-portrait {
+        position: absolute;
+        top: 6px;
+        width: 34px;
+        height: 46px;
+        overflow: hidden;
+        border: 1px solid rgba(231, 193, 127, 0.62);
+        border-radius: 6px;
+        background: #0b1117;
+        box-shadow: 1px 2px 0 rgba(3, 7, 10, 0.86);
+        transform-origin: center bottom;
+        transition: transform 0.18s ease;
+      }
+      .persona-quick-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .persona-quick-portrait:nth-child(1) { left: 1px; transform: rotate(-9deg); opacity: 0.76; }
+      .persona-quick-portrait:nth-child(2) { left: 14px; transform: translateY(-3px); opacity: 0.9; }
+      .persona-quick-portrait:nth-child(3) { left: 27px; transform: rotate(9deg); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(1) { transform: translateX(-4px) rotate(-12deg); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(2) { transform: translateY(-6px); }
+      .persona-quick-entry:hover .persona-quick-portrait:nth-child(3) { transform: translateX(4px) rotate(12deg); }
+      .persona-quick-count {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        place-items: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 5px;
+        border: 1px solid rgba(231, 193, 127, 0.74);
+        border-radius: 50%;
+        background: #11171d;
+        color: #f0d8a5;
+        font: 600 8px/1 var(--mono);
+      }
+      .persona-quick-copy {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+      .persona-quick-kicker {
+        color: rgba(231, 193, 127, 0.56);
+        font: 500 7px/1 var(--mono);
+      }
+      .persona-quick-copy b {
+        color: #fff7e6;
+        font-size: 13px;
+        letter-spacing: 0;
+      }
+      .persona-quick-copy span {
+        color: rgba(205, 211, 211, 0.64);
+        font-size: 8px;
+        line-height: 1.3;
+        letter-spacing: 0;
+      }
+      .persona-quick-arrow {
+        color: #e7c17f;
+        font-size: 16px;
         text-align: right;
       }
       .cards-quick-entry {
@@ -1847,10 +2024,19 @@
         to { opacity: 0.55; transform: translateY(5px) scale(0.998); }
       }
       body.is-cards-open .explore-shell,
+      body.is-cards-open .observatory-controls,
+      body.is-cards-open .persona-quick-entry,
       body.is-cards-open .cards-quick-entry,
       body.is-cards-open .circle-chip,
       body.is-cards-open .focus-banner,
-      body.is-cards-open .verdict { display: none !important; }
+      body.is-cards-open .verdict,
+      body.is-cards-open .persona-focus-chip { display: none !important; }
+      body.is-explore-menu-open .observatory-controls {
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(-50%, 8px);
+        pointer-events: none;
+      }
       .cards-bar {
         flex: none;
         display: grid;
@@ -2018,6 +2204,54 @@
         color: #f3eee0;
       }
       .cards-filter.is-active b { color: #9fd8db; }
+      .cards-persona-title { margin-top: 22px; }
+      .persona-filter-list { display: grid; }
+      .persona-filter {
+        justify-content: flex-start;
+        gap: 8px;
+        border-left-color: transparent;
+      }
+      .persona-filter i {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 50%;
+        background: var(--persona);
+      }
+      .persona-filter span { min-width: 0; flex: 1; }
+      .persona-filter.is-active {
+        border-left-color: transparent;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--persona) 32%, transparent);
+      }
+      .persona-filter.is-active i {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--persona) 18%, transparent);
+      }
+      .persona-deck-entry {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 44px;
+        margin-bottom: 18px;
+        padding: 0 10px;
+        border: 1px solid rgba(231, 193, 127, 0.2);
+        border-radius: 8px;
+        background: #10171d;
+        color: rgba(240, 223, 189, 0.76);
+        font: 10.5px/1 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-entry b {
+        color: rgba(231, 193, 127, 0.56);
+        font: 500 8px/1 var(--mono);
+      }
+      .persona-deck-entry:hover {
+        border-color: rgba(231, 193, 127, 0.52);
+        color: #f3eee0;
+      }
+      .persona-deck-entry:active { transform: scale(0.97); }
       .cards-rail-note {
         margin-top: 14px;
         padding: 12px 10px 0;
@@ -2036,6 +2270,162 @@
       .cards-list::-webkit-scrollbar { width: 6px; }
       .cards-list::-webkit-scrollbar-thumb { background: rgba(143, 216, 220, 0.16); border-radius: 99px; }
       .cards-list::-webkit-scrollbar-thumb:hover { background: rgba(143, 216, 220, 0.28); }
+      .persona-deck {
+        display: grid;
+        grid-template-columns: 44px 78px minmax(0, 1fr) minmax(132px, auto) 44px;
+        grid-template-areas: "previous art copy actions next";
+        align-items: center;
+        gap: 16px;
+        min-height: 154px;
+        margin-bottom: 16px;
+        padding: 16px 14px;
+        border-top: 1px solid color-mix(in srgb, var(--persona) 42%, transparent);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.025);
+      }
+      .persona-deck-nav {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 8px;
+        background: #111820;
+        color: rgba(232, 237, 238, 0.68);
+        font: 24px/1 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-nav:hover {
+        border-color: color-mix(in srgb, var(--persona) 60%, transparent);
+        color: #f3eee0;
+      }
+      .persona-deck-nav:active { transform: scale(0.94); }
+      .persona-deck-nav--previous { grid-area: previous; }
+      .persona-deck-nav--next { grid-area: next; }
+      .persona-deck-art {
+        grid-area: art;
+        width: 78px;
+        height: 96px;
+        object-fit: cover;
+        object-position: center top;
+        border-radius: 8px;
+        outline: 1px solid color-mix(in srgb, var(--persona) 48%, transparent);
+        outline-offset: -1px;
+        background: #0b1117;
+      }
+      .persona-deck-copy { grid-area: copy; min-width: 0; }
+      .persona-deck-kicker {
+        color: color-mix(in srgb, var(--persona) 78%, #dfe8e8);
+        font: 500 8px/1.4 var(--mono);
+      }
+      .persona-deck-name {
+        margin: 5px 0 0;
+        color: #f3eee0;
+        font-size: 19px;
+        font-weight: 650;
+        line-height: 1.25;
+      }
+      .persona-deck-role {
+        margin-top: 3px;
+        color: rgba(204, 212, 214, 0.52);
+        font-size: 10px;
+      }
+      .persona-deck-description {
+        margin-top: 8px;
+        color: rgba(238, 232, 218, 0.84);
+        font-size: 11px;
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
+      .persona-deck-claim {
+        margin-top: 7px;
+        color: rgba(226, 231, 232, 0.74);
+        font-size: 11.5px;
+        line-height: 1.65;
+        text-wrap: pretty;
+      }
+      .persona-deck-source {
+        margin-top: 5px;
+        color: rgba(180, 193, 197, 0.4);
+        font: 8px/1.5 var(--mono);
+      }
+      .persona-deck-actions {
+        grid-area: actions;
+        display: grid;
+        gap: 8px;
+      }
+      .persona-deck-action {
+        min-height: 44px;
+        padding: 0 13px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 8px;
+        background: #111a21;
+        color: rgba(226, 234, 234, 0.76);
+        font: 10px/1.3 var(--font);
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+      }
+      .persona-deck-action--primary {
+        border-color: color-mix(in srgb, var(--persona) 52%, transparent);
+        color: #f3eee0;
+      }
+      .persona-deck-action:hover {
+        border-color: color-mix(in srgb, var(--persona) 72%, transparent);
+        color: #fff8e8;
+      }
+      .persona-deck-action:active { transform: scale(0.97); }
+      .persona-focus-chip {
+        position: fixed;
+        z-index: 10;
+        top: max(142px, calc(env(safe-area-inset-top) + 134px));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        max-width: min(86vw, 440px);
+        min-height: 44px;
+        padding: 0 8px 0 13px;
+        border: 1px solid color-mix(in srgb, var(--persona) 48%, transparent);
+        border-radius: 8px;
+        background: #111820;
+        color: rgba(231, 236, 237, 0.76);
+        font-size: 10.5px;
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+      }
+      .persona-focus-chip[hidden] { display: none; }
+      .persona-focus-chip i {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--persona);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--persona) 16%, transparent);
+      }
+      .persona-focus-chip b { color: #f3eee0; font-weight: 650; }
+      .persona-focus-chip button {
+        min-height: 44px;
+        margin-left: 4px;
+        padding: 0 9px;
+        border: 0;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.045);
+        color: rgba(231, 193, 127, 0.82);
+        font: 9px/1 var(--font);
+        cursor: pointer;
+      }
+      .persona-focus-chip button:active { transform: scale(0.96); }
+      .cards-filter:focus-visible,
+      .persona-quick-entry:focus-visible,
+      .persona-deck-entry:focus-visible,
+      .persona-deck-nav:focus-visible,
+      .persona-deck-action:focus-visible,
+      .persona-focus-chip button:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
+      }
       .me-strip {
         display: grid;
         grid-template-columns: 46px minmax(0, 1fr) 150px auto;
@@ -2126,6 +2516,13 @@
       }
       .pcard--comment { cursor: default; }
       .pcard--comment .pcard-side { grid-template-columns: 1fr; }
+      .pcard-avatar-frame {
+        position: relative;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+      }
       .pcard-ava {
         flex: none;
         width: 42px;
@@ -2137,6 +2534,26 @@
         border: 2px solid #090d12;
         outline: 1px solid color-mix(in srgb, var(--cast, #9fd8db) 60%, transparent);
         background: #0c1319;
+      }
+      .pcard-avatar-retry {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        place-items: center;
+        border: 1px solid rgba(231, 193, 127, 0.52);
+        border-radius: 50%;
+        background: rgba(5, 9, 13, 0.56);
+        color: #f0d89e;
+        font: 20px/1 var(--font);
+        cursor: pointer;
+      }
+      .pcard-avatar-retry[hidden] { display: none; }
+      .pcard-avatar-retry:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
       }
       .pcard-ava--ring {
         display: grid;
@@ -2274,7 +2691,7 @@
       .modal-mask {
         position: fixed;
         inset: 0;
-        z-index: 15;
+        z-index: 21;
         display: none;
         place-items: center;
         padding: 24px;
@@ -2291,6 +2708,10 @@
         border: 1px solid rgba(255, 255, 255, 0.11);
         background: #11171d;
         box-shadow: 0 28px 90px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .modal:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.72);
+        outline-offset: 3px;
       }
       .modal::before {
         content: "";
@@ -2369,6 +2790,150 @@
         color: rgba(230, 193, 127, 0.78);
         font-size: 10.5px;
         line-height: 1.55;
+      }
+      .guide-modal {
+        width: min(560px, 92vw);
+      }
+      .guide-modal .modal-x {
+        width: 44px;
+        height: 44px;
+      }
+      .guide-picks {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 16px;
+      }
+      .guide-pick {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(143, 216, 220, 0.14);
+        border-radius: 10px;
+        background: rgba(143, 216, 220, 0.04);
+        color: var(--hi);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-pick:hover,
+      .guide-pick:focus-visible {
+        border-color: rgba(143, 180, 255, 0.58);
+        background: rgba(143, 180, 255, 0.08);
+      }
+      .guide-pick b {
+        display: block;
+        font-size: 11px;
+        font-weight: 620;
+      }
+      .guide-pick span {
+        display: block;
+        margin-top: 3px;
+        color: var(--txt-faint);
+        font-size: 9.5px;
+        line-height: 1.45;
+      }
+      .guide-pick em {
+        color: var(--lav);
+        font-family: var(--mono);
+        font-size: 8px;
+        font-style: normal;
+      }
+      .guide-body {
+        margin: 0 24px 18px;
+        color: var(--txt);
+        font-size: 11.5px;
+        line-height: 1.65;
+      }
+      .guide-body strong {
+        color: var(--hi);
+        font-weight: 620;
+      }
+      .guide-quiz {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 14px;
+      }
+      .guide-quiz-q {
+        color: var(--lav);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-quiz-choices {
+        display: grid;
+        gap: 6px;
+      }
+      .guide-quiz-btn {
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--mid-btn);
+        color: var(--hi);
+        font: inherit;
+        font-size: 11px;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-quiz-btn:hover,
+      .guide-quiz-btn:focus-visible {
+        border-color: rgba(143, 180, 255, 0.58);
+      }
+      .guide-input {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 20px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--line);
+      }
+      .guide-input label {
+        color: var(--txt-faint);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 8px;
+      }
+      .guide-input-row input {
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        outline: 0;
+        background: var(--mid-deep);
+        color: var(--hi);
+        font: inherit;
+        font-size: 11px;
+      }
+      .guide-input-row input:focus {
+        border-color: rgba(143, 180, 255, 0.72);
+        box-shadow: 0 0 0 3px rgba(143, 180, 255, 0.12);
+      }
+      .guide-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .guide-suggestion {
+        min-height: 44px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--txt-dim);
+        font: inherit;
+        font-size: 9.5px;
+        cursor: pointer;
+      }
+      .guide-suggestion:hover,
+      .guide-suggestion:focus-visible {
+        color: var(--hi);
+        border-color: rgba(143, 216, 220, 0.42);
       }
       .match-mode {
         margin: 0 24px 16px;
@@ -2466,6 +3031,146 @@
         letter-spacing: 0.1em;
         color: var(--faint);
       }
+      .match-evidence {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .match-evidence-item {
+        display: grid;
+        gap: 8px;
+      }
+      .match-evidence-copy {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--txt-faint);
+        font-size: 9px;
+      }
+      .match-evidence-copy b {
+        color: rgba(231, 235, 238, 0.82);
+        font-family: var(--mono);
+        font-size: 8.5px;
+        font-weight: 500;
+      }
+      .match-evidence-track {
+        position: relative;
+        display: block;
+        height: 3px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .match-evidence-track > span {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: #82c8ce;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .match-evidence-item--interest .match-evidence-track > span {
+        background: #e6c17f;
+      }
+      .match-weight-note {
+        grid-column: 1 / -1;
+        margin: 0;
+        color: rgba(180, 193, 197, 0.42);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .match-candidates {
+        margin-top: 17px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .match-candidates-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .match-candidates-head span {
+        color: rgba(231, 235, 238, 0.68);
+        font-size: 9.5px;
+      }
+      .match-candidates-head small {
+        color: rgba(131, 185, 189, 0.58);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .match-candidate-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .match-candidate {
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr);
+        min-width: 0;
+        min-height: 48px;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 7px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+        color: rgba(231, 235, 238, 0.66);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, transform 0.12s ease;
+      }
+      .match-candidate.is-active {
+        border-color: rgba(131, 185, 189, 0.52);
+        color: var(--hi);
+        background: rgba(131, 185, 189, 0.06);
+      }
+      .match-candidate img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        filter: saturate(0.72);
+        outline: 1px solid rgba(255, 255, 255, 0.12);
+        outline-offset: -1px;
+      }
+      .match-candidate > span {
+        display: grid;
+        min-width: 0;
+        gap: 3px;
+      }
+      .match-candidate b {
+        overflow-wrap: anywhere;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .match-candidate small {
+        color: rgba(180, 193, 197, 0.44);
+        font-family: var(--mono);
+        font-size: 7px;
+      }
+      .match-candidate:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.72);
+        outline-offset: 2px;
+      }
+      @media (hover: hover) {
+        .match-candidate:hover {
+          border-color: rgba(131, 185, 189, 0.34);
+          background: rgba(131, 185, 189, 0.035);
+        }
+      }
+      .match-candidate:active { transform: scale(0.96); }
+      .modal.is-keyboard-nav .seg-btn,
+      .modal.is-keyboard-nav .match-candidate,
+      .modal.is-keyboard-nav .match-evidence-track > span {
+        transition: none;
+      }
       .modal-actions {
         margin: 0;
         padding: 18px 24px 22px;
@@ -2508,6 +3213,10 @@
         color: rgba(232, 234, 245, 0.82);
       }
       .gbtn--ghost:hover { border-color: rgba(255, 255, 255, 0.32); color: var(--hi); background: rgba(255, 255, 255, 0.04); }
+      .gbtn--ghost:disabled {
+        cursor: default;
+        opacity: 0.48;
+      }
       .gbtn--text {
         grid-column: 1 / -1;
         justify-self: start;
@@ -2537,6 +3246,178 @@
         transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
       }
       .modal-x:hover { background: var(--cta); color: var(--cta-ink); border-color: transparent; }
+
+      .peer-modal {
+        width: min(760px, 94vw);
+      }
+      .peer-context {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 24px 16px;
+      }
+      .peer-persona {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid rgba(231, 193, 127, 0.24);
+        border-radius: 8px;
+        background: rgba(231, 193, 127, 0.06);
+        color: #e6c17f;
+        font-size: 10.5px;
+        font-weight: 600;
+      }
+      .peer-portrait-note {
+        margin: 0;
+        color: var(--txt-faint);
+        font-size: 10.5px;
+        line-height: 1.55;
+        text-align: right;
+      }
+      .peer-list {
+        max-height: min(56vh, 560px);
+        margin: 0;
+        padding: 0 24px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+      .peer-item {
+        display: grid;
+        grid-template-columns: 50px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: start;
+        padding: 17px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .peer-avatar-wrap {
+        position: relative;
+        width: 48px;
+        height: 48px;
+      }
+      .peer-avatar,
+      .peer-avatar-fallback {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+      }
+      .peer-avatar {
+        display: block;
+        object-fit: cover;
+        filter: saturate(0.78) contrast(1.06);
+        outline: 1px solid rgba(143, 216, 220, 0.34);
+        outline-offset: -1px;
+      }
+      .peer-avatar-fallback {
+        display: none;
+        place-items: center;
+        background: #202731;
+        color: #c6d8dc;
+        font-size: 17px;
+        font-weight: 650;
+      }
+      .peer-avatar-wrap.is-fallback .peer-avatar { display: none; }
+      .peer-avatar-wrap.is-fallback .peer-avatar-fallback { display: grid; }
+      .peer-main { min-width: 0; }
+      .peer-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .peer-name {
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--hi);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+        text-align: left;
+        cursor: pointer;
+      }
+      .peer-name:hover { color: #9fd8db; }
+      .peer-cast {
+        flex: none;
+        padding: 3px 6px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.045);
+        color: var(--txt-faint);
+        font-size: 9px;
+      }
+      .peer-claim {
+        display: -webkit-box;
+        margin: 7px 0 0;
+        overflow: hidden;
+        color: rgba(231, 235, 238, 0.86);
+        font-size: 12px;
+        line-height: 1.55;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .peer-reasons {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 7px 14px;
+        margin-top: 9px;
+      }
+      .peer-reason {
+        color: var(--txt-faint);
+        font-size: 9.5px;
+        line-height: 1.5;
+      }
+      .peer-reason b {
+        margin-right: 5px;
+        color: #83b9bd;
+        font-weight: 600;
+      }
+      .peer-reason--different b { color: rgba(231, 193, 127, 0.82); }
+      .peer-item-actions {
+        display: grid;
+        gap: 7px;
+        justify-items: stretch;
+        min-width: 96px;
+      }
+      .peer-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 11px;
+        border: 1px solid var(--line-2);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--txt-dim);
+        font: inherit;
+        font-size: 10px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.14s ease, border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+      }
+      .peer-action:hover {
+        border-color: rgba(143, 216, 220, 0.4);
+        background: rgba(143, 216, 220, 0.06);
+        color: var(--hi);
+      }
+      .peer-action:active { transform: scale(0.96); }
+      .peer-action--missing {
+        cursor: default;
+        opacity: 0.5;
+      }
+      .peer-status {
+        align-self: center;
+        color: var(--txt-faint);
+        font-size: 10.5px;
+        line-height: 1.5;
+      }
+      .peer-actions {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
 
       .circle-chip {
         position: fixed;
@@ -2655,6 +3536,8 @@
           border-bottom: 1px solid rgba(143, 216, 220, 0.1);
         }
         .cards-rail-title, .cards-rail-note { display: none; }
+        .cards-persona-title { display: none; }
+        .persona-filter-list { display: contents; }
         .cards-filter {
           flex: none;
           width: auto;
@@ -2665,6 +3548,16 @@
           border-bottom: 2px solid transparent;
         }
         .cards-filter.is-active { border-left-color: transparent; border-bottom-color: #9fd8db; }
+        .persona-filter.is-active {
+          border-bottom-color: var(--persona);
+          box-shadow: none;
+        }
+        .persona-deck-entry {
+          flex: none;
+          width: auto;
+          margin: 0;
+          gap: 10px;
+        }
         .pcard::before { display: none; }
       }
       @media (max-width: 720px) {
@@ -2751,6 +3644,24 @@
           width: min(168px, calc(100vw - 222px));
           height: 54px;
         }
+        .persona-quick-entry {
+          right: 14px;
+          bottom: max(148px, calc(env(safe-area-inset-bottom) + 142px));
+          grid-template-columns: 50px minmax(0, 1fr);
+          gap: 7px;
+          width: 178px;
+          height: 64px;
+          padding: 5px 8px;
+        }
+        .persona-quick-stack { width: 48px; height: 50px; }
+        .persona-quick-portrait { top: 6px; width: 28px; height: 38px; }
+        .persona-quick-portrait:nth-child(1) { left: 0; }
+        .persona-quick-portrait:nth-child(2) { left: 8px; }
+        .persona-quick-portrait:nth-child(3) { left: 16px; }
+        .persona-quick-count { min-width: 20px; height: 20px; }
+        .persona-quick-copy b { font-size: 11px; }
+        .persona-quick-copy span { font-size: 7.5px; }
+        .persona-quick-arrow { display: none; }
         .cards-quick-entry {
           right: 14px;
           bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
@@ -2769,6 +3680,12 @@
         .cards-quick-copy b { font-size: 10px; }
         .cards-quick-copy small { font-size: 7.5px; }
         .cards-quick-arrow { display: none; }
+        .observatory-controls {
+          bottom: max(86px, calc(env(safe-area-inset-bottom) + 80px));
+        }
+        .toast {
+          bottom: max(148px, calc(env(safe-area-inset-bottom) + 140px));
+        }
         .blindbox-lid { left: 8px; width: 38px; }
         .zh-orbit-ring { left: 7px; width: 38px; }
         .explore-nudge { left: 64px; bottom: 13px; font-size: 9px; }
@@ -2803,7 +3720,7 @@
         .circle-chip {
           right: 12px;
           width: calc(100vw - 24px);
-          bottom: var(--mobile-panel-clearance, 90px);
+          bottom: var(--mobile-panel-clearance, 152px);
         }
         .verdict, .focus-banner { top: max(76px, calc(env(safe-area-inset-top) + 68px)); }
         body.is-focusing .verdict { top: max(148px, calc(env(safe-area-inset-top) + 140px)); }
@@ -2826,7 +3743,7 @@
         .cards-title { margin-top: 0; font-size: 17px; }
         .cards-question { font-size: 9.5px; }
         .cards-meta { font-size: 7.5px; }
-        .cards-search { grid-column: 1 / -1; min-height: 40px; }
+        .cards-search { grid-column: 1 / -1; min-height: 44px; }
         .cards-spectrum {
           gap: 8px;
           padding: 9px 14px;
@@ -2836,15 +3753,37 @@
         .cards-rail { margin: 0 -14px; padding: 8px 14px 7px; }
         .cards-filter { min-height: 44px; padding: 0 10px; font-size: 9.5px; }
         .cards-list { padding: 10px 0 26px; }
+        .persona-deck {
+          grid-template-columns: 44px 58px minmax(0, 1fr) 44px;
+          grid-template-areas:
+            "previous art copy next"
+            "actions actions actions actions";
+          gap: 10px;
+          min-height: 0;
+          margin: 0 0 12px;
+          padding: 13px 4px;
+        }
+        .persona-deck-art { width: 58px; height: 76px; }
+        .persona-deck-name { font-size: 16px; }
+        .persona-deck-claim { font-size: 10.5px; }
+        .persona-deck-actions {
+          grid-column: 1 / -1;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+        .persona-deck-action { padding: 0 8px; }
+        .persona-focus-chip {
+          top: max(126px, calc(env(safe-area-inset-top) + 118px));
+          max-width: calc(100vw - 24px);
+        }
         .me-strip {
-          grid-template-columns: 42px minmax(0, 1fr);
+          grid-template-columns: 44px minmax(0, 1fr);
           gap: 11px;
           padding: 13px 10px;
         }
         .me-strip-position { grid-column: 1 / -1; padding: 0 2px; }
         .pcard-me-btn { grid-column: 1 / -1; width: 100%; }
         .pcard {
-          grid-template-columns: 40px minmax(0, 1fr);
+          grid-template-columns: 44px minmax(0, 1fr);
           gap: 10px;
           padding: 15px 4px;
         }
@@ -2866,14 +3805,58 @@
         .modal-title { font-size: 20px; }
         .modal-sub { margin-right: 0; }
         .clash-card { margin: 0; padding: 18px; }
+        .match-evidence { grid-template-columns: 1fr; }
+        .match-weight-note { grid-column: auto; }
+        .match-candidate {
+          grid-template-columns: 26px minmax(0, 1fr);
+          gap: 5px;
+          padding-right: 5px;
+          padding-left: 5px;
+        }
+        .match-candidate img { width: 25px; height: 25px; }
         .modal-actions { grid-template-columns: 1fr; padding: 15px 18px 18px; }
         .gbtn--text { grid-column: auto; justify-self: center; }
+        .modal-mask { padding: 10px; }
+        .peer-modal {
+          width: 100%;
+          max-height: calc(100vh - 20px);
+        }
+        .peer-context {
+          align-items: flex-start;
+          padding: 0 18px 14px;
+          flex-direction: column;
+          gap: 7px;
+        }
+        .peer-portrait-note { text-align: left; }
+        .peer-list {
+          max-height: min(58vh, 520px);
+          padding: 0 18px;
+        }
+        .peer-item {
+          grid-template-columns: 44px minmax(0, 1fr);
+          gap: 11px;
+          padding: 15px 0;
+        }
+        .peer-avatar-wrap,
+        .peer-avatar,
+        .peer-avatar-fallback {
+          width: 42px;
+          height: 42px;
+        }
+        .peer-reasons { grid-template-columns: 1fr; gap: 5px; }
+        .peer-item-actions {
+          grid-column: 2;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          min-width: 0;
+        }
+        .peer-action { min-height: 44px; }
+        .peer-actions { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -2911,6 +3894,10 @@
           }
         };
         window.addEventListener("error", function (e) {
+          if (e && e.target instanceof HTMLImageElement) {
+            console.warn("resource", e.target.currentSrc || e.target.src || "资源加载失败");
+            return;
+          }
           fail("error", e && e.message ? e.message : "脚本执行出错");
         }, true);
         window.addEventListener("unhandledrejection", function (e) {
@@ -2940,7 +3927,7 @@
     </script>
   </head>
   <body>
-    <canvas id="scene"></canvas>
+    <canvas id="scene" tabindex="0" aria-label="观点星云交互画布"></canvas>
 
     <section class="entry-flow" id="entryFlow" data-state="discover" aria-label="选择要探索的问题" hidden>
       <div class="entry-atmosphere" aria-hidden="true">
@@ -3021,6 +4008,39 @@
       </div>
       <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点赞校准你的立场</div>
     </div>
+
+    <nav class="observatory-controls" id="observatoryControls" aria-label="星云观测控制">
+      <button type="button" class="observatory-control" id="randomDiscover" aria-label="随机发现" title="随机发现（空格）">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 3h5v5"></path>
+          <path d="M4 20 21 3"></path>
+          <path d="M21 16v5h-5"></path>
+          <path d="m15 15 6 6"></path>
+          <path d="M4 4l5 5"></path>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="followedOnly" aria-label="只看关注" aria-pressed="false" title="只看关注">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3.7 14.55 9l5.85.85-4.23 4.12 1 5.82L12 17.05l-5.17 2.74 1-5.82L3.6 9.85 9.45 9 12 3.7z"></path>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="locateMe" aria-label="我的位置" title="我的位置">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 2v3"></path>
+          <path d="M12 19v3"></path>
+          <path d="M2 12h3"></path>
+          <path d="M19 12h3"></path>
+          <circle cx="12" cy="12" r="7"></circle>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="resetView" aria-label="重置视角" title="重置视角（R）">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 0-2.34 5.66"></path>
+          <path d="M20 4v7h-7"></path>
+        </svg>
+      </button>
+    </nav>
 
     <div class="explore-shell" id="exploreShell">
       <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河故事与星云工具">
@@ -3117,6 +4137,35 @@
           <ol class="discovery-results" id="discoveryResults"></ol>
         </section>
         <div class="explore-section-label">盒内隐藏功能</div>
+        <button type="button" class="dock-action" id="guideBtn">
+          <span class="dock-action-icon" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"></path>
+              <path d="M5 19h14"></path>
+              <path d="M8 16h8"></path>
+            </svg>
+          </span>
+          <span class="dock-action-copy">
+            <b>星图向导</b>
+            <span>一句话看懂争议，帮你定位起点</span>
+          </span>
+          <span class="dock-arrow" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="dock-action" id="peerDiscoveryBtn">
+          <span class="dock-action-icon" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <circle cx="8" cy="8" r="3"></circle>
+              <circle cx="16" cy="8" r="3"></circle>
+              <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
+              <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
+            </svg>
+          </span>
+          <span class="dock-action-copy">
+            <b>同频发现</b>
+            <span id="peerDiscoveryHint">一次遇见 5 位相近回答者</span>
+          </span>
+          <span class="dock-arrow" aria-hidden="true">›</span>
+        </button>
         <button type="button" class="dock-action" id="clashBtn">
           <span class="dock-action-icon" aria-hidden="true">
             <svg class="ui-icon" viewBox="0 0 24 24">
@@ -3182,6 +4231,21 @@
       </button>
     </div>
 
+    <button type="button" class="persona-quick-entry" id="personaQuickEntry">
+      <span class="persona-quick-stack" aria-hidden="true">
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-portrait"><img data-persona-quick-art alt="" /></span>
+        <span class="persona-quick-count" id="personaQuickCount">0</span>
+      </span>
+      <span class="persona-quick-copy">
+        <small class="persona-quick-kicker">PERSONA CONSTELLATION</small>
+        <b id="personaQuickTitle">本题人格星群</b>
+        <span id="personaQuickHint">看占比与代表观点</span>
+      </span>
+      <span class="persona-quick-arrow" aria-hidden="true">→</span>
+    </button>
+
     <button type="button" class="cards-quick-entry" id="cardsQuickEntry">
       <span class="cards-quick-deck" aria-hidden="true">
         <span class="cards-quick-sheet"><img data-cards-quick-avatar alt="" /></span>
@@ -3209,7 +4273,7 @@
           </svg>
         </button>
         <div class="cards-heading">
-          <div class="cards-series">SPECTRUM INDEX · 48 SIGNALS</div>
+          <div class="cards-series" id="cardsSeries">SPECTRUM INDEX</div>
           <div class="cards-title">观点光谱索引</div>
           <div class="cards-question" id="presetCardsQuestion">35 岁程序员该不该转行？</div>
           <div class="cards-meta" id="cardsMeta"></div>
@@ -3229,12 +4293,18 @@
       </div>
       <div class="cards-layout">
         <aside class="cards-rail" aria-label="筛选观点">
+          <div class="cards-rail-title">PERSONA LIBRARY · 本题人格</div>
+          <button type="button" class="persona-deck-entry" id="personaDeckOpen" aria-expanded="false">
+            <span>本题人格卡群</span><b id="personaDeckCount">0</b>
+          </button>
           <div class="cards-rail-title">FILTER · 立场筛选</div>
-          <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">48</b></button>
+          <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="left"><span id="presetFilterLeft">倾向转行</span><b id="filterLeftCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="center"><span id="presetFilterCenter">中立观察</span><b id="filterCenterCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="right"><span id="presetFilterRight">倾向深耕</span><b id="filterRightCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="liked"><span>我赞过的</span><b id="filterLikedCount">0</b></button>
+          <div class="cards-rail-title cards-persona-title">PERSONA · 人格筛选</div>
+          <div class="persona-filter-list" id="personaFilters" role="group" aria-label="按观点人格筛选"></div>
           <p class="cards-rail-note">沿观点光谱从左到右排列。坐标越靠近两端，立场越明确。</p>
         </aside>
         <div class="cards-list" id="cardsList"></div>
@@ -3242,8 +4312,52 @@
     </div>
 
     <!-- Icons adapted from Its Hover (Apache-2.0): https://github.com/itshover/itshover -->
+    <div class="modal-mask" id="guide" aria-hidden="true">
+      <div class="modal guide-modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+        <button type="button" class="modal-x" id="guideX" aria-label="关闭星图向导">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon icon-sparkles" viewBox="0 0 24 24">
+              <path class="sparkle-bottom" d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-top" d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-main" d="M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6z"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">星图向导 · LOCAL GUIDE</div>
+            <div class="modal-title" id="guideTitle">先读懂这片星云</div>
+            <p class="modal-sub" id="guideHeadline"></p>
+          </div>
+        </div>
+        <div class="guide-picks" id="guidePicks"></div>
+        <div class="guide-body" id="guideBody" aria-live="polite"></div>
+        <div class="guide-quiz" id="guideQuiz" hidden></div>
+        <div class="guide-input">
+          <label for="guideAsk">试着问我（本地匹配，不调用大模型）</label>
+          <div class="guide-input-row">
+            <input id="guideAsk" type="search" maxlength="80" autocomplete="off" placeholder="例如：代表性观点 / 我是什么立场" />
+            <button type="button" class="gbtn gbtn--ghost" id="guideAskBtn" aria-label="提交问题">问</button>
+          </div>
+          <div class="guide-suggestions" id="guideSuggestions"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-mask" id="clash">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="观点碰撞">
+      <div
+        class="modal"
+        id="clashDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="clashTitle"
+        aria-describedby="clashReason"
+        tabindex="-1"
+      >
         <button type="button" class="modal-x" id="clashX" aria-label="关闭">
           <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -3260,9 +4374,9 @@
           </span>
           <div>
             <div class="modal-kicker">观点碰撞 · VIEWPOINT MATCH</div>
-            <div class="modal-title">听听对立面怎么想</div>
-            <p class="modal-sub">已找到与你立场距离最远的一种声音。</p>
-            <p class="modal-personalization" id="clashReason">当前根据本题表态进行匹配。</p>
+            <div class="modal-title" id="clashTitle">听听对立面怎么想</div>
+            <p class="modal-sub" id="clashSubtitle">已找到与你立场距离最远的一种声音。</p>
+            <p class="modal-personalization" id="clashReason" aria-live="polite">当前根据本题表态进行匹配。</p>
           </div>
         </div>
         <div class="seg match-mode" role="tablist" aria-label="观点匹配方式">
@@ -3293,6 +4407,44 @@
             </div>
             <div class="clash-labels"><span>必须转行</span><span>深耕不转</span></div>
           </div>
+          <div class="match-evidence" aria-label="推荐排序依据">
+            <div class="match-evidence-item">
+              <span class="match-evidence-copy">
+                <span>本题立场</span>
+                <b id="clashStanceScore"></b>
+              </span>
+              <i
+                class="match-evidence-track"
+                id="clashStanceTrack"
+                role="progressbar"
+                aria-label="本题立场匹配度"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ><span id="clashStanceBar"></span></i>
+            </div>
+            <div class="match-evidence-item match-evidence-item--interest">
+              <span class="match-evidence-copy">
+                <span>知乎兴趣</span>
+                <b id="clashInterestScore"></b>
+              </span>
+              <i
+                class="match-evidence-track"
+                id="clashInterestTrack"
+                role="progressbar"
+                aria-label="知乎兴趣交集"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ><span id="clashInterestBar"></span></i>
+            </div>
+            <p class="match-weight-note" id="clashWeightNote"></p>
+          </div>
+          <div class="match-candidates">
+            <div class="match-candidates-head">
+              <span id="clashQueueLabel">推荐候选</span>
+              <small>选择一位切换观点</small>
+            </div>
+            <div class="match-candidate-list" id="clashCandidates"></div>
+          </div>
         </div>
         <div class="modal-actions">
           <button type="button" class="gbtn gbtn--primary" id="clashGo">
@@ -3307,7 +4459,7 @@
               <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
               <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
             </svg>
-            <span>换一位</span>
+            <span id="clashAgainLabel">换一位</span>
           </button>
           <button type="button" class="gbtn gbtn--text" id="clashAsk">
             <svg class="ui-icon icon-message" viewBox="0 0 24 24" aria-hidden="true">
@@ -3315,6 +4467,48 @@
             </svg>
             <span>在评论区 @TA 提问（演示）</span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-mask" id="peerDiscovery" aria-hidden="true">
+      <div class="modal peer-modal" role="dialog" aria-modal="true" aria-labelledby="peerDiscoveryTitle">
+        <button type="button" class="modal-x" id="peerDiscoveryX" aria-label="关闭同频发现">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <circle cx="8" cy="8" r="3"></circle>
+              <circle cx="16" cy="8" r="3"></circle>
+              <path d="M2.5 19a5.5 5.5 0 0 1 11 0"></path>
+              <path d="M10.5 19a5.5 5.5 0 0 1 11 0"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">同频发现 · PEER SIGNALS</div>
+            <div class="modal-title" id="peerDiscoveryTitle">和你站在附近的人</div>
+            <p class="modal-sub">先看本题立场，再用兴趣信号细排；每轮候选看完前不会重复。</p>
+          </div>
+        </div>
+        <div class="peer-context">
+          <span class="peer-persona" id="peerPersona"></span>
+          <p class="peer-portrait-note" id="peerPortraitNote"></p>
+        </div>
+        <ol class="peer-list" id="peerList"></ol>
+        <div class="modal-actions peer-actions">
+          <button type="button" class="gbtn gbtn--primary" id="peerAgain">
+            <svg class="ui-icon icon-refresh" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
+              <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
+            </svg>
+            <span>换一批</span>
+          </button>
+          <button type="button" class="gbtn gbtn--ghost" id="peerDiscoveryClose">返回星云</button>
+          <div class="peer-status" id="peerStatus" role="status"></div>
         </div>
       </div>
     </div>
@@ -3334,9 +4528,15 @@
       <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="persona-focus-chip" id="personaFocusChip" aria-live="polite" hidden>
+      <i aria-hidden="true"></i>
+      <span><b id="personaFocusName"></b> 星体已高亮</span>
+      <button type="button" id="personaFocusClear">回到整体</button>
+    </div>
 
-    <div id="tip"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="tip" role="region" aria-live="polite" aria-label="当前观点" tabindex="-1"></div>
 
     <div id="loading">
       <div class="loading-inner">
@@ -3370,8 +4570,54 @@
       } = await import(
         `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
+      const {
+        describePeerMatch,
+        rankPeerCandidates,
+        takePeerBatch,
+      } = await import(
+        `./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const {
+        getNebulaLodProfile,
+        NEBULA_PARTICLE_LAYER_SCHEMA,
+        resolveDistanceLod,
+        visibleParticleBudget,
+      } = await import(
+        `./lod.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const {
+        buildPersonaCatalog,
+        cyclePersonaIndex,
+      } = await import(
+        `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
+      );
+      const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
+      async function importOptionalPersonaLibrary(url) {
+        let timeoutId = 0;
+        try {
+          return await Promise.race([
+            import(url),
+            new Promise((_, reject) => {
+              timeoutId = window.setTimeout(
+                () => reject(new Error("persona library load timed out")),
+                OPTIONAL_PERSONA_TIMEOUT_MS
+              );
+            })
+          ]);
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+      let resolvePersonaCastMap = null;
+      try {
+        ({ resolvePersonaCastMap } = await importOptionalPersonaLibrary(
+          `../persona-library.js?v=${encodeURIComponent(presetModuleVersion)}`
+        ));
+      } catch {
+        // The existing nine casts remain usable when the optional theme library fails.
+      }
 
-      const CASTS = {
+      const LEGACY_CASTS = {
         fox: ["长答派", "万字长答", "#aeb6d6"],
         bear: ["拆题派", "先重述问题", "#9fd2d6"],
         cat: ["盐选派", "精选长文", "#e3b27e"],
@@ -3462,6 +4708,15 @@
       const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
       const PRESET = getNebulaPreset(sceneParams.get("preset"));
+      const CASTS = typeof resolvePersonaCastMap === "function"
+        ? resolvePersonaCastMap(PRESET.personaTheme)
+        : LEGACY_CASTS;
+      const personaArtPath = (castKey) => {
+        const portrait = CASTS[castKey]?.[3];
+        return typeof portrait === "string" && /^personas\/[a-z0-9-]+\.jpg$/.test(portrait)
+          ? `../${portrait}`
+          : `../personas/${encodeURIComponent(castKey)}.jpg`;
+      };
       const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length >= 2
         ? PRESET.people
         : DEFAULT_PEOPLE;
@@ -3471,13 +4726,43 @@
       const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
       const CLUSTERS = Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS;
       const ME = PRESET.me || DEFAULT_ME;
+      const PERSONA_CATALOG = buildPersonaCatalog(CASTS, PEOPLE);
       const personAvatarPath = (index) => PRESET.avatarBase
         ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
         : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
+      function avatarRetrySource(source) {
+        const next = new URL(source, location.href);
+        next.searchParams.set("avatar-retry", String(Date.now()));
+        return next.href;
+      }
+      const personaQuickEntryEl = document.getElementById("personaQuickEntry");
+      const personaQuickPreviewIndexes = [
+        0,
+        Math.floor(PERSONA_CATALOG.length / 2),
+        PERSONA_CATALOG.length - 1,
+      ];
+      document.querySelectorAll("[data-persona-quick-art]").forEach((image, index) => {
+        const persona = PERSONA_CATALOG[personaQuickPreviewIndexes[index]];
+        image.closest(".persona-quick-portrait").hidden = !persona;
+        if (persona) image.src = personaArtPath(persona.key);
+      });
+      document.getElementById("personaQuickCount").textContent = PERSONA_CATALOG.length;
+      personaQuickEntryEl.hidden = PERSONA_CATALOG.length === 0;
+      personaQuickEntryEl.setAttribute(
+        "aria-label",
+        `浏览本题 ${PERSONA_CATALOG.length} 种人格卡`,
+      );
       const cardsQuickEntryEl = document.getElementById("cardsQuickEntry");
       const cardsQuickPreviewIndexes = [0, Math.floor(PEOPLE.length / 2), PEOPLE.length - 1];
       document.querySelectorAll("[data-cards-quick-avatar]").forEach((avatar, index) => {
-        avatar.src = personAvatarPath(cardsQuickPreviewIndexes[index]);
+        const personIndex = cardsQuickPreviewIndexes[index];
+        const [name, , castKey] = PEOPLE[personIndex];
+        setDomAvatarSource(
+          avatar,
+          personAvatarPath(personIndex),
+          name,
+          CASTS[castKey][2],
+        );
       });
       document.getElementById("cardsQuickCount").textContent = PEOPLE.length;
       cardsQuickEntryEl.setAttribute("aria-label", `阅读 ${PEOPLE.length} 张观点卡片`);
@@ -3494,6 +4779,8 @@
       document.getElementById("presetFilterLeft").textContent = PRESET.axis.leftTendency;
       document.getElementById("presetFilterCenter").textContent = PRESET.axis.center;
       document.getElementById("presetFilterRight").textContent = PRESET.axis.rightTendency;
+      document.getElementById("cardsSeries").textContent =
+        `SPECTRUM INDEX · ${PEOPLE.length} SIGNALS`;
       document.getElementById("filterAllCount").textContent = PEOPLE.length;
       document.getElementById("filterLeftCount").textContent =
         PEOPLE.filter((person) => person[1] < -0.2).length;
@@ -3507,6 +4794,7 @@
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
       const loadingEl = document.getElementById("loading");
+      const observatoryControlsEl = document.getElementById("observatoryControls");
       const exploreShellEl = document.getElementById("exploreShell");
       const exploreMenuEl = document.getElementById("exploreMenu");
       const exploreToggleEl = document.getElementById("exploreToggle");
@@ -3518,6 +4806,7 @@
       const entryQueryEl = document.getElementById("entryQuery");
       const entrySearchStatusEl = document.getElementById("entrySearchStatus");
       const entryMode = sceneParams.get("entry");
+      const peerDiscoveryRequested = sceneParams.get("peers") === "1";
       const entryEnabled =
         entryMode === "discover" ||
         entryMode === "confirm" ||
@@ -3672,9 +4961,12 @@
       scene.fog = new THREE.FogExp2(0x05090d, 0.028);
 
       const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
-      camera.position.set(0, 1.8, 11.8);
+      const defaultCameraPosition = new THREE.Vector3(0, 1.8, 11.8);
+      const defaultCameraTarget = new THREE.Vector3(0, 0, 0);
+      camera.position.copy(defaultCameraPosition);
 
       const controls = new OrbitControls(camera, canvas);
+      controls.target.copy(defaultCameraTarget);
       controls.enableDamping = true;
       controls.dampingFactor = 0.06;
       controls.enablePan = false;
@@ -3688,14 +4980,72 @@
         (entryMode === "explore" || !entryEnabled) && !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
+      let cameraTransition = null;
+      const pressedNavigationKeys = new Set();
+      const keyboardCameraVelocity = new THREE.Vector3();
+      let keyboardMotionActive = false;
+      let sceneControlsWereAvailable = controls.enabled;
+      function cancelCameraTransition() {
+        cameraTransition = null;
+      }
+      function scheduleAutoRotate(delay = 5000) {
+        clearTimeout(rotateIdleTimer);
+        if (reduceMotion) return;
+        rotateIdleTimer = setTimeout(() => {
+          if (!cameraTransition) {
+            controls.autoRotate = true;
+          }
+        }, delay);
+      }
+      function moveCamera(target, position, animate, onComplete) {
+        resetKeyboardMotion(false);
+        cancelCameraTransition();
+        controls.autoRotate = false;
+        clearTimeout(rotateIdleTimer);
+        const dampingEnabled = controls.enableDamping;
+        controls.enableDamping = false;
+        controls.update();
+        controls.enableDamping = dampingEnabled;
+        if (!animate || reduceMotion) {
+          controls.target.copy(target);
+          camera.position.copy(position);
+          camera.lookAt(target);
+          controls.update();
+          if (onComplete) onComplete();
+          return;
+        }
+        cameraTransition = {
+          startedAt: performance.now(),
+          duration: 640,
+          fromTarget: controls.target.clone(),
+          toTarget: target.clone(),
+          fromPosition: camera.position.clone(),
+          toPosition: position.clone(),
+          onComplete,
+        };
+      }
+      function updateCameraTransition(now) {
+        if (!cameraTransition) return;
+        const transition = cameraTransition;
+        const progress = Math.max(0, Math.min(1, (now - transition.startedAt) / transition.duration));
+        const eased = progress * progress * (3 - 2 * progress);
+        controls.target.lerpVectors(transition.fromTarget, transition.toTarget, eased);
+        camera.position.lerpVectors(transition.fromPosition, transition.toPosition, eased);
+        camera.lookAt(controls.target);
+        if (progress < 1) return;
+        cameraTransition = null;
+        controls.update();
+        if (transition.onComplete) transition.onComplete();
+      }
       controls.addEventListener("start", () => {
+        cameraFocusUser = null;
+        resetKeyboardMotion(false);
+        cancelCameraTransition();
         controls.autoRotate = false;
         clearTimeout(rotateIdleTimer);
       });
       controls.addEventListener("end", () => {
-        if (reduceMotion) return;
-        clearTimeout(rotateIdleTimer);
-        rotateIdleTimer = setTimeout(() => { controls.autoRotate = true; }, 5000);
+        scheduleAutoRotate();
       });
 
       const composer = new EffectComposer(renderer);
@@ -3847,6 +5197,7 @@
       }
 
       const galaxyMaterials = [];
+      const particleLayers = [];
       const galaxyPointer = new THREE.Vector3(999, 999, 0);
       let pointerEnergy = 0;
 
@@ -3928,7 +5279,15 @@
         geo.setAttribute("aTwinkle", new THREE.BufferAttribute(twinkles, 1));
       }
 
-      function buildStarfield(count, spreadX, depth, size, opacity, palette) {
+      function registerParticleLayer(points, budgetKey, count) {
+        if (!Object.hasOwn(NEBULA_PARTICLE_LAYER_SCHEMA, budgetKey)) {
+          throw new Error(`Unknown nebula particle layer: ${budgetKey}`);
+        }
+        particleLayers.push({ points, budgetKey, count });
+        return points;
+      }
+
+      function buildStarfield(count, spreadX, depth, size, opacity, palette, budgetKey) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
@@ -3959,15 +5318,33 @@
         const mat = galaxyPointMaterial(opacity, 0.08);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 0;
-        return points;
+        return registerParticleLayer(points, budgetKey, count);
       }
 
       const nebula = new THREE.Group();
       scene.add(nebula);
+      const spectrumGroup = new THREE.Group();
+      nebula.add(spectrumGroup);
 
       const starPalette = ["#dff8ff", "#9ed8e4", "#b9d7e8", "#dbe9df", "#ffd9a0", "#fff4d6", "#ffffff"];
-      nebula.add(buildStarfield(quality.farStars, 30, 8.5, 0.066, 0.84, starPalette));
-      nebula.add(buildStarfield(quality.haloStars, 46, 17, 0.048, 0.5, ["#ffffff", "#c7e7ed", "#ffe7ba"]));
+      nebula.add(buildStarfield(
+        quality.farStars,
+        30,
+        8.5,
+        0.066,
+        0.84,
+        starPalette,
+        NEBULA_PARTICLE_LAYER_SCHEMA.farStars,
+      ));
+      nebula.add(buildStarfield(
+        quality.haloStars,
+        46,
+        17,
+        0.048,
+        0.5,
+        ["#ffffff", "#c7e7ed", "#ffe7ba"],
+        NEBULA_PARTICLE_LAYER_SCHEMA.haloStars,
+      ));
 
       const fogGroup = new THREE.Group();
       nebula.add(fogGroup);
@@ -4002,35 +5379,72 @@
         return glowCache[hex];
       }
 
-      function placeholderTexture(name, hex) {
-        const s = 256;
-        const c = document.createElement("canvas");
-        c.width = c.height = s;
-        const ctx = c.getContext("2d");
+      function paintAvatarPlaceholder(ctx, name, hex) {
+        const s = ctx.canvas.width;
+        const scale = s / 256;
+        ctx.clearRect(0, 0, s, s);
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 123 * scale, 0, Math.PI * 2);
         ctx.fillStyle = "#05090d";
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 111 * scale, 0, Math.PI * 2);
         ctx.fillStyle = "#121b22";
         ctx.fill();
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2.5 * scale;
         ctx.globalAlpha = 0.9;
         ctx.strokeStyle = hex;
         ctx.shadowColor = hex;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 6 * scale;
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
         ctx.fillStyle = "rgba(235,241,238,0.78)";
-        ctx.font = "500 82px 'Noto Sans SC', sans-serif";
+        ctx.font = `500 ${82 * scale}px 'Noto Sans SC', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(name[0], s / 2, s / 2 + 6);
-        const t = new THREE.CanvasTexture(c);
-        t.colorSpace = THREE.SRGBColorSpace;
+        ctx.fillText(name[0], s / 2, s / 2 + 6 * scale);
+      }
+
+      function placeholderTexture(name, hex, size = 256) {
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const ctx = c.getContext("2d");
+        paintAvatarPlaceholder(ctx, name, hex);
         return { canvas: c, ctx };
+      }
+
+      function setDomAvatarSource(image, source, name, ringColor) {
+        image.dataset.avatarName = name || "知";
+        image.dataset.avatarRing = ringColor || "#9fd8db";
+        if (image.dataset.avatarFallbackBound !== "true") {
+          image.dataset.avatarFallbackBound = "true";
+          image.addEventListener("load", () => {
+            if (!image.src.startsWith("data:image/")) {
+              image.dataset.avatarFallbackApplied = "false";
+            }
+          });
+          image.addEventListener("error", () => {
+            if (image.dataset.avatarFallbackApplied === "true") return;
+            image.dataset.avatarFallbackApplied = "true";
+            image.src = placeholderTexture(
+              image.dataset.avatarName,
+              image.dataset.avatarRing,
+              128,
+            ).canvas.toDataURL("image/png");
+          });
+        }
+        image.dataset.avatarFallbackApplied = "false";
+        image.src = source;
+      }
+
+      function canvasAvatarTexture(canvas) {
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.generateMipmaps = false;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        return texture;
       }
 
       function meBadgeTexture() {
@@ -4060,24 +5474,32 @@
       }
 
       function paintAvatar(ctx, img, hex) {
-        const s = 256;
+        const s = ctx.canvas.width;
+        const scaleFactor = s / 256;
         ctx.clearRect(0, 0, s, s);
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 123, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 123 * scaleFactor, 0, Math.PI * 2);
         ctx.fillStyle = "#05090d";
         ctx.fill();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 111, 0, Math.PI * 2);
+        ctx.arc(s / 2, s / 2, 111 * scaleFactor, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         const iw = img.width, ih = img.height;
-        const scale = Math.max(222 / iw, 222 / ih);
-        const w = iw * scale, h = ih * scale;
+        const imageScale = Math.max((222 * scaleFactor) / iw, (222 * scaleFactor) / ih);
+        const w = iw * imageScale, h = ih * imageScale;
         ctx.filter = "saturate(0.78) contrast(1.08) brightness(0.94)";
         ctx.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
         ctx.filter = "none";
-        const vignette = ctx.createRadialGradient(s / 2, s / 2 - 8, 45, s / 2, s / 2, 126);
+        const vignette = ctx.createRadialGradient(
+          s / 2,
+          s / 2 - 8 * scaleFactor,
+          45 * scaleFactor,
+          s / 2,
+          s / 2,
+          126 * scaleFactor,
+        );
         vignette.addColorStop(0.55, "rgba(5,9,13,0)");
         vignette.addColorStop(1, "rgba(5,9,13,0.5)");
         ctx.fillStyle = vignette;
@@ -4085,25 +5507,25 @@
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 113, 0, Math.PI * 2);
-        ctx.lineWidth = 5;
+        ctx.arc(s / 2, s / 2, 113 * scaleFactor, 0, Math.PI * 2);
+        ctx.lineWidth = 5 * scaleFactor;
         ctx.strokeStyle = "rgba(5,9,13,0.88)";
         ctx.stroke();
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 119, 0, Math.PI * 2);
-        ctx.lineWidth = 2.5;
+        ctx.arc(s / 2, s / 2, 119 * scaleFactor, 0, Math.PI * 2);
+        ctx.lineWidth = 2.5 * scaleFactor;
         ctx.globalAlpha = 0.92;
         ctx.strokeStyle = hex;
         ctx.shadowColor = hex;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 6 * scaleFactor;
         ctx.stroke();
         ctx.restore();
         ctx.save();
         ctx.beginPath();
-        ctx.arc(s / 2, s / 2, 116.5, Math.PI * 1.12, Math.PI * 1.72);
-        ctx.lineWidth = 1.2;
+        ctx.arc(s / 2, s / 2, 116.5 * scaleFactor, Math.PI * 1.12, Math.PI * 1.72);
+        ctx.lineWidth = 1.2 * scaleFactor;
         ctx.strokeStyle = "rgba(255,255,255,0.36)";
         ctx.stroke();
         ctx.restore();
@@ -4213,8 +5635,7 @@
         group.add(glow);
 
         const holder = placeholderTexture(name, glowColor);
-        const avatarTex = new THREE.CanvasTexture(holder.canvas);
-        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarTex = canvasAvatarTexture(holder.canvas);
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
         avatar.scale.setScalar(baseAvatar);
@@ -4223,6 +5644,7 @@
           name, stance, castKey, castName, castRole, castColor, claim,
           followed: FOLLOWED.has(i), index: i, isMe: false, group, avatar, glow,
           ringColor: glowColor, baseAvatar, baseGlow,
+          avatarCanvas: holder.canvas, avatarState: "loading", avatarPaintSignature: "",
           baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
           scale: 1,
         };
@@ -4265,8 +5687,7 @@
         group.add(glow);
 
         const holder = placeholderTexture("我", "#e7c98c");
-        const avatarTex = new THREE.CanvasTexture(holder.canvas);
-        avatarTex.colorSpace = THREE.SRGBColorSpace;
+        const avatarTex = canvasAvatarTexture(holder.canvas);
         const avatarMat = new THREE.SpriteMaterial({ map: avatarTex, transparent: true, depthWrite: false });
         const avatar = new THREE.Sprite(avatarMat);
         avatar.scale.setScalar(0.8);
@@ -4286,6 +5707,7 @@
           claim: ME.claim, followed: false, index: -1, isMe: true,
           group, avatar, glow, badge,
           ringColor: "#e7c98c", baseAvatar: 0.8, baseGlow: 1.04,
+          avatarCanvas: holder.canvas, avatarState: "loading", avatarPaintSignature: "",
           baseY: 1.95, phase: 0, speed: 0.6, scale: 1,
         };
         avatar.userData.user = meUser;
@@ -4294,12 +5716,12 @@
         userGroup.add(group);
       }
 
-      nebula.add(userGroup);
+      spectrumGroup.add(userGroup);
 
       // 评论区观点：空心圆环，沿各自立场悬浮在星系两侧的“评论云”里，默认不显示
       const commentGroup = new THREE.Group();
       commentGroup.visible = false;
-      nebula.add(commentGroup);
+      spectrumGroup.add(commentGroup);
       const commentTargets = [];
       const cusers = COMMENTS.map(([name, stance, castKey, claim, funny], i) => {
         const [castName, castRole, castColor] = CASTS[castKey];
@@ -4359,8 +5781,8 @@
       // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
       // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
       const dustGroup = new THREE.Group();
-      nebula.add(dustGroup);
-      function buildCoreDust(count, size, opacity) {
+      spectrumGroup.add(dustGroup);
+      function buildCoreDust(count, size, opacity, budgetKey) {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(count * 3);
         const col = new Float32Array(count * 3);
@@ -4427,10 +5849,67 @@
         const mat = galaxyPointMaterial(opacity, 1);
         const points = new THREE.Points(geo, mat);
         points.renderOrder = 1;
-        return points;
+        return registerParticleLayer(points, budgetKey, count);
       }
-      dustGroup.add(buildCoreDust(quality.armDust, 0.03, 0.68));
-      dustGroup.add(buildCoreDust(quality.brightDust, 0.048, 0.58));
+      dustGroup.add(buildCoreDust(
+        quality.armDust,
+        0.03,
+        0.68,
+        NEBULA_PARTICLE_LAYER_SCHEMA.armDust,
+      ));
+      dustGroup.add(buildCoreDust(
+        quality.brightDust,
+        0.048,
+        0.58,
+        NEBULA_PARTICLE_LAYER_SCHEMA.brightDust,
+      ));
+
+      let distanceLod = null;
+      let visibleParticleCount = 0;
+      function applyAvatarTextureForLod(user, profile) {
+        const size = profile.avatarSize;
+        const signature = `${user.avatarState}:${user.avatarLoadVersion || 0}:${size}`;
+        if (user.avatarPaintSignature === signature) return;
+        const ringColor = user.followed ? "#e7c98c" : user.ringColor;
+        const holder = placeholderTexture(user.name, ringColor, size);
+        if (user.avatarState === "ready" && user.avatarImage) {
+          paintAvatar(holder.ctx, user.avatarImage, ringColor);
+        }
+        const previousTexture = user.avatar.material.map;
+        user.avatarCanvas = holder.canvas;
+        user.avatar.material.map = canvasAvatarTexture(holder.canvas);
+        user.avatar.material.needsUpdate = true;
+        user.avatarPaintSignature = signature;
+        previousTexture.dispose();
+      }
+      function applyLodBloom(profile) {
+        bloom.enabled = profile.bloomEnabled;
+        bloom.strength = bloomDefaults.strength * profile.bloomRatio;
+        bloom.radius = bloomDefaults.radius * (0.8 + profile.bloomRatio * 0.2);
+        bloom.threshold = Math.min(
+          0.96,
+          bloomDefaults.threshold + (1 - profile.bloomRatio) * 0.05,
+        );
+      }
+      function applyDistanceLod(tier) {
+        const profile = getNebulaLodProfile(tier);
+        const budget = visibleParticleBudget(quality, tier);
+        particleLayers.forEach(({ points, budgetKey, count }) => {
+          points.geometry.setDrawRange(0, Math.min(count, budget[budgetKey]));
+        });
+        users.forEach((user) => applyAvatarTextureForLod(user, profile));
+        applyLodBloom(profile);
+        distanceLod = tier;
+        visibleParticleCount = budget.total;
+      }
+      function updateDistanceLod() {
+        const nextTier = resolveDistanceLod(
+          camera.position.distanceTo(controls.target),
+          distanceLod || "medium",
+        );
+        if (nextTier !== distanceLod) applyDistanceLod(nextTier);
+      }
+      updateDistanceLod();
 
       const entryAnswerUsers = users.filter((user) => !user.isMe);
       entryAnswerUsers.forEach((user, index) => {
@@ -4467,6 +5946,7 @@
         bloom.strength = bloomDefaults.strength;
         bloom.radius = bloomDefaults.radius;
         bloom.threshold = bloomDefaults.threshold;
+        applyLodBloom(getNebulaLodProfile(distanceLod));
         galaxyMaterials.forEach((material) => {
           material.uniforms.uOpacity.value = material.userData.entryBaseOpacity;
           material.uniforms.uPointScale.value = 1;
@@ -4492,6 +5972,7 @@
         entryFlowEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("entry-active");
         document.body.classList.toggle("entry-exploring", entryEnabled);
+        resumeCirclePrompt();
         if (entryEnabled && window.parent !== window.self) {
           window.parent.postMessage(
             { type: "nebula-entry-explore", preset: PRESET.id },
@@ -4590,6 +6071,7 @@
         entryProgressEl.style.transform = "scaleX(0)";
         entryGenerationPercentEl.textContent = "00%";
         entryGenerationStepEls.forEach((step) => step.classList.remove("is-active"));
+        bloom.enabled = true;
         bloom.strength = lowPower ? 0.08 : 0.12;
         bloom.radius = 0.12;
         bloom.threshold = 0.9;
@@ -4636,6 +6118,7 @@
         window.clearTimeout(entryFinishTimer);
         entryFinishTimer = 0;
         entryGenerationStartedAt = 0;
+        deferCirclePrompt();
         entryFlowEl.hidden = false;
         entryFlowEl.classList.remove("is-done");
         entryFlowEl.setAttribute("aria-hidden", "false");
@@ -4662,31 +6145,56 @@
         document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
       }
 
+      const AVATAR_LOAD_TIMEOUT_MS = 8000;
       let loaded = 0;
-      function loadUserAvatar(u, file, onSettled, onApplied) {
+      function loadUserAvatar(u, file, onSettled, onApplied, canonicalSource = file) {
         const requestVersion = (u.avatarLoadVersion || 0) + 1;
+        let settled = false;
+        let timeoutId = 0;
+        const settleOnce = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timeoutId);
+          if (onSettled) onSettled();
+        };
+        const markAvatarError = (invalidateRequest = false) => {
+          if (u.avatarLoadVersion !== requestVersion) return;
+          if (invalidateRequest) u.avatarLoadVersion = requestVersion + 1;
+          u.avatarImage = null;
+          u.avatarState = "error";
+          u.avatarRetrying = false;
+          u.avatarPaintSignature = "";
+          applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
+          if (hovered === u) renderTip(u);
+        };
         u.avatarLoadVersion = requestVersion;
+        u.avatarSource = canonicalSource;
+        u.avatarState = "loading";
+        timeoutId = window.setTimeout(() => {
+          markAvatarError(true);
+          settleOnce();
+        }, AVATAR_LOAD_TIMEOUT_MS);
         loader.load(
           file,
           (tex) => {
             try {
               if (u.avatarLoadVersion !== requestVersion) return;
-              const ringColor = u.followed ? "#e7c98c" : u.ringColor;
-              const holder = placeholderTexture(u.name, ringColor);
-              paintAvatar(holder.ctx, tex.image, ringColor);
-              u.avatar.material.map.dispose();
-              u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
-              u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
-              u.avatar.material.needsUpdate = true;
+              u.avatarImage = tex.image;
+              u.avatarState = "ready";
+              u.avatarRetrying = false;
+              u.avatarPaintSignature = "";
+              applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
               if (onApplied) onApplied();
+              if (hovered === u) renderTip(u);
             } finally {
               tex.dispose();
-              if (onSettled) onSettled();
+              settleOnce();
             }
           },
           undefined,
           () => {
-            if (onSettled) onSettled();
+            markAvatarError();
+            settleOnce();
           }
         );
       }
@@ -4709,12 +6217,26 @@
         }
       }
       function replaceUserAvatarWithPlaceholder(u) {
-        const ringColor = u.followed ? "#e7c98c" : u.ringColor;
-        const holder = placeholderTexture(u.name, ringColor);
-        u.avatar.material.map.dispose();
-        u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
-        u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
-        u.avatar.material.needsUpdate = true;
+        u.avatarImage = null;
+        u.avatarState = "loading";
+        u.avatarPaintSignature = "";
+        applyAvatarTextureForLod(u, getNebulaLodProfile(distanceLod));
+      }
+      function retryUserAvatar(u) {
+        if (!u || u.avatarState !== "error") return;
+        u.avatarRetrying = true;
+        loadUserAvatar(
+          u,
+          avatarRetrySource(
+            u.avatarSource || (u.isMe ? meAvatarSource : personAvatarPath(u.index)),
+          ),
+          null,
+          () => {
+            if (u.isMe) renderCardsIfOpen();
+          },
+          u.avatarSource,
+        );
+        if (hovered === u) renderTip(u);
       }
       function setMeAvatar(value) {
         const avatarUrl = safeUserAvatarUrl(value) || DEFAULT_ME_AVATAR;
@@ -4836,6 +6358,7 @@
             cast: ME.castKey,
             stance: 0,
             likedCount: 0,
+            likedIndexes: [],
             claim: `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`,
             interest: portraitInterest(),
           };
@@ -4866,6 +6389,7 @@
           cast,
           stance: Number(stance.avg.toFixed(4)),
           likedCount: stance.n,
+          likedIndexes: [...liked],
           claim: `本题 ${stance.n} 次表态中，${matched} 次呈现「${castName}」特征：${castRole}。`,
           interest: portraitInterest(),
         };
@@ -4913,10 +6437,16 @@
           : `再表态 ${remaining} 次解锁人格`;
         const clashButton = document.getElementById("clashBtn");
         const circleButton = document.getElementById("circleBtn");
+        const peerButton = document.getElementById("peerDiscoveryBtn");
+        peerButton.classList.toggle("is-locked", !unlocked);
         clashButton.classList.toggle("is-locked", !unlocked);
         circleButton.classList.toggle("is-locked", !unlocked);
+        peerButton.setAttribute("aria-disabled", String(!unlocked));
         clashButton.setAttribute("aria-disabled", String(!unlocked));
         circleButton.setAttribute("aria-disabled", String(!unlocked));
+        document.getElementById("peerDiscoveryHint").textContent = unlocked
+          ? "一次遇见 5 位相近回答者"
+          : `再表态 ${remaining} 次解锁同频发现`;
         document.getElementById("clashHint").textContent = unlocked
           ? "发现同频或互补的回答者"
           : `再表态 ${remaining} 次解锁匹配`;
@@ -4943,8 +6473,13 @@
           if (CLUSTERS.length) queueNextChip(4200);
         }
         if (wasUnlocked && !personaUnlocked()) {
+          closePeerDiscovery();
+          resetPeerDiscoveryState();
           hideChip();
           if (focusSet) exitFocus();
+        } else if (wasUnlocked) {
+          closePeerDiscovery();
+          clearPeerBatchState();
         }
         return liked.has(i);
       }
@@ -4955,6 +6490,8 @@
           localStorage.removeItem(LEGACY_LIKE_KEY);
         } catch { /* ignore */ }
         users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
+        closePeerDiscovery();
+        resetPeerDiscoveryState();
         hideChip();
         if (focusSet) exitFocus();
         applyStance(true);
@@ -4995,10 +6532,16 @@
           const identityChanged =
             userIdentityRevision !== null &&
             userIdentityRevision !== identityRevision;
+          const peerScopeChanged = userIdentityRevision !== identityRevision;
           userIdentityRevision = identityRevision;
           setMeAvatar(e.data.profile && e.data.profile.avatarUrl);
           userPortrait = normalizeUserPortrait(e.data.portrait);
+          if (peerScopeChanged) {
+            peerSeenIndexes = loadPeerSeenIndexes();
+            peerBatch = [];
+          }
           if (identityChanged) {
+            closePeerDiscovery();
             hideChip();
             chipCluster = null;
             chipQueue = rankedCircles();
@@ -5007,7 +6550,18 @@
             if (focusSet) exitFocus();
           }
           applyStance(false);
+          if (!identityChanged && peerDiscoveryEl.classList.contains("show")) {
+            refreshPeerDiscoveryBatch();
+          }
+          if (!identityChanged && clashEl.classList.contains("show")) {
+            refreshMatchCandidates(false);
+            renderClash();
+          }
+          if (discoveryMode === "recommend") renderRecommendations();
           renderCardsIfOpen();
+        }
+        if (e.data && e.data.type === "nebula-open-peer-discovery") {
+          openPeerDiscovery();
         }
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
@@ -5103,10 +6657,16 @@
         if (window.parent !== window.self) return "";
         try {
           const prefix = "jiupai:nebula:";
+          const contextPrefixes = [`${prefix}self:`, `${prefix}subject:`];
           const existing = [];
           for (let index = 0; index < sessionStorage.length; index += 1) {
             const storageKey = sessionStorage.key(index);
-            if (storageKey?.startsWith(prefix)) existing.push(storageKey);
+            if (
+              storageKey &&
+              contextPrefixes.some((contextPrefix) =>
+                storageKey.startsWith(contextPrefix)
+              )
+            ) existing.push(storageKey);
           }
           const timestamp = (storageKey) => {
             const token = storageKey.slice(storageKey.lastIndexOf(":") + 1);
@@ -5217,7 +6777,15 @@
         pointer.x = (clientX / window.innerWidth) * 2 - 1;
         pointer.y = -(clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const targets = commentGroup.visible ? avatarTargets.concat(commentTargets) : avatarTargets;
+        const visibleAvatars = followedOnly
+          ? avatarTargets.filter((target) => {
+              const user = target.userData.user;
+              return user && (user.isMe || user.followed);
+            })
+          : avatarTargets;
+        const targets = commentGroup.visible && !followedOnly
+          ? visibleAvatars.concat(commentTargets)
+          : visibleAvatars;
         const hits = raycaster.intersectObjects(targets, false);
         return hits.length ? hits[0].object.userData.user : null;
       }
@@ -5228,10 +6796,7 @@
       function scheduleHideTip(ms) {
         cancelHideTip();
         hideTipTimer = setTimeout(() => {
-          hovered = null;
-          canvas.classList.remove("hovering");
-          tip.classList.remove("show");
-          tip.style.pointerEvents = "none";
+          setHovered(null);
         }, ms);
       }
       function syncTipPointer() {
@@ -5268,6 +6833,7 @@
           button.dataset.go = "self";
           button.disabled = !personaUnlocked();
           actions.appendChild(button);
+          appendAvatarRecovery(actions, u);
           tip.replaceChildren(row, claim, actions);
         } else if (u.kind === "comment") {
           row.append(
@@ -5309,9 +6875,21 @@
           button.type = "button";
           button.dataset.like = String(u.index);
           actions.appendChild(button);
+          appendAvatarRecovery(actions, u);
           tip.replaceChildren(row, claim, persona, actions);
         }
         updateTipPosition();
+      }
+
+      function appendAvatarRecovery(actions, u) {
+        if (u.avatarState === "error") {
+          const retry = uiNode("button", "tip-like", "重试头像");
+          retry.type = "button";
+          retry.dataset.retryAvatar = "";
+          actions.appendChild(retry);
+        } else if (u.avatarRetrying) {
+          actions.appendChild(uiNode("span", "tip-resource-status", "正在重试头像…"));
+        }
       }
 
       function setHovered(u) {
@@ -5322,22 +6900,39 @@
         hovered = u;
         canvas.classList.toggle("hovering", !!u);
         if (u) {
+          deferCirclePrompt();
           cancelHideTip();
           renderTip(u);
           tip.classList.add("show");
         } else {
           tip.classList.remove("show");
+          if (tip.contains(document.activeElement)) {
+            canvas.focus({ preventScroll: true });
+          }
+          resumeCirclePrompt();
         }
         syncTipPointer();
       }
 
       tip.addEventListener("click", (e) => {
+        const retryBtn = e.target.closest("[data-retry-avatar]");
+        if (retryBtn) {
+          e.stopPropagation();
+          retryUserAvatar(hovered);
+          return;
+        }
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
           const i = Number(likeBtn.getAttribute("data-like"));
+          const restoreLikeFocus = tip.contains(document.activeElement);
           toggleLike(i);
-          if (hovered && !hovered.isMe && hovered.kind !== "comment") renderTip(hovered);
+          if (hovered && !hovered.isMe && hovered.kind !== "comment") {
+            renderTip(hovered);
+            if (restoreLikeFocus) {
+              tip.querySelector("[data-like]")?.focus({ preventScroll: true });
+            }
+          }
           return;
         }
         if (hovered && hovered.kind !== "comment" && !e.target.closest(".tip-tag")) {
@@ -5385,8 +6980,7 @@
         hovered.group.getWorldPosition(projected);
         projected.project(camera);
         if (projected.z < -1 || projected.z > 1) {
-          tip.classList.remove("show");
-          tip.style.pointerEvents = "none";
+          setHovered(null);
           return;
         }
         if (!tip.classList.contains("show")) tip.classList.add("show");
@@ -5404,7 +6998,10 @@
       function syncResponsiveOffsets() {
         if (window.innerWidth <= 720 && exploreShellEl) {
           const anchor = exploreShellEl.classList.contains("is-open") ? exploreMenuEl : exploreToggleEl;
-          const anchorTop = anchor.getBoundingClientRect().top;
+          const anchorTop = Math.min(
+            anchor.getBoundingClientRect().top,
+            observatoryControlsEl.getBoundingClientRect().top,
+          );
           const clearance = Math.ceil(window.innerHeight - anchorTop + 12);
           document.documentElement.style.setProperty("--mobile-panel-clearance", `${clearance}px`);
         } else {
@@ -5413,9 +7010,9 @@
       }
 
       function updateAxisLabels() {
-        nebula.updateMatrixWorld();
+        spectrumGroup.updateMatrixWorld();
         const place = (element, anchor, side) => {
-          const projected = nebula.localToWorld(anchor.clone()).project(camera);
+          const projected = spectrumGroup.localToWorld(anchor.clone()).project(camera);
           const width = element.offsetWidth || 96;
           const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
           const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
@@ -5443,27 +7040,44 @@
 
       const clock = new THREE.Clock();
       let running = true;
-      const scheduleFrame = () => (window.__rafShim || requestAnimationFrame)(loop);
+      let frameScheduled = false;
+      const scheduleFrame = () => {
+        if (frameScheduled) return;
+        frameScheduled = true;
+        (window.__rafShim || requestAnimationFrame)(() => {
+          frameScheduled = false;
+          loop();
+        });
+      };
       document.addEventListener("visibilitychange", () => {
         running = !document.hidden;
-        if (running) { clock.getDelta(); loop(); }
+        if (document.hidden) resetKeyboardMotion(false);
+        if (running) {
+          clock.getDelta();
+          scheduleFrame();
+        }
       });
 
       function animateNode(u, t, baseAva, baseGlow) {
         const floatY = reduceMotion ? 0 : Math.sin(t * u.speed + u.phase) * 0.09;
         u.group.position.y = u.baseY + floatY;
-        const hoverBoost = hovered === u ? 1.3 : 1;
-        u.scale += (hoverBoost - u.scale) * 0.14;
+        const personaSelected = Boolean(personaFilter) && !u.isMe && u.castKey === personaFilter;
+        const hoverBoost = hovered === u ? 1.3 : personaSelected ? 1.08 : 1;
+        u.scale += (hoverBoost - u.scale) * (reduceMotion ? 1 : 0.14);
         u.avatar.scale.setScalar(baseAva * u.scale);
         u.glow.scale.setScalar(baseGlow * u.scale);
         const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
-        const dimmed = focusSet && !u.isMe && !focusSet.has(u.index);
+        const dimmedByFocus = focusSet && !u.isMe && !focusSet.has(u.index);
+        const dimmedByFollow = followedOnly && !u.isMe && !u.followed;
+        const personaDimmed = Boolean(personaFilter) && !u.isMe && u.castKey !== personaFilter;
+        const dimmed = dimmedByFocus || dimmedByFollow || personaDimmed;
+        const fadeRate = reduceMotion ? 1 : 0.12;
         const avaTarget = dimmed ? 0.07 : 1;
-        u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * 0.12;
+        u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * fadeRate;
         const glowTarget = dimmed
           ? 0.03
-          : (hovered === u ? 0.68 : (u.isMe ? 0.44 : 0.18) * breathe);
-        u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * 0.12;
+          : (hovered === u ? 0.68 : personaSelected ? 0.42 : (u.isMe ? 0.44 : 0.18) * breathe);
+        u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * fadeRate;
         if (u.star) u.star.material.opacity = dimmed ? 0.04 : 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
         if (u.heart && u.heart.visible) {
           u.heart.material.opacity = dimmed ? 0.1 : 0.78 + Math.sin(t * 3.2 + u.phase) * 0.22;
@@ -5473,16 +7087,34 @@
         if (u.ring) {
           const onFocus = focusSet && !u.isMe && focusSet.has(u.index);
           const onMatch = matchIndex === u.index && performance.now() < matchUntil;
-          const target = onMatch ? 0.7 + Math.sin(t * 6) * 0.3 : onFocus ? 0.9 : 0;
-          u.ring.material.opacity += (target - u.ring.material.opacity) * 0.14;
-          if (onMatch) u.ring.scale.setScalar(1.08 + Math.sin(t * 6) * 0.07);
+          const onPersona = personaSelected && !dimmed;
+          const matchOpacity = reduceMotion ? 0.9 : 0.7 + Math.sin(t * 6) * 0.3;
+          const personaOpacity = reduceMotion
+            ? 0.48
+            : 0.48 + Math.sin(t * 1.8 + u.phase) * 0.08;
+          const target = onMatch
+            ? matchOpacity
+            : onFocus
+              ? 0.9
+              : onPersona
+                ? personaOpacity
+                : 0;
+          const ringRate = reduceMotion ? 1 : 0.14;
+          u.ring.material.opacity += (target - u.ring.material.opacity) * ringRate;
+          if (onMatch) {
+            u.ring.scale.setScalar(
+              reduceMotion ? 1.08 : 1.08 + Math.sin(t * 6) * 0.07,
+            );
+          }
+          else if (onPersona) u.ring.scale.setScalar(1.04);
           else if (!onFocus) u.ring.scale.setScalar(1.02);
         }
       }
 
       function loop() {
         if (!running) return;
-        const t = clock.getElapsedTime();
+        const delta = Math.min(clock.getDelta(), 0.05);
+        const t = clock.elapsedTime;
 
         pointerEnergy += (pointerTarget - pointerEnergy) * 0.075;
         galaxyMaterials.forEach((material) => {
@@ -5500,11 +7132,16 @@
         fogGroup.rotation.z = t * 0.008;
         fogGroup.rotation.y = Math.sin(t * 0.03) * 0.08;
         if (!reduceMotion) {
-          dustGroup.rotation.y = t * 0.014;
-          dustGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
+          spectrumGroup.rotation.y = t * 0.014;
+          spectrumGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
         }
 
-        controls.update();
+        updateKeyboardCamera(delta);
+        if (sceneControlsAvailable()) {
+          updateCameraTransition(performance.now());
+          controls.update();
+        }
+        updateDistanceLod();
         updateAxisLabels();
         updateTipPosition();
         composer.render();
@@ -5516,6 +7153,9 @@
       let matchIndex = -1;
       let matchUntil = 0;
       let includeComments = false;
+      let followedOnly = false;
+      let lastRandomIndex = -1;
+      let cameraFocusUser = null;
 
       const $ = (id) => document.getElementById(id);
       const toastEl = $("toast");
@@ -5658,7 +7298,13 @@
         button.addEventListener("click", onClick);
         if (Number.isInteger(avatarIndex)) {
           marker.className = "discovery-result-avatar";
-          marker.src = personAvatarPath(avatarIndex);
+          const [avatarName, , avatarCast] = PEOPLE[avatarIndex];
+          setDomAvatarSource(
+            marker,
+            personAvatarPath(avatarIndex),
+            avatarName,
+            CASTS[avatarCast][2],
+          );
           marker.alt = "";
         } else {
           marker.className = "discovery-rank";
@@ -5735,27 +7381,29 @@
             .filter(Number.isInteger)
             .filter((index, position, indexes) => indexes.indexOf(index) === position);
         }
-        return PEOPLE
-          .map((person, index) => ({
-            index,
-            distance: Math.abs(person[1] - stance),
-            liked: liked.has(index),
-          }))
-          .filter((item) => !item.liked)
-          .sort((left, right) => left.distance - right.distance)
+        return rankMatchCandidates("same")
           .slice(0, 5)
-          .map((item) => item.index);
+          .map((item) => item.i);
       }
 
       function renderRecommendations() {
         const indexes = recommendationIndexes();
+        const personalized = liked.size
+          ? new Map(rankMatchCandidates("same").map((item) => [item.i, item]))
+          : new Map();
         discoveryResultsEl.replaceChildren();
         indexes.forEach((index) => {
           const [name, stance, , claim] = PEOPLE[index];
+          const candidate = personalized.get(index);
+          const interestText = candidate?.interest.word && candidate.interest.score >= 0.34
+            ? ` · 兴趣「${candidate.interest.word}」`
+            : userPortrait
+              ? " · 兴趣画像已参与排序"
+              : "";
           appendLocalDiscoveryResult({
             titleText: `@${name}：${claim}`,
             metaText: liked.size
-              ? `${stanceLabel(stance)} · 与你当前立场接近`
+              ? `${stanceLabel(stance)} · 同频 ${Math.round((candidate?.stanceScore || 0) * 100)}${interestText}`
               : `${stanceLabel(stance)} · 代表观点`,
             avatarIndex: index,
             onClick: () => {
@@ -5917,6 +7565,7 @@
 
       function setExploreOpen(open) {
         exploreShellEl.classList.toggle("is-open", open);
+        document.body.classList.toggle("is-explore-menu-open", open);
         exploreToggleEl.setAttribute("aria-expanded", String(open));
         exploreToggleEl.setAttribute("aria-label", open ? "收起银河故事" : "打开银河故事");
         exploreMenuEl.setAttribute("aria-hidden", String(!open));
@@ -5924,7 +7573,8 @@
           setPresetPickerOpen(false);
           setDiscoveryMode(null);
         }
-        if (open) $("circleChip").classList.remove("show");
+        if (open) deferCirclePrompt();
+        else resumeCirclePrompt();
         syncResponsiveOffsets();
       }
       exploreToggleEl.addEventListener("click", () => {
@@ -5948,9 +7598,19 @@
       const cardsMeMarkerEl = $("cardsMeMarker");
       const cardFilterButtons = [...document.querySelectorAll("[data-card-filter]")];
       const cardsQuickEntryBtn = $("cardsQuickEntry");
+      const personaQuickEntryBtn = $("personaQuickEntry");
+      const personaFiltersEl = $("personaFilters");
+      const personaDeckOpenEl = $("personaDeckOpen");
+      const personaFocusChipEl = $("personaFocusChip");
       let cardsFilter = "all";
       let cardsQuery = "";
       let cardsTransitioning = false;
+      const failedCardAvatarSources = new Set();
+      const cardAvatarFallbacks = new Map();
+      const resolvedCardAvatarSources = new Map();
+      let cardsReturnFocus = null;
+      let personaFilter = null;
+      let personaDeckOpen = false;
 
       function stancePercent(stance) {
         return Math.max(0, Math.min(100, Math.round((stance + 1) * 50)));
@@ -5960,7 +7620,8 @@
         if (stance > 0.2) return PRESET.axis.rightTendency;
         return PRESET.axis.center;
       }
-      function matchesCardFilter(stance, isLiked) {
+      function matchesCardFilter(stance, isLiked, castKey) {
+        if (personaFilter && castKey !== personaFilter) return false;
         if (cardsFilter === "left") return stance < -0.2;
         if (cardsFilter === "center") return stance >= -0.2 && stance <= 0.2;
         if (cardsFilter === "right") return stance > 0.2;
@@ -5971,6 +7632,197 @@
         if (!cardsQuery) return true;
         return `${name} ${castName} ${castRole} ${claim}`.toLowerCase().includes(cardsQuery);
       }
+      function personaByKey(key) {
+        return PERSONA_CATALOG.find((persona) => persona.key === key) || null;
+      }
+      function syncPersonaFilterUi() {
+        const active = personaByKey(personaFilter);
+        personaFiltersEl.querySelectorAll("[data-persona-filter]").forEach((button) => {
+          const selected = button.getAttribute("data-persona-filter") === personaFilter;
+          button.classList.toggle("is-active", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+        personaDeckOpenEl.setAttribute("aria-expanded", String(personaDeckOpen));
+        personaQuickEntryBtn.classList.toggle("is-active", Boolean(active));
+        personaQuickEntryBtn.style.setProperty("--persona", active?.color || "#e7c17f");
+        $("personaQuickTitle").textContent = active?.name || "本题人格星群";
+        $("personaQuickHint").textContent = active
+          ? "已高亮 · 重新打开卡群"
+          : "看占比与代表观点";
+        personaQuickEntryBtn.setAttribute(
+          "aria-label",
+          active
+            ? `重新打开${active.name}人格卡群`
+            : `浏览本题 ${PERSONA_CATALOG.length} 种人格卡`,
+        );
+        personaFocusChipEl.hidden = !active;
+        if (!active) return;
+        personaFocusChipEl.style.setProperty("--persona", active.color);
+        $("personaFocusName").textContent = active.name;
+      }
+      function setPersonaFilter(key, options = {}) {
+        const active = personaByKey(key);
+        personaFilter = active ? active.key : null;
+        personaDeckOpen = Boolean(active) && options.openDeck !== false;
+        if (active) {
+          users
+            .filter((user) => !user.isMe && user.castKey === active.key)
+            .forEach(ensureRing);
+        }
+        syncPersonaFilterUi();
+        if (cardsEl.classList.contains("show")) {
+          renderCards(options.resetScroll !== false);
+        }
+      }
+      function cyclePersona(offset) {
+        if (!PERSONA_CATALOG.length) return;
+        const current = PERSONA_CATALOG.findIndex((persona) => persona.key === personaFilter);
+        const next = cyclePersonaIndex(current, offset, PERSONA_CATALOG.length);
+        setPersonaFilter(PERSONA_CATALOG[next].key);
+        requestAnimationFrame(() => {
+          cardsListEl.querySelector(`[data-persona-step="${offset}"]`)?.focus();
+        });
+      }
+      function renderPersonaFilters() {
+        const buttons = PERSONA_CATALOG.map((persona) => {
+          const button = uiNode("button", "cards-filter persona-filter");
+          button.type = "button";
+          button.dataset.personaFilter = persona.key;
+          button.style.setProperty("--persona", persona.color);
+          button.setAttribute("aria-pressed", "false");
+          button.append(
+            uiNode("i"),
+            uiNode("span", "", persona.name),
+            uiNode("b", "", persona.count),
+          );
+          return button;
+        });
+        personaFiltersEl.replaceChildren(...buttons);
+        $("personaDeckCount").textContent = PERSONA_CATALOG.length;
+        personaDeckOpenEl.hidden = PERSONA_CATALOG.length === 0;
+        syncPersonaFilterUi();
+      }
+      function renderPersonaDeck() {
+        const persona = personaDeckOpen ? personaByKey(personaFilter) : null;
+        if (!persona) return null;
+        const representative = persona.representative;
+        const section = uiNode("section", "persona-deck");
+        section.style.setProperty("--persona", persona.color);
+        section.dataset.personaDeck = persona.key;
+        section.setAttribute("aria-label", `${persona.name}人格卡`);
+
+        const previous = uiNode("button", "persona-deck-nav persona-deck-nav--previous", "‹");
+        previous.type = "button";
+        previous.dataset.personaStep = "-1";
+        previous.setAttribute("aria-label", "上一种人格");
+        previous.title = "上一种人格";
+
+        const art = uiNode("img", "persona-deck-art");
+        art.src = personaArtPath(persona.key);
+        art.alt = `${persona.name}人格形象`;
+        art.width = 78;
+        art.height = 96;
+
+        const copy = uiNode("div", "persona-deck-copy");
+        copy.append(
+          uiNode(
+            "div",
+            "persona-deck-kicker",
+            `${String(PERSONA_CATALOG.indexOf(persona) + 1).padStart(2, "0")} / ${String(PERSONA_CATALOG.length).padStart(2, "0")} · 本题 ${persona.count} 位 · 占 ${Math.round(persona.share * 100)}%`,
+          ),
+          uiNode("h2", "persona-deck-name", persona.name),
+          uiNode("div", "persona-deck-role", persona.role),
+        );
+        if (persona.description) {
+          copy.append(
+            uiNode("p", "persona-deck-description", persona.description),
+          );
+        }
+        copy.append(
+          uiNode("p", "persona-deck-claim", `“${representative.claim}”`),
+          uiNode(
+            "div",
+            "persona-deck-source",
+            `代表观点 · @${representative.name}${Number.isFinite(representative.votes) ? ` · ${representative.votes} 赞同` : ""}`,
+          ),
+        );
+
+        const actions = uiNode("div", "persona-deck-actions");
+        const read = uiNode(
+          "button",
+          "persona-deck-action persona-deck-action--primary",
+          "看看这一派怎么说",
+        );
+        read.type = "button";
+        read.dataset.personaRead = "";
+        const clear = uiNode("button", "persona-deck-action", "回到整体");
+        clear.type = "button";
+        clear.dataset.personaClear = "";
+        actions.append(read, clear);
+
+        const next = uiNode("button", "persona-deck-nav persona-deck-nav--next", "›");
+        next.type = "button";
+        next.dataset.personaStep = "1";
+        next.setAttribute("aria-label", "下一种人格");
+        next.title = "下一种人格";
+        section.append(previous, art, copy, actions, next);
+        return section;
+      }
+
+      function cardAvatar(name, source, className, ringColor) {
+        const frame = uiNode("span", "pcard-avatar-frame");
+        const avatar = uiNode("img", className);
+        const retry = uiNode("button", "pcard-avatar-retry", "↻");
+        const fallbackKey = `${source}\u0000${name}\u0000${ringColor}`;
+        const fallbackSource = () => {
+          if (!cardAvatarFallbacks.has(fallbackKey)) {
+            cardAvatarFallbacks.set(
+              fallbackKey,
+              placeholderTexture(name, ringColor, 128).canvas.toDataURL("image/png"),
+            );
+          }
+          return cardAvatarFallbacks.get(fallbackKey);
+        };
+        let showingFallback = failedCardAvatarSources.has(source);
+        retry.type = "button";
+        retry.hidden = !showingFallback;
+        retry.title = "重试头像";
+        retry.setAttribute("aria-label", `重试 ${name} 的头像`);
+        retry.dataset.avatarRetry = "";
+        avatar.alt = name;
+        avatar.width = 42;
+        avatar.height = 42;
+        avatar.addEventListener("load", () => {
+          if (!showingFallback) {
+            failedCardAvatarSources.delete(source);
+            resolvedCardAvatarSources.set(source, avatar.src);
+            retry.hidden = true;
+          }
+        });
+        avatar.addEventListener("error", () => {
+          if (showingFallback) return;
+          failedCardAvatarSources.add(source);
+          resolvedCardAvatarSources.delete(source);
+          showingFallback = true;
+          avatar.src = fallbackSource();
+          retry.hidden = false;
+        });
+        retry.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          failedCardAvatarSources.delete(source);
+          showingFallback = false;
+          retry.hidden = true;
+          const next = avatarRetrySource(source);
+          resolvedCardAvatarSources.set(source, next);
+          avatar.src = next;
+        });
+        avatar.src = showingFallback
+          ? fallbackSource()
+          : resolvedCardAvatarSources.get(source) || source;
+        frame.append(avatar, retry);
+        return frame;
+      }
 
       function personCard(i) {
         const [name, stance, castKey, claim, sourceUrl, , votes] = PEOPLE[i];
@@ -5978,6 +7830,7 @@
         const on = liked.has(i);
         const article = uiNode("article", "pcard");
         article.dataset.u = String(i);
+        article.dataset.persona = castKey;
         article.dataset.signal = String(i + 1).padStart(2, "0");
         article.style.setProperty("--cast", castColor);
         article.style.setProperty("--stance", `${stancePercent(stance)}%`);
@@ -5985,9 +7838,12 @@
         article.setAttribute("role", "link");
         article.setAttribute("aria-label", `查看 ${name} 的人格卡`);
 
-        const avatar = uiNode("img", "pcard-ava");
-        avatar.src = personAvatarPath(i);
-        avatar.alt = name;
+        const avatar = cardAvatar(
+          name,
+          personAvatarPath(i),
+          "pcard-ava",
+          castColor,
+        );
 
         const body = uiNode("div", "pcard-body");
         const row = uiNode("div", "pcard-row");
@@ -6103,7 +7959,7 @@
         const visibleEntries = totalEntries.filter(({ kind, data, index }) => {
           const [name, stance, castKey, claim] = data;
           const [castName, castRole] = CASTS[castKey];
-          return matchesCardFilter(stance, kind === "answer" && liked.has(index)) &&
+          return matchesCardFilter(stance, kind === "answer" && liked.has(index), castKey) &&
             matchesCardQuery(name, castName, castRole, claim);
         });
         const visibleAnswers = visibleEntries.filter((entry) => entry.kind === "answer");
@@ -6122,9 +7978,12 @@
         const head = uiNode("section", "me-strip");
         head.style.setProperty("--cast", "#e7c17f");
         head.style.setProperty("--stance", `${stancePercent(my)}%`);
-        const meAvatar = uiNode("img", "pcard-ava pcard-ava--me");
-        meAvatar.src = meAvatarSource;
-        meAvatar.alt = "我";
+        const meAvatar = cardAvatar(
+          "我",
+          meAvatarSource,
+          "pcard-ava pcard-ava--me",
+          "#e7c98c",
+        );
         const meCopy = uiNode("div", "me-strip-copy");
         const meTitle = uiNode("div", "me-strip-title", "我的立场坐标 ");
         meTitle.appendChild(uiNode(
@@ -6158,11 +8017,21 @@
         meButton.disabled = !personaUnlocked();
         head.append(meAvatar, meCopy, mePosition, meButton);
 
-        cardsListEl.replaceChildren(head);
+        cardsListEl.replaceChildren();
+        const personaDeck = renderPersonaDeck();
+        if (personaDeck) cardsListEl.appendChild(personaDeck);
+        cardsListEl.appendChild(head);
         if (visibleAnswers.length) {
           const section = uiNode("div", "cards-section");
+          const selectedPersona = personaByKey(personaFilter);
           section.append(
-            uiNode("span", "", PRESET.peopleLabel || "回答者观点"),
+            uiNode(
+              "span",
+              "",
+              selectedPersona
+                ? `${selectedPersona.name} · ${PRESET.peopleLabel || "回答者观点"}`
+                : PRESET.peopleLabel || "回答者观点",
+            ),
             uiNode("b", "", visibleAnswers.length),
           );
           cardsListEl.append(
@@ -6185,7 +8054,9 @@
           cardsListEl.appendChild(uiNode("div", "cards-empty", "没有找到符合条件的观点"));
         }
         cardsListEl.scrollTop = scrollTop;
-        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size} · 按立场从左到右排列`;
+        const persona = personaByKey(personaFilter);
+        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size}${persona ? ` · ${persona.name}` : ""} · 按立场从左到右排列`;
+        syncPersonaFilterUi();
       }
       function renderCardsIfOpen() {
         if (cardsEl.classList.contains("show")) renderCards();
@@ -6196,11 +8067,15 @@
           window.parent.postMessage({ type: "nebula-view-change", view }, location.origin);
         } catch (e) {}
       }
-      function openCards() {
+      function openCards(focusSelector = "#cardsClose") {
         if (cardsEl.classList.contains("show") || cardsTransitioning) return;
+        cardsReturnFocus = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
         exitFocus();
         renderCards();
         cardsTransitioning = true;
+        deferCirclePrompt();
         document.body.classList.add("is-view-transitioning");
         cardsQuickEntryBtn.classList.add("is-launching");
         setTimeout(() => {
@@ -6213,6 +8088,7 @@
             cardsQuickEntryBtn.classList.remove("is-launching");
             document.body.classList.remove("is-view-transitioning");
             cardsTransitioning = false;
+            document.querySelector(focusSelector)?.focus();
           }, reduceMotion ? 0 : 290);
         }, reduceMotion ? 0 : 130);
       }
@@ -6227,23 +8103,75 @@
           notifyHostView("nebula");
           document.body.classList.remove("is-view-transitioning");
           cardsTransitioning = false;
+          cardsReturnFocus?.focus();
+          cardsReturnFocus = null;
+          resumeCirclePrompt();
         }, reduceMotion ? 0 : 180);
       }
-      cardsQuickEntryBtn.addEventListener("click", openCards);
+      function openPersonaDeck() {
+        const key = personaFilter || PERSONA_CATALOG[0]?.key;
+        if (!key) return;
+        setPersonaFilter(key, { openDeck: true });
+        openCards('[data-persona-step="-1"]');
+      }
+      cardsQuickEntryBtn.addEventListener("click", () => openCards());
+      personaQuickEntryBtn.addEventListener("click", openPersonaDeck);
       $("cardsClose").addEventListener("click", closeCards);
       cardsSearchEl.addEventListener("input", (e) => {
         cardsQuery = e.target.value.trim().toLowerCase();
         renderCards(true);
       });
+      function setCardFilter(filter) {
+        cardsFilter = filter || "all";
+        cardFilterButtons.forEach((item) => {
+          const active = item.getAttribute("data-card-filter") === cardsFilter;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-pressed", String(active));
+        });
+      }
       cardFilterButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
         button.addEventListener("click", () => {
-          cardsFilter = button.getAttribute("data-card-filter") || "all";
-          cardFilterButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+          setCardFilter(button.getAttribute("data-card-filter"));
           renderCards(true);
         });
       });
+      personaFiltersEl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-persona-filter]");
+        if (!button) return;
+        setPersonaFilter(button.getAttribute("data-persona-filter"));
+      });
+      personaDeckOpenEl.addEventListener("click", () => {
+        const key = personaFilter || PERSONA_CATALOG[0]?.key;
+        if (key) setPersonaFilter(key, { openDeck: true });
+      });
+      $("personaFocusClear").addEventListener("click", () => {
+        setPersonaFilter(null);
+        showToast("已回到完整观点光谱");
+      });
       cardsListEl.addEventListener("click", (e) => {
         if (e.target.closest("[data-source]")) return;
+        const personaStep = e.target.closest("[data-persona-step]");
+        if (personaStep) {
+          cyclePersona(Number(personaStep.getAttribute("data-persona-step")));
+          return;
+        }
+        if (e.target.closest("[data-persona-read]")) {
+          setCardFilter("all");
+          cardsQuery = "";
+          cardsSearchEl.value = "";
+          personaDeckOpen = false;
+          renderCards(true);
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector(".pcard[data-u]")?.focus();
+          });
+          return;
+        }
+        if (e.target.closest("[data-persona-clear]")) {
+          setPersonaFilter(null);
+          requestAnimationFrame(() => personaDeckOpenEl.focus());
+          return;
+        }
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
@@ -6254,10 +8182,370 @@
         const card = e.target.closest(".pcard[data-u]");
         if (card) openPerson(Number(card.getAttribute("data-u")));
       });
+      renderPersonaFilters();
       cardsListEl.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" || e.target.closest("button")) return;
         const card = e.target.closest(".pcard[data-u]");
         if (card) openPerson(Number(card.getAttribute("data-u")));
+      });
+
+      // ---- 同频发现 ----
+      const peerDiscoveryEl = $("peerDiscovery");
+      const peerListEl = $("peerList");
+      const peerAgainBtn = $("peerAgain");
+      const PEER_SEEN_KEY_PREFIX =
+        `jiupai:nebula:peer-seen:v1:${PRESET.id}:${PRESET.version || "1"}`;
+      const PEER_BATCH_KEY_PREFIX =
+        `jiupai:nebula:peer-batch:v1:${PRESET.id}:${PRESET.version || "1"}`;
+      const peerSeenMemory = new Map();
+      const peerBatchMemory = new Map();
+      const peerSeenMemoryPreferred = new Set();
+      const peerBatchMemoryPreferred = new Set();
+      function peerSeenStorageKey() {
+        return `${PEER_SEEN_KEY_PREFIX}:${userIdentityRevision ?? "anonymous"}`;
+      }
+      function peerBatchStorageKey() {
+        return `${PEER_BATCH_KEY_PREFIX}:${userIdentityRevision ?? "anonymous"}`;
+      }
+      function normalizePeerSeenIndexes(value) {
+        return Array.isArray(value)
+          ? [...new Set(value.filter((index) =>
+              Number.isSafeInteger(index) && index >= 0 && index < N
+            ))]
+          : [];
+      }
+      function loadPeerSeenIndexes() {
+        const storageKey = peerSeenStorageKey();
+        if (peerSeenMemoryPreferred.has(storageKey)) {
+          return [...(peerSeenMemory.get(storageKey) || [])];
+        }
+        try {
+          const stored = sessionStorage.getItem(storageKey);
+          if (stored === null && peerSeenMemory.has(storageKey)) {
+            return [...peerSeenMemory.get(storageKey)];
+          }
+          const parsed = normalizePeerSeenIndexes(
+            JSON.parse(stored || "[]")
+          );
+          peerSeenMemory.set(storageKey, parsed);
+          return parsed;
+        } catch {
+          return [...(peerSeenMemory.get(storageKey) || [])];
+        }
+      }
+      function savePeerSeenIndexes() {
+        const storageKey = peerSeenStorageKey();
+        peerSeenMemory.set(storageKey, [...peerSeenIndexes]);
+        try {
+          sessionStorage.setItem(
+            storageKey,
+            JSON.stringify(peerSeenIndexes)
+          );
+          peerSeenMemoryPreferred.delete(storageKey);
+        } catch {
+          peerSeenMemoryPreferred.add(storageKey);
+        }
+      }
+      function loadPeerBatchIndexes() {
+        const storageKey = peerBatchStorageKey();
+        if (peerBatchMemoryPreferred.has(storageKey)) {
+          return [...(peerBatchMemory.get(storageKey) || [])];
+        }
+        try {
+          const stored = sessionStorage.getItem(storageKey);
+          if (stored === null && peerBatchMemory.has(storageKey)) {
+            return [...peerBatchMemory.get(storageKey)];
+          }
+          const parsed = normalizePeerSeenIndexes(
+            JSON.parse(stored || "[]")
+          );
+          peerBatchMemory.set(storageKey, parsed);
+          return parsed;
+        } catch {
+          return [...(peerBatchMemory.get(storageKey) || [])];
+        }
+      }
+      function savePeerBatchIndexes() {
+        const storageKey = peerBatchStorageKey();
+        const indexes = peerBatch.map(({ index }) => index);
+        peerBatchMemory.set(storageKey, indexes);
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(indexes));
+          peerBatchMemoryPreferred.delete(storageKey);
+        } catch {
+          peerBatchMemoryPreferred.add(storageKey);
+        }
+      }
+      function clearPeerBatchState() {
+        const storageKey = peerBatchStorageKey();
+        peerBatch = [];
+        peerBatchMemory.set(storageKey, []);
+        try {
+          sessionStorage.removeItem(storageKey);
+          peerBatchMemory.delete(storageKey);
+          peerBatchMemoryPreferred.delete(storageKey);
+        } catch {
+          peerBatchMemoryPreferred.add(storageKey);
+        }
+      }
+      let peerSeenIndexes = loadPeerSeenIndexes();
+      let peerBatch = [];
+      let peerReturnFocus = null;
+
+      function peerRanking() {
+        const profile = inferSelfProfile();
+        return rankPeerCandidates({
+          people: PEOPLE,
+          myStance: profile.stance,
+          myCast: profile.cast,
+          likedIndexes: [...liked],
+          interestForIndex: interestMatchForPerson,
+        });
+      }
+
+      function restorePeerBatch() {
+        const indexes = loadPeerBatchIndexes();
+        if (!indexes.length) return false;
+        const rankedByIndex = new Map(
+          peerRanking().map((candidate) => [candidate.index, candidate]),
+        );
+        const restored = indexes
+          .map((index) => rankedByIndex.get(index))
+          .filter(Boolean);
+        if (restored.length !== indexes.length) {
+          clearPeerBatchState();
+          return false;
+        }
+        peerBatch = restored;
+        renderPeerBatchContent();
+        renderPeerBatchStatus();
+        return true;
+      }
+
+      function resetPeerDiscoveryState() {
+        const storageKey = peerSeenStorageKey();
+        peerSeenIndexes = [];
+        peerSeenMemory.set(storageKey, []);
+        try {
+          sessionStorage.removeItem(storageKey);
+          peerSeenMemory.delete(storageKey);
+          peerSeenMemoryPreferred.delete(storageKey);
+        } catch {
+          peerSeenMemoryPreferred.add(storageKey);
+        }
+        clearPeerBatchState();
+      }
+
+      function peerAvatar(name, index) {
+        const wrap = uiNode("span", "peer-avatar-wrap");
+        const avatar = uiNode("img", "peer-avatar");
+        avatar.src = personAvatarPath(index);
+        avatar.alt = `${name}的头像`;
+        avatar.width = 48;
+        avatar.height = 48;
+        avatar.addEventListener("error", () => wrap.classList.add("is-fallback"), { once: true });
+        const fallback = uiNode("span", "peer-avatar-fallback", Array.from(name)[0] || "知");
+        fallback.setAttribute("aria-hidden", "true");
+        wrap.append(avatar, fallback);
+        return wrap;
+      }
+
+      function renderPeerItem(candidate) {
+        const index = candidate.index;
+        const [name, , castKey, claim, sourceUrl] = PEOPLE[index];
+        const [castName, , castColor] = CASTS[castKey];
+        const profile = inferSelfProfile();
+        const explanation = describePeerMatch({
+          candidate,
+          myStance: profile.stance,
+          myCast: profile.cast,
+          castName: CASTS[profile.cast][0],
+          candidateCastName: castName,
+          leftChoice: PRESET.axis.leftChoice,
+          rightChoice: PRESET.axis.rightChoice,
+        });
+        const item = uiNode("li", "peer-item");
+        const main = uiNode("div", "peer-main");
+        const nameRow = uiNode("div", "peer-name-row");
+        const nameButton = uiNode("button", "peer-name", `@${name}`);
+        nameButton.type = "button";
+        nameButton.addEventListener("click", () => {
+          openPerson(index);
+        });
+        const cast = uiNode("span", "peer-cast", castName);
+        cast.style.color = castColor;
+        nameRow.append(nameButton, cast);
+        const reasons = uiNode("div", "peer-reasons");
+        const similar = uiNode("span", "peer-reason");
+        similar.append(uiNode("b", "", "相似点"), document.createTextNode(explanation.similarity));
+        const different = uiNode("span", "peer-reason peer-reason--different");
+        different.append(uiNode("b", "", "不同点"), document.createTextNode(explanation.difference));
+        reasons.append(similar, different);
+        main.append(nameRow, uiNode("p", "peer-claim", `“${claim}”`), reasons);
+
+        const actions = uiNode("div", "peer-item-actions");
+        const cardButton = uiNode("button", "peer-action", "看人格卡");
+        cardButton.type = "button";
+        cardButton.addEventListener("click", () => {
+          openPerson(index);
+        });
+        actions.append(cardButton);
+        const verifiedSource = safeZhihuUrl(sourceUrl);
+        if (verifiedSource) {
+          const source = uiNode("a", "peer-action", "原回答");
+          source.href = verifiedSource;
+          source.target = "_blank";
+          source.rel = "noopener noreferrer";
+          actions.append(source);
+        } else {
+          const missing = uiNode("span", "peer-action peer-action--missing", "暂无原回答");
+          missing.setAttribute("aria-disabled", "true");
+          actions.append(missing);
+        }
+        item.append(peerAvatar(name, index), main, actions);
+        return item;
+      }
+
+      function renderPeerBatchContent() {
+        const shouldRestoreFocus = peerListEl.contains(document.activeElement);
+        peerListEl.replaceChildren(...peerBatch.map(renderPeerItem));
+        peerListEl.scrollTop = 0;
+        if (shouldRestoreFocus) $("peerDiscoveryX").focus();
+        const profile = inferSelfProfile();
+        const sameCastCount = peerBatch.filter(({ sameCast }) => sameCast).length;
+        $("peerPersona").textContent =
+          `${CASTS[profile.cast][0]} · 本批 ${sameCastCount}/${peerBatch.length} 位同人格`;
+        $("peerPortraitNote").textContent = userPortrait
+          ? "知乎兴趣仅参与次级排序，原始画像不会进入名单。"
+          : "画像不可用，当前仅按本题人格与立场推荐。";
+      }
+
+      function renderPeerBatchStatus(restarted = false) {
+        const rankedIndexes = new Set(
+          peerRanking().map(({ index }) => index),
+        );
+        const seenCount = new Set(
+          peerSeenIndexes.filter((index) => rankedIndexes.has(index)),
+        ).size;
+        const remaining = Math.max(0, rankedIndexes.size - seenCount);
+        if (!peerBatch.length) {
+          $("peerStatus").textContent = "当前快照没有可推荐的回答者。";
+          peerAgainBtn.disabled = true;
+        } else if (restarted) {
+          $("peerStatus").textContent =
+            `已开始新一轮，本批 ${peerBatch.length} 位。`;
+          peerAgainBtn.disabled = false;
+        } else if (remaining === 0) {
+          $("peerStatus").textContent = peerBatch.length < 5
+            ? `最后 ${peerBatch.length} 位候选；再换一批将开始新一轮。`
+            : "本轮候选已看完；再换一批将开始新一轮。";
+          peerAgainBtn.disabled = false;
+        } else {
+          $("peerStatus").textContent =
+            `本批 ${peerBatch.length} 位，还有 ${remaining} 位未看。`;
+          peerAgainBtn.disabled = false;
+        }
+      }
+
+      function refreshPeerDiscoveryBatch() {
+        const ranked = peerRanking();
+        const rankedByIndex = new Map(
+          ranked.map((candidate) => [candidate.index, candidate]),
+        );
+        const rankPosition = new Map(
+          ranked.map(({ index }, position) => [index, position]),
+        );
+        peerBatch = peerBatch
+          .map(({ index }) => rankedByIndex.get(index))
+          .filter(Boolean)
+          .sort((left, right) =>
+            rankPosition.get(left.index) - rankPosition.get(right.index)
+          );
+        if (peerBatch.length) {
+          savePeerBatchIndexes();
+          renderPeerBatchContent();
+          renderPeerBatchStatus();
+        } else if (!restorePeerBatch()) {
+          renderNextPeerBatch();
+        }
+      }
+
+      function renderNextPeerBatch() {
+        const ranked = peerRanking();
+        const batch = takePeerBatch(ranked, peerSeenIndexes, 5);
+        peerSeenIndexes = batch.seenIndexes;
+        savePeerSeenIndexes();
+        peerBatch = batch.items;
+        savePeerBatchIndexes();
+        renderPeerBatchContent();
+        renderPeerBatchStatus(batch.restarted);
+      }
+
+      function openPeerDiscovery() {
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁同频发现`);
+          return;
+        }
+        if (peerDiscoveryEl.classList.contains("show")) return;
+        const activeElement = document.activeElement;
+        const canRestoreActiveFocus =
+          activeElement instanceof HTMLElement &&
+          activeElement !== document.body &&
+          activeElement.getClientRects().length > 0;
+        peerReturnFocus =
+          activeElement === $("peerDiscoveryBtn") || !canRestoreActiveFocus
+            ? exploreToggleEl
+            : activeElement;
+        setExploreOpen(false);
+        deferCirclePrompt();
+        if (!peerBatch.length && !restorePeerBatch()) renderNextPeerBatch();
+        peerDiscoveryEl.classList.add("show");
+        peerDiscoveryEl.setAttribute("aria-hidden", "false");
+        $("peerDiscoveryX").focus();
+      }
+
+      function closePeerDiscovery() {
+        if (!peerDiscoveryEl.classList.contains("show")) return;
+        peerDiscoveryEl.classList.remove("show");
+        peerDiscoveryEl.setAttribute("aria-hidden", "true");
+        if (
+          peerReturnFocus &&
+          peerReturnFocus.isConnected &&
+          typeof peerReturnFocus.focus === "function"
+        ) {
+          peerReturnFocus.focus();
+        }
+        peerReturnFocus = null;
+        if (personaUnlocked() && chipQueue.length) queueNextChip(5200);
+      }
+
+      function trapPeerFocus(event) {
+        if (event.key !== "Tab" || !peerDiscoveryEl.classList.contains("show")) return false;
+        const focusable = [...peerDiscoveryEl.querySelectorAll(
+          'button:not(:disabled), a[href]',
+        )].filter((node) => node.getClientRects().length > 0);
+        if (!focusable.length) return false;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!peerDiscoveryEl.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return true;
+      }
+
+      $("peerDiscoveryBtn").addEventListener("click", openPeerDiscovery);
+      $("peerDiscoveryX").addEventListener("click", closePeerDiscovery);
+      $("peerDiscoveryClose").addEventListener("click", closePeerDiscovery);
+      peerAgainBtn.addEventListener("click", renderNextPeerBatch);
+      peerDiscoveryEl.addEventListener("click", (event) => {
+        if (event.target === peerDiscoveryEl) closePeerDiscovery();
       });
 
       // ---- 评论区开关 ----
@@ -6269,11 +8557,343 @@
         if (includeComments) showToast(`已纳入 ${COMMENTS.length} 条评论区观点，空心圆即评论者`);
       });
 
+      // ---- 星图向导 ----
+      const guideEl = $("guide");
+      const guideCloseButton = $("guideX");
+      const guideHeadlineEl = $("guideHeadline");
+      const guidePicksEl = $("guidePicks");
+      const guideBodyEl = $("guideBody");
+      const guideQuizEl = $("guideQuiz");
+      const guideAskEl = $("guideAsk");
+      const guideSuggestionsEl = $("guideSuggestions");
+      const GUIDE_SUGGESTIONS = [
+        "代表性观点有哪些？",
+        "和我相反的人怎么看？",
+        "我现在的立场是什么？",
+        "帮我定位起点",
+      ];
+      const GUIDE_QUIZ_INPUT_GUARD_MS = 800;
+      let guideQuizStep = 0;
+      let guideQuizStances = [];
+      let guideQuizInputReadyAt = 0;
+
+      function findPersonNearStance(target) {
+        let best = 0;
+        let bestDistance = Infinity;
+        PEOPLE.forEach((person, index) => {
+          const distance = Math.abs(person[1] - target);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = index;
+          }
+        });
+        return best;
+      }
+      function guideHeadline() {
+        if (PRESET.guide && typeof PRESET.guide.headline === "string") {
+          return PRESET.guide.headline;
+        }
+        return `${PRESET.question}：讨论主要围绕「${PRESET.axis.left}」与「${PRESET.axis.right}」两种方向展开。`;
+      }
+      function guideQuizQuestions() {
+        if (Array.isArray(PRESET.guide?.quiz) && PRESET.guide.quiz.length) {
+          return PRESET.guide.quiz;
+        }
+        const axis = PRESET.axis;
+        return [
+          {
+            question: "你更认同哪一侧？",
+            choices: [
+              { label: axis.leftTendency, stance: -0.75 },
+              { label: axis.center, stance: 0 },
+              { label: axis.rightTendency, stance: 0.75 },
+            ],
+          },
+          {
+            question: "如果只能选一种态度？",
+            choices: [
+              { label: axis.leftChoice || axis.left, stance: -0.85 },
+              { label: "两者都有道理", stance: 0 },
+              { label: axis.rightChoice || axis.right, stance: 0.85 },
+            ],
+          },
+          {
+            question: "你更接近光谱哪一端？",
+            choices: [
+              { label: axis.left, stance: -0.65 },
+              { label: axis.center, stance: 0 },
+              { label: axis.right, stance: 0.65 },
+            ],
+          },
+        ];
+      }
+      function guideRepresentatives() {
+        const left = findPersonNearStance(-0.85);
+        const middle = findPersonNearStance(0);
+        const right = findPersonNearStance(0.85);
+        const my = liked.size ? myStanceVal : 0;
+        let opposite = 0;
+        let oppositeDistance = -1;
+        PEOPLE.forEach((person, index) => {
+          const distance = Math.abs(person[1] - my);
+          if (distance > oppositeDistance) {
+            oppositeDistance = distance;
+            opposite = index;
+          }
+        });
+        return { left, middle, right, opposite };
+      }
+      function renderGuidePick(label, index, note) {
+        const [name, stance, , claim] = PEOPLE[index];
+        const button = uiNode("button", "guide-pick");
+        button.type = "button";
+        button.dataset.person = String(index);
+        button.append(
+          uiNode("em", "", label),
+          (() => {
+            const copy = uiNode("div");
+            copy.append(
+              uiNode("b", "", `@${name}`),
+              uiNode("span", "", claim),
+            );
+            return copy;
+          })(),
+          uiNode("em", "", `${stance > 0 ? "+" : ""}${stance.toFixed(2)}`),
+        );
+        button.title = note;
+        return button;
+      }
+      function renderGuidePicks() {
+        const picks = guideRepresentatives();
+        guidePicksEl.replaceChildren(
+          renderGuidePick("代表·左端", picks.left, PRESET.axis.leftTendency),
+          renderGuidePick("中间观察", picks.middle, PRESET.axis.center),
+          renderGuidePick("代表·右端", picks.right, PRESET.axis.rightTendency),
+          renderGuidePick("对立声音", picks.opposite, "与你当前坐标距离最远"),
+        );
+      }
+      function renderGuideSelfSection() {
+        const stance = computeStance([...liked]);
+        if (stance) {
+          const stanceText = stance.avg > 0 ? "+" : "";
+          const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+          const detail = personaUnlocked()
+            ? (() => {
+                const profile = inferSelfProfile();
+                const [castName, castRole] = CASTS[profile.cast];
+                return `九派人格暂定为「${castName}」——${castRole}。这来自本次快照内的观点分布，不是你的永久画像。`;
+              })()
+            : `再表态 ${remaining} 次即可解锁本题人格；当前只展示立场坐标。`;
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "根据你的点赞"),
+            document.createTextNode(
+              `，当前坐标约为 ${stanceText}${stance.avg.toFixed(2)}，更接近「${stanceLabel(stance.avg)}」。`,
+            ),
+            document.createElement("br"),
+            document.createTextNode(detail),
+          );
+          guideQuizEl.hidden = true;
+          return;
+        }
+        guideBodyEl.replaceChildren(
+          uiNode("strong", "", "尚未点赞"),
+          document.createTextNode("。回答下面 3 道选择题，向导会帮你估计一个起始星位（不会写入点赞记录）。"),
+        );
+        guideQuizStep = 0;
+        guideQuizStances = [];
+        guideQuizInputReadyAt = 0;
+        renderGuideQuizStep();
+      }
+      function renderGuideQuizStep(restoreFocus = false) {
+        const questions = guideQuizQuestions();
+        if (guideQuizStep >= questions.length) {
+          const avg = guideQuizStances.reduce((sum, value) => sum + value, 0) /
+            guideQuizStances.length;
+          guideQuizEl.hidden = true;
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "建议起点"),
+            document.createTextNode(
+              `：坐标约 ${avg > 0 ? "+" : ""}${avg.toFixed(2)}，更接近「${stanceLabel(avg)}」。去光谱阅读里找相近观点，再点赞形成你的真实星位。`,
+            ),
+          );
+          if (restoreFocus) guideAskEl.focus();
+          return;
+        }
+        const current = questions[guideQuizStep];
+        const choices = uiNode("div", "guide-quiz-choices");
+        current.choices.forEach((choice) => {
+          const button = uiNode("button", "guide-quiz-btn", choice.label);
+          button.type = "button";
+          button.addEventListener("keydown", (event) => {
+            if (
+              event.repeat &&
+              (event.key === "Enter" || event.key === " " || event.code === "Space")
+            ) {
+              event.preventDefault();
+            }
+          });
+          button.addEventListener("click", () => {
+            const now = performance.now();
+            if (now < guideQuizInputReadyAt) {
+              showToast("请先读完本题再选择");
+              return;
+            }
+            guideQuizInputReadyAt = now + GUIDE_QUIZ_INPUT_GUARD_MS;
+            guideQuizStances.push(choice.stance);
+            guideQuizStep += 1;
+            renderGuideQuizStep(true);
+          });
+          choices.appendChild(button);
+        });
+        guideQuizEl.hidden = false;
+        guideQuizEl.replaceChildren(
+          uiNode("div", "guide-quiz-q", `第 ${guideQuizStep + 1} / ${questions.length} 题 · ${current.question}`),
+          choices,
+        );
+        if (restoreFocus) choices.querySelector("button")?.focus();
+      }
+      function matchGuideIntent(query) {
+        const text = query.trim().toLocaleLowerCase("zh-CN");
+        if (!text) return null;
+        if (/代表性观点|主要观点|有哪些代表/.test(text)) return "representatives";
+        if (/左端|转行|警惕|伤害/.test(text)) return "left";
+        if (/中间|中立|观望|审慎/.test(text)) return "middle";
+        if (/右端|深耕|拥抱|加速|协同/.test(text)) return "right";
+        if (/相反|对立|最远|反面/.test(text)) return "opposite";
+        if (/我|立场|人格|坐标|赞/.test(text)) return "self";
+        if (/起点|定位|开始|没赞|未赞/.test(text)) return "quiz";
+        return null;
+      }
+      function answerGuideIntent(intent) {
+        const picks = guideRepresentatives();
+        if (intent === "representatives") {
+          renderGuidePicks();
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "代表性观点"),
+            document.createTextNode("：已按光谱左端、中点和右端列出三种典型声音，可逐条打开核验。"),
+          );
+          guideQuizEl.hidden = true;
+          return;
+        }
+        if (intent === "left" || intent === "middle" || intent === "right" || intent === "opposite") {
+          closeGuide(false);
+          openPerson(picks[intent]);
+          return;
+        }
+        if (intent === "self") {
+          renderGuideSelfSection();
+          showToast(liked.size ? "已根据你的点赞更新说明" : "请先完成下方选择题");
+          return;
+        }
+        if (intent === "quiz") {
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "起点定位"),
+            document.createTextNode("：请完成下方 3 道选择题。"),
+          );
+          guideQuizStep = 0;
+          guideQuizStances = [];
+          guideQuizInputReadyAt = 0;
+          renderGuideQuizStep(true);
+          return;
+        }
+        guideSuggestionsEl.replaceChildren(
+          ...GUIDE_SUGGESTIONS.map((label) => {
+            const button = uiNode("button", "guide-suggestion", label);
+            button.type = "button";
+            button.addEventListener("click", () => {
+              guideAskEl.value = label;
+              answerGuideIntent(matchGuideIntent(label));
+            });
+            return button;
+          }),
+        );
+        showToast("暂时只能回答代表性观点、对立观点、立场说明和起点定位。试试下方建议问题。");
+      }
+      function trapGuideFocus(event) {
+        if (event.key !== "Tab") return;
+        const focusable = [...guideEl.querySelectorAll("button:not([disabled]), input:not([disabled])")]
+          .filter((element) => element.offsetParent !== null);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (!guideEl.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      function renderGuideSuggestions() {
+        guideSuggestionsEl.replaceChildren(
+          ...GUIDE_SUGGESTIONS.map((label) => {
+            const button = uiNode("button", "guide-suggestion", label);
+            button.type = "button";
+            button.addEventListener("click", () => {
+              guideAskEl.value = label;
+              answerGuideIntent(matchGuideIntent(label));
+            });
+            return button;
+          }),
+        );
+      }
+      function openGuide() {
+        deferCirclePrompt();
+        guideHeadlineEl.textContent = guideHeadline();
+        renderGuidePicks();
+        renderGuideSelfSection();
+        renderGuideSuggestions();
+        guideAskEl.value = "";
+        guideEl.classList.add("show");
+        guideEl.setAttribute("aria-hidden", "false");
+        guideCloseButton.focus();
+      }
+      function resumeCirclePrompt() {
+        if (chipQueue.length && personaUnlocked() && !circlePromptBlocked()) {
+          queueNextChip(3000);
+        }
+      }
+      function closeGuide(restoreFocus = true) {
+        guideEl.classList.remove("show");
+        guideEl.setAttribute("aria-hidden", "true");
+        resumeCirclePrompt();
+        if (restoreFocus) $("exploreToggle").focus();
+      }
+      $("guideBtn").addEventListener("click", () => {
+        setExploreOpen(false);
+        openGuide();
+      });
+      guideCloseButton.addEventListener("click", () => closeGuide());
+      guideEl.addEventListener("click", (event) => {
+        if (event.target === guideEl) closeGuide();
+      });
+      guideEl.addEventListener("keydown", trapGuideFocus);
+      guidePicksEl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-person]");
+        if (!button) return;
+        closeGuide(false);
+        openPerson(Number(button.getAttribute("data-person")));
+      });
+      $("guideAskBtn").addEventListener("click", () => {
+        answerGuideIntent(matchGuideIntent(guideAskEl.value));
+      });
+      guideAskEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.isComposing) {
+          event.preventDefault();
+          answerGuideIntent(matchGuideIntent(guideAskEl.value));
+        }
+      });
+
       // ---- 观点碰撞 ----
       const clashEl = $("clash");
       const clashGoBtn = $("clashGo");
       let clashCurrent = -1;
       let matchMode = "opposite";
+      let matchCandidates = [];
+      let matchCursor = 0;
       function setClashButtonLabel(label) {
         const slot = clashGoBtn.querySelector(".gbtn-label");
         if (slot) slot.textContent = label;
@@ -6283,36 +8903,56 @@
         const person = PEOPLE[index];
         const sourceText = `${person[0] || ""} ${person[3] || ""} ${person[5] || ""}`
           .toLocaleLowerCase("zh-CN");
+        const sourceLatin = new Set(sourceText.match(/[a-z0-9]+/g) || []);
         const maxWeight = Math.max(1, ...userPortrait.keywords.map((item) => item.score));
         let best = { score: 0, word: "" };
         userPortrait.keywords.forEach(({ word, score }) => {
           const normalized = word.toLocaleLowerCase("zh-CN");
-          let relevance = sourceText.includes(normalized) ? 1 : 0;
-          if (!relevance && Array.from(normalized).length >= 3) {
-            const units = [...new Set(Array.from(normalized).filter((char) =>
-              /[a-z0-9\u4e00-\u9fff]/i.test(char)
-            ))];
-            const overlap = units.filter((char) => sourceText.includes(char)).length;
-            if (overlap >= 2) relevance = overlap / units.length * 0.55;
+          const normalizedLatin = /^[a-z0-9]+$/.test(normalized);
+          let relevance = normalizedLatin
+            ? Number(sourceLatin.has(normalized))
+            : Number(sourceText.includes(normalized));
+          if (!relevance) {
+            const units = [];
+            const latinUnits = normalized.match(/[a-z0-9]+/g) || [];
+            latinUnits.filter((unit) => unit.length >= 2).forEach((unit) => units.push(unit));
+            const cjkRuns = normalized.match(/[\u4e00-\u9fff]+/g) || [];
+            cjkRuns.forEach((run) => {
+              if (run.length <= 2) {
+                units.push(run);
+                return;
+              }
+              for (let offset = 0; offset < run.length - 1; offset += 1) {
+                units.push(run.slice(offset, offset + 2));
+              }
+            });
+            const uniqueUnits = [...new Set(units)];
+            const overlap = uniqueUnits.filter((unit) =>
+              /^[a-z0-9]+$/.test(unit) ? sourceLatin.has(unit) : sourceText.includes(unit)
+            ).length;
+            if (overlap) {
+              relevance = Math.min(0.68, 0.34 + overlap / uniqueUnits.length * 0.34);
+            }
           }
           const weighted = relevance * (0.75 + 0.25 * Math.min(1, score / maxWeight));
           if (weighted > best.score) best = { score: weighted, word };
         });
         return best;
       }
-      function pickMatch(exclude) {
+      function rankMatchCandidates(mode, exclude = -1) {
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
         const candidates = PEOPLE
           .map((p, i) => {
             const interest = interestMatchForPerson(i);
             const distance = Math.abs(p[1] - my);
-            const stanceScore = matchMode === "same"
+            const stanceScore = mode === "same"
               ? 1 - Math.min(2, distance) / 2
               : distance / 2;
             return {
               i,
               d: distance,
               interest,
+              stanceScore,
               score: stanceScore * 0.82 + interest.score * 0.18,
             };
           });
@@ -6325,10 +8965,67 @@
         )
           .sort((a, b) =>
             b.score - a.score ||
-            (matchMode === "same" ? a.d - b.d : b.d - a.d)
+            (mode === "same" ? a.d - b.d : b.d - a.d) ||
+            a.i - b.i
           );
-        const pool = ranked.slice(0, userPortrait ? 3 : 6);
-        return pool.length ? pool[Math.floor(Math.random() * pool.length)].i : 0;
+        return ranked;
+      }
+      function renderMatchCandidates() {
+        const container = $("clashCandidates");
+        const signature = `${matchMode}:${matchCandidates
+          .map(({ i, score }) => `${i}:${score.toFixed(5)}`)
+          .join(",")}`;
+        if (container.dataset.signature !== signature) {
+          container.dataset.signature = signature;
+          container.replaceChildren();
+          matchCandidates.forEach((candidate, position) => {
+            const [name] = PEOPLE[candidate.i];
+            const button = uiNode("button", "match-candidate");
+            button.type = "button";
+            button.setAttribute(
+              "aria-label",
+              `选择${name}，综合排序 ${Math.round(candidate.score * 100)}`,
+            );
+            const avatar = uiNode("img", "");
+            setDomAvatarSource(
+              avatar,
+              personAvatarPath(candidate.i),
+              name,
+              CASTS[PEOPLE[candidate.i][2]][2],
+            );
+            avatar.alt = "";
+            const copy = uiNode("span", "");
+            copy.append(
+              uiNode("b", "", `@${name}`),
+              uiNode("small", "", `综合 ${Math.round(candidate.score * 100)}`),
+            );
+            button.append(avatar, copy);
+            button.addEventListener("click", () => {
+              matchCursor = position;
+              clashCurrent = candidate.i;
+              renderClash();
+            });
+            container.appendChild(button);
+          });
+        }
+        [...container.children].forEach((button, position) => {
+          const active = matchCandidates[position]?.i === clashCurrent;
+          button.classList.toggle("is-active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        $("clashQueueLabel").textContent =
+          `${matchMode === "same" ? "同频" : "互补"}候选 · ${matchCandidates.length} 位`;
+        $("clashAgainLabel").textContent = matchCandidates.length > 1
+          ? `换一位 · ${matchCursor + 1}/${matchCandidates.length}`
+          : "当前仅一位";
+        $("clashAgain").disabled = matchCandidates.length < 2;
+      }
+      function refreshMatchCandidates(preserveCurrent) {
+        const current = preserveCurrent ? clashCurrent : -1;
+        matchCandidates = rankMatchCandidates(matchMode).slice(0, 3);
+        const currentPosition = matchCandidates.findIndex((item) => item.i === current);
+        matchCursor = currentPosition >= 0 ? currentPosition : 0;
+        clashCurrent = matchCandidates[matchCursor]?.i ?? 0;
       }
       function setMatchMode(mode) {
         matchMode = mode === "same" ? "same" : "opposite";
@@ -6338,10 +9035,10 @@
         $("matchOpposite").classList.toggle("is-active", !same);
         $("matchOpposite").setAttribute("aria-selected", String(!same));
         $("clashMetricLabel").textContent = same ? "你们的立场相似度" : "你们的立场距离";
-        document.querySelector(".modal-title").textContent = same
-          ? "遇见与你同频的声音"
+        $("clashTitle").textContent = same
+          ? "遇见同频的声音"
           : "听听对立面怎么想";
-        document.querySelector(".modal-sub").textContent = same
+        $("clashSubtitle").textContent = same
           ? "从未点赞的回答中，寻找立场相近且兴趣相关的一种声音。"
           : "从未点赞的回答中，寻找立场相远且兴趣相关的一种声音。";
       }
@@ -6350,18 +9047,28 @@
           showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁观点碰撞`);
           return;
         }
+        setFollowedOnly(false, false);
+        clearTimeout(toastTimer);
+        toastEl.classList.remove("show");
         clashGoBtn.disabled = false;
         setClashButtonLabel("翻开人格卡");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
+        deferCirclePrompt();
         clashEl.classList.add("show");
+        $("clashX").focus({ preventScroll: true });
       }
       function renderClash() {
         const i = clashCurrent;
         ensureRing(users[i]);
         const [name, stance, castKey, claim] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
-        $("clashAva").src = personAvatarPath(i);
+        setDomAvatarSource(
+          $("clashAva"),
+          personAvatarPath(i),
+          name,
+          castColor,
+        );
         $("clashAva").alt = `${name}的头像`;
         $("clashName").textContent = `@${name}`;
         $("clashDot").style.background = castColor;
@@ -6378,21 +9085,49 @@
         taMk.style.left = pct(stance);
         meMk.title = liked.size ? `你（${my.toFixed(2)}）` : "你（中立，尚未点赞）";
         const distance = Math.abs(stance - my);
+        const activeMatch = matchCandidates.find((item) => item.i === i) ||
+          rankMatchCandidates(matchMode).find((item) => item.i === i);
+        const stanceScore = activeMatch?.stanceScore ??
+          (matchMode === "same" ? 1 - Math.min(2, distance) / 2 : distance / 2);
         $("clashDistance").textContent = matchMode === "same"
-          ? `相似 ${Math.round((1 - Math.min(2, distance) / 2) * 100)} / 100`
+          ? `相似 ${Math.round(stanceScore * 100)} / 100`
           : `相距 ${Math.round(distance * 50)} / 100`;
-        const interest = interestMatchForPerson(i);
+        const interest = activeMatch?.interest || interestMatchForPerson(i);
+        const stancePercent = Math.round(stanceScore * 100);
+        const interestPercent = Math.round(interest.score * 100);
+        $("clashStanceScore").textContent =
+          `${matchMode === "same" ? "同频" : "互补"} ${stancePercent}`;
+        $("clashStanceBar").style.transform = `scaleX(${stancePercent / 100})`;
+        $("clashStanceTrack").setAttribute("aria-valuenow", String(stancePercent));
+        $("clashInterestScore").textContent = userPortrait
+          ? interest.word && interest.score >= 0.34
+            ? `${interest.word} ${interestPercent}`
+            : "暂无明显交集"
+          : "未连接";
+        $("clashInterestBar").style.transform =
+          `scaleX(${userPortrait ? interestPercent / 100 : 0})`;
+        $("clashInterestTrack").setAttribute(
+          "aria-valuenow",
+          String(userPortrait ? interestPercent : 0),
+        );
+        $("clashWeightNote").textContent = userPortrait
+          ? "排序权重 · 本题立场 82 / 知乎兴趣 18"
+          : "当前仅按本题立场排序，连接知乎后加入兴趣交集";
         $("clashReason").textContent = interest.word && interest.score >= 0.34
           ? `结合你的知乎兴趣「${interest.word}」，优先呈现相关的${matchMode === "same" ? "同频" : "互补"}观点。`
           : userPortrait
             ? "兴趣画像已参与排序，本题立场距离仍是主要依据。"
             : "当前仅根据本题点赞形成的立场距离匹配。";
+        renderMatchCandidates();
         matchIndex = i;
         matchUntil = performance.now() + 6000;
       }
       function closeClash() {
+        const wasOpen = clashEl.classList.contains("show");
+        if (wasOpen) exploreToggleEl.focus({ preventScroll: true });
         clashEl.classList.remove("show");
         matchIndex = -1;
+        resumeCirclePrompt();
       }
       $("clashBtn").addEventListener("click", () => {
         setExploreOpen(false);
@@ -6402,15 +9137,71 @@
       clashEl.addEventListener("click", (e) => { if (e.target === clashEl) closeClash(); });
       $("matchSame").addEventListener("click", () => {
         setMatchMode("same");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
       });
       $("matchOpposite").addEventListener("click", () => {
         setMatchMode("opposite");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
       });
-      $("clashAgain").addEventListener("click", () => { clashCurrent = pickMatch(clashCurrent); renderClash(); });
+      $("clashAgain").addEventListener("click", () => {
+        if (matchCandidates.length < 2) return;
+        matchCursor = (matchCursor + 1) % matchCandidates.length;
+        clashCurrent = matchCandidates[matchCursor].i;
+        renderClash();
+      });
+      function runClashKeyboardAction(action) {
+        const dialog = $("clashDialog");
+        dialog.classList.add("is-keyboard-nav");
+        action();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => dialog.classList.remove("is-keyboard-nav"));
+        });
+      }
+      clashEl.addEventListener("keydown", (event) => {
+        if (!clashEl.classList.contains("show")) return;
+        const modeButton = event.target.closest(".match-mode .seg-btn");
+        if (modeButton && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+          event.preventDefault();
+          const target = event.key === "ArrowLeft" ? $("matchSame") : $("matchOpposite");
+          runClashKeyboardAction(() => target.click());
+          target.focus();
+          return;
+        }
+        const candidateButton = event.target.closest(".match-candidate");
+        if (candidateButton && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+          const buttons = [...$("clashCandidates").querySelectorAll(".match-candidate")];
+          const current = buttons.indexOf(candidateButton);
+          const next = event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? buttons.length - 1
+              : (current + (event.key === "ArrowLeft" ? -1 : 1) + buttons.length) % buttons.length;
+          runClashKeyboardAction(() => buttons[next]?.click());
+          buttons[next]?.focus();
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const focusable = [...$("clashDialog").querySelectorAll(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )].filter((element) => element.getClientRects().length > 0);
+        if (!focusable.length) {
+          event.preventDefault();
+          $("clashDialog").focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (event.target === first || event.target === $("clashDialog"))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && event.target === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
       clashGoBtn.addEventListener("click", () => {
         if (clashGoBtn.disabled) return;
         clashGoBtn.disabled = true;
@@ -6475,16 +9266,44 @@
         renderClusterBlurb($("circleText"), c);
         chipEl.classList.add("show");
         chipEl.setAttribute("aria-hidden", "false");
+        document.body.classList.add("is-circle-open");
       }
       function hideChip() {
         chipEl.classList.remove("show");
         chipEl.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("is-circle-open");
+      }
+      function circlePromptBlocked() {
+        return document.body.classList.contains("entry-active") ||
+          cardsTransitioning ||
+          cardsEl.classList.contains("show") ||
+          guideEl.classList.contains("show") ||
+          clashEl.classList.contains("show") ||
+          peerDiscoveryEl.classList.contains("show") ||
+          Boolean(focusSet) ||
+          Boolean(hovered) ||
+          Boolean(cameraTransition) ||
+          exploreShellEl.classList.contains("is-open") ||
+          chipEl.classList.contains("show");
+      }
+      function deferCirclePrompt() {
+        clearTimeout(chipTimer);
+        chipTimer = 0;
+        if (
+          chipEl.classList.contains("show") &&
+          chipCluster &&
+          !chipQueue.includes(chipCluster)
+        ) {
+          chipQueue.unshift(chipCluster);
+        }
+        hideChip();
       }
       function queueNextChip(delay) {
         clearTimeout(chipTimer);
         chipTimer = setTimeout(() => {
+          chipTimer = 0;
           if (!personaUnlocked()) return;
-          if (cardsEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) return;
+          if (circlePromptBlocked()) return;
           if (chipQueue.length) showChip(chipQueue.shift());
         }, delay);
       }
@@ -6494,7 +9313,7 @@
       function exitFocus() {
         focusSet = null;
         if (focusLines) {
-          nebula.remove(focusLines);
+          spectrumGroup.remove(focusLines);
           focusLines.geometry.dispose();
           focusLines.material.dispose();
           focusLines = null;
@@ -6503,9 +9322,19 @@
         focusBannerEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("is-focusing");
         commentGroup.visible = includeComments;
+        resumeCirclePrompt();
       }
       function focusCluster(c) {
+        setFollowedOnly(false, false);
         exitFocus();
+        setPersonaFilter(null);
+        setHovered(null);
+        cameraFocusUser = null;
+        matchIndex = -1;
+        matchUntil = 0;
+        moveCamera(defaultCameraTarget, defaultCameraPosition, true, () => {
+          controls.autoRotate = !reduceMotion;
+        });
         focusSet = new Set(c.members);
         c.members.forEach((i) => ensureRing(users[i]));
         const pts = [];
@@ -6521,13 +9350,298 @@
         });
         focusLines = new THREE.LineSegments(geo, mat);
         focusLines.renderOrder = 4;
-        nebula.add(focusLines);
+        spectrumGroup.add(focusLines);
         commentGroup.visible = false;
         renderClusterBlurb($("focusText"), c);
         focusBannerEl.classList.add("show");
         focusBannerEl.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-focusing");
       }
+
+      function setFollowedOnly(active, announce = true) {
+        const next = Boolean(active);
+        if (next && FOLLOWED.size === 0) {
+          followedOnly = false;
+          $("followedOnly").setAttribute("aria-pressed", "false");
+          if (announce) showToast("当前快照没有已关注的回答者");
+          return false;
+        }
+        followedOnly = next;
+        $("followedOnly").setAttribute("aria-pressed", String(followedOnly));
+        if (followedOnly && focusSet) exitFocus();
+        const matchedUser = users[matchIndex];
+        if (
+          followedOnly &&
+          matchedUser &&
+          !matchedUser.isMe &&
+          !matchedUser.followed
+        ) {
+          const interruptedTransition = Boolean(cameraTransition);
+          cancelCameraTransition();
+          matchIndex = -1;
+          matchUntil = 0;
+          if (interruptedTransition) scheduleAutoRotate();
+        }
+        if (
+          followedOnly &&
+          cameraFocusUser &&
+          !cameraFocusUser.isMe &&
+          !cameraFocusUser.followed
+        ) {
+          cameraFocusUser = null;
+          moveCamera(defaultCameraTarget, defaultCameraPosition, true, () => {
+            controls.autoRotate = !reduceMotion;
+            resumeCirclePrompt();
+          });
+        }
+        if (
+          hovered &&
+          !hovered.isMe &&
+          (!hovered.followed || hovered.kind === "comment")
+        ) {
+          setHovered(null);
+        }
+        if (announce) {
+          showToast(
+            followedOnly
+              ? `正在查看 ${FOLLOWED.size} 位已关注回答者`
+              : "已恢复全部回答者",
+          );
+        }
+        return followedOnly;
+      }
+
+      function cameraPositionFor(target) {
+        const direction = camera.position.clone().sub(controls.target);
+        if (direction.lengthSq() < 0.001) {
+          direction.copy(defaultCameraPosition).sub(defaultCameraTarget);
+        }
+        const distance = THREE.MathUtils.clamp(
+          camera.position.distanceTo(controls.target),
+          7.2,
+          8.4,
+        );
+        return target.clone().add(direction.normalize().multiplyScalar(distance));
+      }
+
+      function focusUser(user, animate, focusTip = false) {
+        if (!user) return;
+        if (focusSet) exitFocus();
+        setHovered(null);
+        deferCirclePrompt();
+        nebula.updateMatrixWorld(true);
+        const target = new THREE.Vector3();
+        if (user.isMe && user.group.parent) {
+          target.copy(user.group.position);
+          target.x = user.baseX;
+          user.group.parent.localToWorld(target);
+        } else {
+          user.group.getWorldPosition(target);
+        }
+        ensureRing(user);
+        cameraFocusUser = user;
+        matchIndex = user.index;
+        matchUntil = performance.now() + 3600;
+        moveCamera(target, cameraPositionFor(target), animate, () => {
+          setHovered(user);
+          if (focusTip) tip.focus({ preventScroll: true });
+          scheduleAutoRotate(7000);
+        });
+      }
+
+      function randomDiscover(animate, focusTip = false) {
+        const candidates = entryAnswerUsers.filter((user) => !followedOnly || user.followed);
+        if (!candidates.length) {
+          showToast("当前筛选下没有可发现的回答者");
+          return -1;
+        }
+        const fresh = candidates.filter((user) => user.index !== lastRandomIndex);
+        const pool = fresh.length ? fresh : candidates;
+        const user = pool[Math.floor(Math.random() * pool.length)];
+        lastRandomIndex = user.index;
+        focusUser(user, animate, focusTip);
+        return user.index;
+      }
+
+      function resetObservation(animate) {
+        setFollowedOnly(false, false);
+        if (focusSet) exitFocus();
+        setHovered(null);
+        deferCirclePrompt();
+        includeComments = false;
+        $("commentToggle").checked = false;
+        commentGroup.visible = false;
+        matchIndex = -1;
+        matchUntil = 0;
+        cameraFocusUser = null;
+        moveCamera(defaultCameraTarget, defaultCameraPosition, animate, () => {
+          controls.autoRotate = !reduceMotion;
+          showToast("已重置星云视角");
+          resumeCirclePrompt();
+        });
+      }
+
+      function resetKeyboardMotion(resumeAutoRotate = false) {
+        const wasActive =
+          keyboardMotionActive ||
+          pressedNavigationKeys.size > 0 ||
+          keyboardCameraVelocity.lengthSq() > 0.000001;
+        pressedNavigationKeys.clear();
+        keyboardCameraVelocity.set(0, 0, 0);
+        keyboardMotionActive = false;
+        if (wasActive && resumeAutoRotate) scheduleAutoRotate();
+      }
+
+      function discardOrbitMomentum() {
+        const position = camera.position.clone();
+        const quaternion = camera.quaternion.clone();
+        const target = controls.target.clone();
+        const dampingEnabled = controls.enableDamping;
+        controls.enableDamping = false;
+        controls.update();
+        controls.enableDamping = dampingEnabled;
+        controls.target.copy(target);
+        camera.position.copy(position);
+        camera.quaternion.copy(quaternion);
+      }
+
+      function updateKeyboardCamera(delta) {
+        const controlsAvailable = sceneControlsAvailable();
+        if (!controlsAvailable) {
+          if (sceneControlsWereAvailable) {
+            sceneControlsWereAvailable = false;
+            resetKeyboardMotion(false);
+            cameraFocusUser = null;
+            cancelCameraTransition();
+            controls.autoRotate = false;
+            clearTimeout(rotateIdleTimer);
+            discardOrbitMomentum();
+          }
+          return;
+        }
+        if (!sceneControlsWereAvailable) {
+          sceneControlsWereAvailable = true;
+          scheduleAutoRotate();
+        }
+
+        const horizontal =
+          Number(pressedNavigationKeys.has("ArrowRight")) -
+          Number(pressedNavigationKeys.has("ArrowLeft"));
+        const vertical =
+          Number(pressedNavigationKeys.has("ArrowDown")) -
+          Number(pressedNavigationKeys.has("ArrowUp"));
+        const zoom =
+          Number(
+            pressedNavigationKeys.has("ZoomOut"),
+          ) -
+          Number(
+            pressedNavigationKeys.has("ZoomIn"),
+          );
+        const hasInput = Boolean(horizontal || vertical || zoom);
+        const response = hasInput ? 13 : 8;
+        keyboardCameraVelocity.x = THREE.MathUtils.damp(
+          keyboardCameraVelocity.x,
+          horizontal * 0.78,
+          response,
+          delta,
+        );
+        keyboardCameraVelocity.y = THREE.MathUtils.damp(
+          keyboardCameraVelocity.y,
+          vertical * 0.58,
+          response,
+          delta,
+        );
+        keyboardCameraVelocity.z = THREE.MathUtils.damp(
+          keyboardCameraVelocity.z,
+          zoom * 0.72,
+          response,
+          delta,
+        );
+
+        const moving =
+          Math.abs(keyboardCameraVelocity.x) > 0.001 ||
+          Math.abs(keyboardCameraVelocity.y) > 0.001 ||
+          Math.abs(keyboardCameraVelocity.z) > 0.001;
+        if (!moving) {
+          if (keyboardMotionActive) {
+            keyboardCameraVelocity.set(0, 0, 0);
+            keyboardMotionActive = false;
+            scheduleAutoRotate();
+          }
+          return;
+        }
+
+        if (!keyboardMotionActive) {
+          cameraFocusUser = null;
+          cancelCameraTransition();
+          controls.autoRotate = false;
+          clearTimeout(rotateIdleTimer);
+          keyboardMotionActive = true;
+        }
+
+        const offset = camera.position.clone().sub(controls.target);
+        const spherical = new THREE.Spherical().setFromVector3(offset);
+        spherical.theta += keyboardCameraVelocity.x * delta;
+        spherical.phi = THREE.MathUtils.clamp(
+          spherical.phi + keyboardCameraVelocity.y * delta,
+          controls.minPolarAngle,
+          controls.maxPolarAngle,
+        );
+        spherical.radius = THREE.MathUtils.clamp(
+          spherical.radius * Math.exp(keyboardCameraVelocity.z * delta),
+          controls.minDistance,
+          controls.maxDistance,
+        );
+        camera.position.copy(controls.target).add(offset.setFromSpherical(spherical));
+        camera.lookAt(controls.target);
+      }
+
+      function sceneControlsAvailable() {
+        return controls.enabled &&
+          !document.body.classList.contains("entry-active") &&
+          !cardsTransitioning &&
+          !cardsEl.classList.contains("show") &&
+          !guideEl.classList.contains("show") &&
+          !clashEl.classList.contains("show") &&
+          !peerDiscoveryEl.classList.contains("show") &&
+          !exploreShellEl.classList.contains("is-open");
+      }
+
+      function isInteractiveKeyboardTarget(target) {
+        return target instanceof Element && Boolean(
+          target.closest("input, textarea, select, button, a, [contenteditable='true']"),
+        );
+      }
+
+      function navigationKeyForEvent(event) {
+        if (
+          event.key === "ArrowLeft" ||
+          event.key === "ArrowRight" ||
+          event.key === "ArrowUp" ||
+          event.key === "ArrowDown"
+        ) {
+          return event.key;
+        }
+        if (event.key === "+" || event.key === "=" || event.key === "Add") {
+          return "ZoomIn";
+        }
+        if (event.key === "-" || event.key === "_" || event.key === "Subtract") {
+          return "ZoomOut";
+        }
+        return "";
+      }
+
+      $("randomDiscover").addEventListener("click", (event) => {
+        randomDiscover(true, event.detail === 0);
+      });
+      $("followedOnly").addEventListener("click", () => {
+        setFollowedOnly(!followedOnly);
+      });
+      $("locateMe").addEventListener("click", (event) => {
+        focusUser(meUser, true, event.detail === 0);
+      });
+      $("resetView").addEventListener("click", () => resetObservation(true));
+
       $("circleFocus").addEventListener("click", () => {
         if (chipCluster) focusCluster(chipCluster);
         hideChip();
@@ -6558,13 +9672,48 @@
       });
 
       document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (clashEl.classList.contains("show")) closeClash();
-        else if (cardsEl.classList.contains("show")) closeCards();
-        else if (focusSet) exitFocus();
-        else if (chipEl.classList.contains("show")) hideChip();
-        else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
+        if (trapPeerFocus(e)) return;
+        if (e.key === "Escape") {
+          if (e.isComposing || e.repeat) return;
+          if (peerDiscoveryEl.classList.contains("show")) closePeerDiscovery();
+          else if (guideEl.classList.contains("show")) closeGuide();
+          else if (clashEl.classList.contains("show")) closeClash();
+          else if (cardsEl.classList.contains("show")) closeCards();
+          else if (focusSet) exitFocus();
+          else if (chipEl.classList.contains("show")) hideChip();
+          else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
+          else if (hovered) setHovered(null);
+          return;
+        }
+        if (
+          e.defaultPrevented ||
+          e.metaKey ||
+          e.ctrlKey ||
+          e.altKey ||
+          isInteractiveKeyboardTarget(e.target) ||
+          !sceneControlsAvailable()
+        ) {
+          return;
+        }
+        if ((e.key === " " || e.key === "Space" || e.code === "Space") && !e.repeat) {
+          e.preventDefault();
+          randomDiscover(true, true);
+        } else if (e.key === "r" || e.key === "R") {
+          if (e.repeat) return;
+          e.preventDefault();
+          resetObservation(true);
+        } else {
+          const navigationKey = navigationKeyForEvent(e);
+          if (!navigationKey) return;
+          e.preventDefault();
+          pressedNavigationKeys.add(navigationKey);
+        }
       });
+      document.addEventListener("keyup", (e) => {
+        const navigationKey = navigationKeyForEvent(e);
+        if (navigationKey) pressedNavigationKeys.delete(navigationKey);
+      });
+      window.addEventListener("blur", () => resetKeyboardMotion(true));
 
       window.__neb = {
         presetId: () => PRESET.id,
@@ -6581,16 +9730,83 @@
         selfProfile: () => inferSelfProfile(),
         quality: () => quality.name,
         particleCount: () => quality.farStars + quality.haloStars + quality.armDust + quality.brightDust,
+        lodTier: () => distanceLod,
+        visibleParticleCount: () => visibleParticleCount,
+        bloomEnabled: () => bloom.enabled,
+        avatarTextureSize: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatar.material.map?.image?.width || 0;
+        },
+        avatarTextureId: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatar.material.map?.uuid || "";
+        },
+        avatarStatus: (i) => {
+          const user = i === -1 ? meUser : users[i];
+          return user?.avatarState || "missing";
+        },
+        retryAvatar: (i) => retryUserAvatar(i === -1 ? meUser : users[i]),
+        setCameraDistance: (distance) => {
+          const nextDistance = THREE.MathUtils.clamp(
+            Number(distance) || controls.minDistance,
+            controls.minDistance,
+            controls.maxDistance,
+          );
+          const direction = camera.position.clone().sub(controls.target).normalize();
+          camera.position.copy(controls.target).addScaledVector(direction, nextDistance);
+          camera.lookAt(controls.target);
+          controls.update();
+          updateDistanceLod();
+          composer.render();
+        },
         pointerEnergy: () => pointerEnergy,
+        spectrumChildrenAligned: () =>
+          userGroup.parent === spectrumGroup &&
+          commentGroup.parent === spectrumGroup &&
+          dustGroup.parent === spectrumGroup,
+        spectrumRotation: () => [
+          spectrumGroup.rotation.x,
+          spectrumGroup.rotation.y,
+          spectrumGroup.rotation.z,
+        ],
+        spectrumAlignmentError: () => {
+          spectrumGroup.updateMatrixWorld(true);
+          const avatarWorld = users[0].group.getWorldPosition(new THREE.Vector3());
+          const dustWorld = dustGroup.localToWorld(users[0].group.position.clone());
+          return avatarWorld.distanceTo(dustWorld);
+        },
         focusSize: () => (focusSet ? focusSet.size : 0),
+        followedOnly: () => followedOnly,
+        randomIndex: () => lastRandomIndex,
+        cameraPosition: () => camera.position.toArray(),
+        cameraTarget: () => controls.target.toArray(),
+        keyboardVelocity: () => keyboardCameraVelocity.toArray(),
+        stepKeyboardCamera: (delta = 1 / 60) => {
+          updateKeyboardCamera(Math.max(0, Math.min(delta, 0.05)));
+        },
         clashIndex: () => clashCurrent,
         matchIndex: () => matchIndex,
         matchMode: () => matchMode,
+        peerIndexes: () => peerBatch.map(({ index }) => index),
+        peerSeenIndexes: () => [...peerSeenIndexes],
+        matchCandidates: () => matchCandidates.map(({ i, score, stanceScore, interest }) => ({
+          index: i,
+          score,
+          stanceScore,
+          interest,
+        })),
+        personaFilter: () => personaFilter,
+        personaCatalog: () => PERSONA_CATALOG.map(({ key, count }) => ({ key, count })),
         portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
-        play: () => { running = true; clock.getDelta(); loop(); },
+        play: () => { running = true; clock.getDelta(); scheduleFrame(); },
+        randomDiscover: (animate = false) => randomDiscover(animate),
+        locateMe: (animate = false) => focusUser(meUser, animate),
+        resetObservation: (animate = false) => resetObservation(animate),
+        setFollowedOnly: (active) => setFollowedOnly(active, false),
         heartOn: (i) => !!(users[i] && users[i].heart && users[i].heart.visible),
         ringOpacity: (i) => (users[i] && users[i].ring ? users[i].ring.material.opacity : 0),
         avatarOpacity: (i) => (users[i] ? users[i].avatar.material.opacity : -1),
+        setPersonaFilter: (key) => setPersonaFilter(key, { openDeck: false }),
       };
 
       try {
@@ -6598,6 +9814,7 @@
           window.parent.postMessage({ type: "nebula-scene-ready" }, location.origin);
         }
       } catch (e) {}
+      if (peerDiscoveryRequested && !entryEnabled) queueMicrotask(openPeerDiscovery);
       loop();
       window.__stage && window.__stage("looping");
     </script>

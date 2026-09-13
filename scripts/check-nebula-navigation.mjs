@@ -1,14 +1,20 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import {
   buildNebulaShelfUrl,
+  getNebulaPreset,
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
+import {
+  buildPersonaCatalog,
+  cyclePersonaIndex,
+} from "../public/nebula-scene/persona-browser.js";
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
+const identityRevisionSource = readFileSync(new URL("../src/identityRevision.ts", import.meta.url), "utf8");
 const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url), "utf8");
 const shelfSource = readFileSync(new URL("../src/Shelf.tsx", import.meta.url), "utf8");
 const portraitSource = readFileSync(new URL("../src/zhihuPortrait.ts", import.meta.url), "utf8");
@@ -17,6 +23,7 @@ const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
 const reactCatalogSource = readFileSync(new URL("../src/people.ts", import.meta.url), "utf8");
+const presetMetaSource = readFileSync(new URL("../src/presetMeta.ts", import.meta.url), "utf8");
 const homeSourceFile = ts.createSourceFile(
   "src/Home.tsx",
   homeSource,
@@ -27,6 +34,13 @@ const homeSourceFile = ts.createSourceFile(
 const reactSourceFile = ts.createSourceFile(
   "src/people.ts",
   reactCatalogSource,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TS,
+);
+const presetMetaSourceFile = ts.createSourceFile(
+  "src/presetMeta.ts",
+  presetMetaSource,
   ts.ScriptTarget.Latest,
   true,
   ts.ScriptKind.TS,
@@ -74,6 +88,7 @@ for (const statement of homeSourceFile.statements) {
 assert.ok(homeCatalogInitializer, "首页问题目录不存在");
 
 let reactCatalogInitializer = null;
+let reactAnswerCountInitializer = null;
 for (const statement of reactSourceFile.statements) {
   if (!ts.isVariableStatement(statement)) continue;
   for (const declaration of statement.declarationList.declarations) {
@@ -85,9 +100,33 @@ for (const statement of reactSourceFile.statements) {
     ) {
       reactCatalogInitializer = declaration.initializer;
     }
+    if (
+      ts.isIdentifier(declaration.name) &&
+      declaration.name.text === "NEBULA_PRESET_ANSWER_COUNTS" &&
+      declaration.initializer &&
+      ts.isObjectLiteralExpression(declaration.initializer)
+    ) {
+      reactAnswerCountInitializer = declaration.initializer;
+    }
   }
 }
 assert.ok(reactCatalogInitializer, "React 快照版本目录不存在");
+assert.ok(reactAnswerCountInitializer, "React 快照人数目录不存在");
+let presetMetaInitializer = null;
+for (const statement of presetMetaSourceFile.statements) {
+  if (!ts.isVariableStatement(statement)) continue;
+  for (const declaration of statement.declarationList.declarations) {
+    if (
+      ts.isIdentifier(declaration.name) &&
+      declaration.name.text === "PRESET_META" &&
+      declaration.initializer
+    ) {
+      const initializer = unwrapExpression(declaration.initializer);
+      if (ts.isObjectLiteralExpression(initializer)) presetMetaInitializer = initializer;
+    }
+  }
+}
+assert.ok(presetMetaInitializer, "朋友对照快照元数据目录不存在");
 const reactCatalogEntries = reactCatalogInitializer.properties.map((property) => {
   assert.ok(ts.isPropertyAssignment(property), "React 快照目录只能包含静态属性");
   assert.ok(
@@ -98,6 +137,25 @@ const reactCatalogEntries = reactCatalogInitializer.properties.map((property) =>
   return [property.name.text, property.initializer.text];
 });
 const reactCatalog = new Map(reactCatalogEntries);
+const presetMetaIds = presetMetaInitializer.properties.map((property) => {
+  assert.ok(ts.isPropertyAssignment(property), "朋友对照快照元数据只能包含静态属性");
+  assert.ok(
+    ts.isStringLiteral(property.name) || ts.isIdentifier(property.name),
+    "朋友对照快照 id 必须是静态字符串",
+  );
+  return property.name.text;
+});
+const reactAnswerCounts = new Map(
+  reactAnswerCountInitializer.properties.map((property) => {
+    assert.ok(ts.isPropertyAssignment(property), "React 快照人数目录只能包含静态属性");
+    assert.ok(
+      ts.isStringLiteral(property.name) || ts.isIdentifier(property.name),
+      "React 快照人数 id 必须是静态字符串",
+    );
+    assert.ok(ts.isNumericLiteral(property.initializer), "React 快照人数必须是静态数字");
+    return [property.name.text, Number(property.initializer.text)];
+  }),
+);
 assert.equal(
   reactCatalog.size,
   reactCatalogEntries.length,
@@ -132,12 +190,189 @@ assert.match(
 );
 assert.match(
   source,
+  /id="observatoryControls"[\s\S]*id="randomDiscover"[\s\S]*id="followedOnly"[\s\S]*id="locateMe"[\s\S]*id="resetView"/,
+  "星云必须提供随机发现、只看关注、我的位置和重置视角控制",
+);
+assert.match(
+  source,
+  /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
+  "星云画布必须提供可聚焦的键盘操作入口",
+);
+assert.match(
+  source,
+  /<div id="tip" role="region" aria-live="polite" aria-label="当前观点" tabindex="-1"><\/div>/,
+  "键盘定位后的观点必须提供可聚焦的辅助技术反馈",
+);
+assert.match(
+  source,
+  /<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><\/div>/,
+  "观测控制反馈必须向辅助技术播报",
+);
+assert.match(
+  source,
+  /tip\.classList\.remove\("show"\);\s*if \(tip\.contains\(document\.activeElement\)\) \{\s*canvas\.focus\(\{ preventScroll: true \}\)/,
+  "关闭键盘定位观点后必须把焦点恢复到星云画布",
+);
+assert.match(
+  source,
+  /function scheduleHideTip\(ms\)[\s\S]*setTimeout\(\(\) => \{\s*setHovered\(null\);[\s\S]*projected\.z < -1 \|\| projected\.z > 1\) \{\s*setHovered\(null\);/,
+  "观点浮层的所有自动关闭路径必须恢复键盘焦点",
+);
+assert.match(
+  source,
+  /const restoreLikeFocus = tip\.contains\(document\.activeElement\)[\s\S]*renderTip\(hovered\)[\s\S]*tip\.querySelector\("\[data-like\]"\)\?\.focus\(\{ preventScroll: true \}\)/,
+  "键盘点赞重绘观点浮层后必须恢复按钮焦点",
+);
+assert.match(
+  source,
+  /function randomDiscover\(animate, focusTip = false\)[\s\S]*user\.index !== lastRandomIndex[\s\S]*focusUser\(user, animate, focusTip\)/,
+  "随机发现必须避开连续命中同一回答者并定位到目标",
+);
+assert.match(
+  source,
+  /const dimmedByFollow = followedOnly && !u\.isMe && !u\.followed/,
+  "只看关注必须淡出未关注回答者并保留我的星位",
+);
+assert.match(
+  source,
+  /followedOnly[\s\S]*matchedUser[\s\S]*!matchedUser\.followed[\s\S]*cancelCameraTransition\(\)[\s\S]*matchIndex = -1[\s\S]*cameraFocusUser[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true/,
+  "只看关注必须取消已被过滤回答者的定位、高亮并恢复全景",
+);
+const autoRotateScheduler = source.match(
+  /function scheduleAutoRotate\(delay = 5000\) \{[\s\S]*?\n\s*\}\n\s*function moveCamera/,
+)?.[0];
+assert.ok(autoRotateScheduler, "自动旋转恢复逻辑不存在");
+assert.doesNotMatch(
+  autoRotateScheduler,
+  /cameraFocusUser\s*=/,
+  "自动旋转仍围绕目标用户时不得遗失相机焦点状态",
+);
+assert.match(
+  source,
+  /function resetObservation\(animate\)[\s\S]*setFollowedOnly\(false, false\)[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition[\s\S]*controls\.autoRotate = !reduceMotion/,
+  "重置视角必须恢复默认相机、筛选和自动旋转",
+);
+assert.match(
+  source,
+  /function openClash\(\)[\s\S]*setFollowedOnly\(false, false\)[\s\S]*clashEl\.classList\.add\("show"\)/,
+  "观点碰撞必须退出只看关注，避免选中已淡出的回答者",
+);
+assert.match(
+  source,
+  /function focusCluster\(c\)[\s\S]*setHovered\(null\)[\s\S]*matchIndex = -1[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true/,
+  "小圈子聚焦必须清理旧人物定位并恢复全景",
+);
+assert.match(
+  source,
+  /event\.key === "ArrowLeft"[\s\S]*event\.key === "ArrowRight"[\s\S]*event\.key === "ArrowUp"[\s\S]*event\.key === "ArrowDown"[\s\S]*event\.key === "\+"[\s\S]*event\.key === "-"/,
+  "星云必须支持方向键旋转和加减号缩放",
+);
+assert.match(
+  source,
+  /const pressedNavigationKeys = new Set\(\)[\s\S]*function updateKeyboardCamera\(delta\)[\s\S]*THREE\.MathUtils\.damp/,
+  "键盘相机运动必须在渲染帧内按时间阻尼更新",
+);
+assert.match(
+  source,
+  /updateKeyboardCamera\(delta\);\s*if \(sceneControlsAvailable\(\)\) \{\s*updateCameraTransition\(performance\.now\(\)\);\s*controls\.update\(\);/,
+  "键盘相机运动必须接入渲染帧，且不可观测时不得推进相机过渡或 OrbitControls 阻尼",
+);
+assert.match(
+  source,
+  /function navigationKeyForEvent\(event\)[\s\S]*return "ZoomIn"[\s\S]*return "ZoomOut"[\s\S]*pressedNavigationKeys\.add\(navigationKey\)[\s\S]*addEventListener\("keyup"[\s\S]*pressedNavigationKeys\.delete\(navigationKey\)/,
+  "方向和缩放键必须维护按住状态并在松开时停止加速",
+);
+assert.match(
+  source,
+  /let frameScheduled = false[\s\S]*if \(frameScheduled\) return[\s\S]*frameScheduled = false;\s*loop\(\)[\s\S]*visibilitychange[\s\S]*scheduleFrame\(\)/,
+  "页面恢复可见时不得创建重复的渲染循环",
+);
+assert.match(
+  source,
+  /if \(!controlsAvailable\)[\s\S]*cancelCameraTransition\(\)[\s\S]*controls\.autoRotate = false[\s\S]*if \(!sceneControlsWereAvailable\)[\s\S]*scheduleAutoRotate\(\)/,
+  "弹层打开时必须暂停相机运动，关闭后恢复自动旋转",
+);
+assert.match(
+  source,
+  /function sceneControlsAvailable\(\)[\s\S]*!guideEl\.classList\.contains\("show"\)/,
+  "星图向导打开时必须暂停星云观测控制",
+);
+assert.match(
+  source,
+  /Math\.min\(\s*anchor\.getBoundingClientRect\(\)\.top,\s*observatoryControlsEl\.getBoundingClientRect\(\)\.top[\s\S]*--mobile-panel-clearance/,
+  "移动端浮层必须避开观测控制条",
+);
+assert.match(
+  source,
+  /if \(user\.isMe && user\.group\.parent\)[\s\S]*target\.x = user\.baseX[\s\S]*localToWorld\(target\)/,
+  "定位我的位置必须使用星位漂移的最终横坐标",
+);
+assert.match(
+  source,
+  /const matchOpacity = reduceMotion \? 0\.9[\s\S]*reduceMotion \? 1\.08/,
+  "减少动态效果下匹配高亮不得持续脉动",
+);
+assert.match(
+  source,
+  /randomDiscover\(true, event\.detail === 0\)[\s\S]*focusUser\(meUser, true, event\.detail === 0\)[\s\S]*randomDiscover\(true, true\)/,
+  "按钮和空格键定位必须把观点反馈交给键盘用户",
+);
+assert.match(
+  source,
+  /duration: 640[\s\S]*const eased = progress \* progress \* \(3 - 2 \* progress\)/,
+  "相机定位必须使用平滑起止的过渡曲线",
+);
+const keyboardResponse = source.match(
+  /const response = hasInput \? ([\d.]+) : ([\d.]+);/,
+);
+const keyboardHorizontalSpeed = source.match(
+  /horizontal \* ([\d.]+),\s*response,\s*delta/,
+);
+assert.ok(keyboardResponse && keyboardHorizontalSpeed, "必须能够读取键盘相机阻尼参数");
+const activeResponse = Number(keyboardResponse[1]);
+const idleResponse = Number(keyboardResponse[2]);
+const horizontalSpeed = Number(keyboardHorizontalSpeed[1]);
+let keyboardVelocity = 0;
+const keyboardFrameSteps = [];
+for (let frame = 0; frame < 120; frame += 1) {
+  const pressed = frame < 60;
+  const response = pressed ? activeResponse : idleResponse;
+  const target = pressed ? horizontalSpeed : 0;
+  keyboardVelocity =
+    target + (keyboardVelocity - target) * Math.exp(-response / 60);
+  keyboardFrameSteps.push(Math.abs(keyboardVelocity / 60));
+}
+const maxKeyboardFrameStep = Math.max(...keyboardFrameSteps);
+assert.ok(
+  keyboardFrameSteps[0] < maxKeyboardFrameStep * 0.25,
+  "键盘相机首帧必须平缓加速",
+);
+assert.ok(
+  maxKeyboardFrameStep < 0.014,
+  "键盘相机在 60 fps 下单帧旋转不得产生明显跳步",
+);
+assert.ok(
+  keyboardFrameSteps.at(-1) < 0.00001,
+  "松开方向键后相机速度必须平滑衰减至静止",
+);
+assert.match(
+  source,
+  /e\.key === "r" \|\| e\.key === "R"[\s\S]*resetObservation\(true\)/,
+  "星云必须支持 R 重置视角",
+);
+assert.match(
+  source,
+  /e\.key === " " \|\| e\.key === "Space" \|\| e\.code === "Space"[\s\S]*randomDiscover\(true, true\)/,
+  "星云必须支持空格随机发现",
+);
+assert.match(
+  source,
   /id="cardsQuickEntry"[\s\S]*id="cardsQuickCount"/,
   "观点卡片必须作为星云常驻入口展示",
 );
 assert.match(
   source,
-  /cardsQuickEntryBtn\.addEventListener\("click",\s*openCards\)/,
+  /cardsQuickEntryBtn\.addEventListener\("click",\s*\(\) => openCards\(\)\)/,
   "常驻观点卡片入口必须直接打开光谱阅读",
 );
 assert.doesNotMatch(
@@ -147,8 +382,68 @@ assert.doesNotMatch(
 );
 assert.match(
   source,
+  /id="personaFilters"/,
+  "观点阅读必须提供人格筛选入口",
+);
+assert.match(
+  source,
+  /id="personaDeckOpen"/,
+  "观点阅读必须提供人格卡群入口",
+);
+assert.match(
+  source,
+  /id="personaQuickEntry"[\s\S]*id="personaQuickCount"/,
+  "主星云必须常驻展示本题人格卡群入口",
+);
+assert.match(
+  source,
+  /personaQuickEntryBtn\.addEventListener\("click",\s*openPersonaDeck\)/,
+  "主星云人格入口必须直接打开人格卡群",
+);
+assert.match(
+  source,
+  /body\.is-circle-open \.persona-quick-entry,[\s\S]*body\.is-circle-open \.cards-quick-entry/,
+  "小圈子结果显示时必须隐藏右侧常驻入口",
+);
+assert.match(
+  source,
+  /function showChip\(c\)[\s\S]*classList\.add\("is-circle-open"\)[\s\S]*function hideChip\(\)[\s\S]*classList\.remove\("is-circle-open"\)/,
+  "小圈子结果的打开和关闭必须同步页面占用状态",
+);
+assert.match(
+  source,
+  /personaDimmed\s*=\s*Boolean\(personaFilter\)[\s\S]*u\.castKey\s*!==\s*personaFilter/,
+  "人格筛选必须淡出其他人格星体而不是移除节点",
+);
+assert.match(
+  source,
+  /看看这一派怎么说[\s\S]*read\.dataset\.personaRead[\s\S]*回到整体[\s\S]*clear\.dataset\.personaClear/,
+  "人格卡群必须提供阅读当前人格与回到整体的操作",
+);
+assert.match(
+  source,
+  /if \(e\.target\.closest\("\[data-persona-read\]"\)\) \{[\s\S]*setCardFilter\("all"\);[\s\S]*cardsSearchEl\.value = "";/,
+  "阅读当前人格必须清除会掩盖该人格的次级筛选与搜索",
+);
+assert.match(
+  source,
+  /function openCards\(focusSelector = "#cardsClose"\)[\s\S]*document\.querySelector\(focusSelector\)\?\.focus\(\)/,
+  "打开观点层后必须把焦点移入可见内容",
+);
+assert.match(
+  source,
+  /function closeCards\(\)[\s\S]*cardsReturnFocus\?\.focus\(\)/,
+  "关闭观点层后必须恢复原入口焦点",
+);
+assert.match(
+  source,
   /function renderRecommendations\(\)[\s\S]*recommendationIndexes\(\)/,
   "推荐入口必须渲染当前星云中的观点",
+);
+assert.match(
+  source,
+  /function recommendationIndexes\(\)[\s\S]*rankMatchCandidates\("same"\)[\s\S]*slice\(0,\s*5\)/,
+  "相关推荐必须复用画像驱动的同频排序",
 );
 assert.match(
   source,
@@ -167,18 +462,18 @@ assert.match(
 );
 assert.doesNotMatch(
   source,
-  /getElementById\("(?:clashBtn|circleBtn)"\)\.disabled/,
-  "未解锁的碰撞与圈子入口必须保持可点击并说明门槛",
+  /getElementById\("(?:peerDiscoveryBtn|clashBtn|circleBtn)"\)\.disabled/,
+  "未解锁的同频、碰撞与圈子入口必须保持可点击并说明门槛",
 );
 assert.match(
   source,
-  /if \(wasUnlocked && !personaUnlocked\(\)\) \{\s*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);\s*\}/,
-  "点赞降到三次以下时必须退出已有的小圈子聚焦态",
+  /if \(wasUnlocked && !personaUnlocked\(\)\) \{[\s\S]*?closePeerDiscovery\(\);[\s\S]*?hideChip\(\);\s*if \(focusSet\) exitFocus\(\);\s*\}/,
+  "点赞降到三次以下时必须退出同频发现与小圈子聚焦态",
 );
 assert.match(
   source,
-  /function resetLikes\(\)[\s\S]*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);[\s\S]*applyStance\(true\)/,
-  "清空全部点赞时必须退出已有的小圈子聚焦态",
+  /function resetLikes\(\)[\s\S]*closePeerDiscovery\(\);[\s\S]*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);[\s\S]*applyStance\(true\)/,
+  "清空全部点赞时必须退出同频发现与小圈子聚焦态",
 );
 assert.match(
   source,
@@ -360,8 +655,236 @@ assert.match(
   /stanceScore \* 0\.82 \+ interest\.score \* 0\.18/,
   "匹配必须以本题立场为主、画像兴趣为辅",
 );
+assert.match(
+  source,
+  /id="peerDiscoveryBtn"[\s\S]*id="peerDiscovery"/,
+  "星云工具箱必须提供同频发现入口和结果面板",
+);
+assert.match(
+  source,
+  /takePeerBatch\(ranked,\s*peerSeenIndexes,\s*5\)/,
+  "同频发现必须按五人一批且记录已展示候选",
+);
+assert.match(
+  source,
+  /PEER_SEEN_KEY_PREFIX\s*=\s*`jiupai:nebula:peer-seen:v1:\$\{PRESET\.id\}:\$\{PRESET\.version \|\| "1"\}`[\s\S]*userIdentityRevision \?\? "anonymous"[\s\S]*sessionStorage\.getItem\(storageKey\)[\s\S]*sessionStorage\.setItem\(/,
+  "同频发现必须按快照版本和账号作用域保留当前标签页的已展示候选",
+);
+assert.match(
+  nebulaHostSource,
+  /function identityRevisionFor\(accountVersion:[\s\S]*resolveIdentityRevision\([\s\S]*IDENTITY_REVISIONS_KEY[\s\S]*identityRevisionRef\.current = identityRevisionFor\([\s\S]*identityRevision:\s*identityRevisionRef\.current/,
+  "父页必须用不透明身份修订号隔离账号并同步给星云",
+);
+assert.match(
+  identityRevisionSource,
+  /const revisions = new Set<number>\(\)[\s\S]*storedRevisionState[\s\S]*nextAvailableRevision[\s\S]*persisted\.entries\.forEach[\s\S]*memory\.set\(scope,\s*nextRevision\)[\s\S]*storage\.setItem[\s\S]*nextRevision:\s*nextRevision < MAX_IDENTITY_REVISION/,
+  "身份修订号必须合并持久化记录、保持唯一并用高水位避免淘汰后复用",
+);
+assert.match(
+  nebulaHostSource,
+  /NAVIGATION_CONTEXT_KINDS[\s\S]*key\.startsWith\(`\$\{NAVIGATION_CONTEXT_PREFIX\}\$\{kind\}:`\)/,
+  "导航上下文清理不得误删身份修订或同频轮次状态",
+);
+assert.match(
+  source,
+  /const contextPrefixes = \[`\$\{prefix\}self:`, `\$\{prefix\}subject:`\][\s\S]*contextPrefixes\.some/,
+  "独立星云的导航上下文清理不得误删身份修订或同频轮次状态",
+);
+assert.doesNotMatch(
+  nebulaHostSource,
+  /identityScope:/,
+  "父页不得把账号版本或账号指纹传给星云 iframe",
+);
+assert.match(
+  source,
+  /const peerScopeChanged = userIdentityRevision !== identityRevision[\s\S]*peerSeenIndexes = loadPeerSeenIndexes\(\)[\s\S]*peerBatch = \[\]/,
+  "账号切换或 iframe 恢复时必须切换到该身份自己的同频浏览轮次",
+);
+assert.match(
+  source,
+  /const peerSeenMemory = new Map\(\)[\s\S]*peerSeenMemory\.set\(storageKey,[\s\S]*peerSeenMemory\.get\(storageKey\)/,
+  "Session Storage 不可用时必须按身份保留当前页面内的浏览轮次",
+);
+assert.match(
+  source,
+  /const peerSeenMemoryPreferred = new Set\(\)[\s\S]*peerSeenMemoryPreferred\.has\(storageKey\)[\s\S]*peerSeenMemoryPreferred\.add\(storageKey\)/,
+  "Session Storage 后续写失败时必须继续以内存中的最新轮次为准",
+);
+assert.match(
+  source,
+  /const peerBatchMemoryPreferred = new Set\(\)[\s\S]*peerBatchMemoryPreferred\.has\(storageKey\)[\s\S]*peerBatchMemoryPreferred\.add\(storageKey\)/,
+  "Session Storage 后续写失败时必须继续以内存中的最新批次为准",
+);
+assert.match(
+  source,
+  /PEER_BATCH_KEY_PREFIX[\s\S]*const peerBatchMemory = new Map\(\)[\s\S]*function restorePeerBatch\(\)[\s\S]*loadPeerBatchIndexes\(\)[\s\S]*renderPeerBatchContent\(\);[\s\S]*renderPeerBatchStatus\(\)/,
+  "浏览器返回或 iframe 重载时必须按身份恢复离开前的同频批次",
+);
+assert.match(
+  source,
+  /\$\("peerDiscoveryBtn"\)\.addEventListener\("click",\s*openPeerDiscovery\)/,
+  "星云工具箱的同频发现入口必须绑定打开弹层的处理器",
+);
+assert.match(
+  source,
+  /function openPeerDiscovery\(\)[\s\S]*if \(peerDiscoveryEl\.classList\.contains\("show"\)\) return;[\s\S]*peerReturnFocus =/,
+  "重复的自动打开请求不得覆盖弹层原有回焦目标",
+);
+assert.match(
+  source,
+  /nameButton\.addEventListener\("click",\s*\(\) => \{\s*openPerson\(index\);[\s\S]*cardButton\.addEventListener\("click",\s*\(\) => \{\s*openPerson\(index\);/,
+  "候选人格卡入口必须保留弹层状态，以便浏览器返回时恢复原批次",
+);
+assert.match(
+  source,
+  /activeElement === \$\("peerDiscoveryBtn"\)[\s\S]*exploreToggleEl[\s\S]*function trapPeerFocus\(event\)[\s\S]*!peerDiscoveryEl\.contains\(document\.activeElement\)/,
+  "同频弹层必须回焦到可见入口并限制键盘焦点留在弹层内",
+);
+assert.match(
+  source,
+  /peerListEl\.replaceChildren[\s\S]*peerListEl\.scrollTop = 0/,
+  "同频发现换批后必须回到名单顶部",
+);
+assert.match(
+  source,
+  /function refreshPeerDiscoveryBatch\(\)[\s\S]*rankPosition[\s\S]*peerBatch = peerBatch[\s\S]*\.sort\(/,
+  "画像晚到时必须重排当前批次且保留已看候选",
+);
+assert.match(
+  source,
+  /function sceneControlsAvailable\(\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)/,
+  "同频弹层打开时必须暂停星云观测控制",
+);
+assert.match(
+  source,
+  /function discardOrbitMomentum\(\)[\s\S]*controls\.enableDamping = false;[\s\S]*controls\.update\(\);[\s\S]*camera\.position\.copy\(position\);[\s\S]*camera\.quaternion\.copy\(quaternion\);[\s\S]*if \(!controlsAvailable\)[\s\S]*discardOrbitMomentum\(\)/,
+  "暂停观测时必须清除 OrbitControls 惯性且保持当前相机姿态",
+);
+assert.match(
+  source,
+  /document\.addEventListener\("keydown",\s*\(e\) => \{[\s\S]*trapPeerFocus\(e\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)[\s\S]*navigationKeyForEvent\(e\)/,
+  "键盘处理必须同时保留同频弹层焦点约束和星云观测快捷键",
+);
+assert.match(
+  source,
+  /else if \(wasUnlocked\) \{[\s\S]*closePeerDiscovery\(\);[\s\S]*clearPeerBatchState\(\);[\s\S]*\}/,
+  "保持解锁的点赞变化必须重新排名但保留已看轮次",
+);
+assert.match(
+  source,
+  /function queueNextChip\(delay\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)/,
+  "同频弹层打开时不得在背后弹出小圈子提示",
+);
+assert.match(
+  source,
+  /function renderPeerItem\(candidate\)[\s\S]*相似点[\s\S]*不同点[\s\S]*暂无原回答/,
+  "同频名单必须展示异同解释并处理无来源链接",
+);
+assert.match(
+  cardSource,
+  /selfProfile\.likedCount >= 3 && onDiscoverPeers[\s\S]*发现 5 位同频的人/,
+  "真实自我人格卡必须在三次表态后提供同频发现入口",
+);
+assert.match(
+  shelfSource,
+  /navigate\(`\/nebula\?preset=\$\{encodeURIComponent\(presetId\)\}&peers=1`\)/,
+  "人格卡入口必须回到同一快照并请求打开同频发现",
+);
+assert.match(
+  shelfSource,
+  /currentNebulaLikeCount\([\s\S]*subject\.profile\?\.likedIndexes[\s\S]*activeLikeCount !== null[\s\S]*activeLikeCount >= 3/,
+  "人格卡同频入口必须由当前版本的可恢复点赞数确认",
+);
+assert.match(
+  nebulaStageSource,
+  /openPeerDiscovery \? "&peers=1" : ""/,
+  "React 外壳必须把同频发现入口状态传给星云场景",
+);
+assert.match(
+  nebulaHostSource,
+  /requestOpenPeerDiscovery[\s\S]*type:\s*"nebula-open-peer-discovery"[\s\S]*addEventListener\("pageshow",\s*requestOpenPeerDiscovery\)[\s\S]*data\?\.type === "nebula-scene-ready"[\s\S]*type:\s*"nebula-open-peer-discovery"[\s\S]*onLoad=\{requestOpenPeerDiscovery\}/,
+  "React 外壳必须在挂载、页面恢复、场景就绪和 iframe 加载时请求打开同频名单",
+);
+assert.match(
+  nebulaStageSource,
+  /onLoad\?: \(\) => void[\s\S]*onLoad=\{onLoad\}/,
+  "星云 iframe 必须向 React 外壳暴露真实加载完成事件",
+);
+assert.match(
+  source,
+  /e\.data\.type === "nebula-open-peer-discovery"[\s\S]*openPeerDiscovery\(\)/,
+  "星云场景必须处理父页的同频打开请求",
+);
+assert.match(
+  source,
+  /function rankMatchCandidates\(mode,[\s\S]*b\.score - a\.score[\s\S]*a\.i - b\.i/,
+  "同频与互补候选必须使用稳定排序",
+);
+const viewpointMatchSource = source.slice(
+  source.indexOf("function rankMatchCandidates"),
+  source.indexOf("// ---- 小圈子 ----"),
+);
+assert.ok(
+  viewpointMatchSource.includes("function rankMatchCandidates"),
+  "必须找到观点碰撞候选实现",
+);
+assert.doesNotMatch(
+  viewpointMatchSource,
+  /Math\.floor\(Math\.random\(\) \* pool\.length\)/,
+  "画像候选不得从高分池随机抽取",
+);
+assert.match(
+  source,
+  /matchCandidates = rankMatchCandidates\(matchMode\)\.slice\(0,\s*3\)/,
+  "观点碰撞必须保留前三位稳定候选",
+);
+assert.match(
+  source,
+  /id="clashStanceScore"[\s\S]*id="clashInterestScore"[\s\S]*id="clashCandidates"/,
+  "观点碰撞必须展示立场、兴趣双依据与候选队列",
+);
+assert.match(
+  source,
+  /排序权重 · 本题立场 82 \/ 知乎兴趣 18/,
+  "观点碰撞必须解释画像推荐权重",
+);
+assert.match(
+  source,
+  /cjkRuns[\s\S]*run\.slice\(offset,\s*offset \+ 2\)/,
+  "兴趣相关性必须使用中文短语片段，不能退化为单字重叠",
+);
+assert.doesNotMatch(
+  source,
+  /Array\.from\(normalized\)\.filter/,
+  "兴趣相关性不得按单字重叠制造弱相关误命中",
+);
+assert.match(
+  source,
+  /id="clashDialog"[\s\S]*aria-labelledby="clashTitle"[\s\S]*aria-describedby="clashReason"/,
+  "观点碰撞弹层必须关联动态标题和推荐解释",
+);
+assert.match(
+  source,
+  /container\.dataset\.signature[\s\S]*button\.classList\.toggle\("is-active", active\)/,
+  "切换候选时必须复用按钮 DOM 并保留键盘焦点",
+);
+assert.match(
+  source,
+  /clashEl\.addEventListener\("keydown"[\s\S]*ArrowLeft[\s\S]*ArrowRight[\s\S]*event\.key !== "Tab"/,
+  "观点碰撞必须支持方向键切换和 Tab 焦点锁定",
+);
+assert.match(
+  source,
+  /if \(wasOpen\) exploreToggleEl\.focus[\s\S]*clashEl\.classList\.remove\("show"\)/,
+  "关闭观点碰撞前必须把焦点恢复到可见入口",
+);
 assert.match(source, /id="matchSame"/, "匹配流程必须提供同频模式");
 assert.match(source, /id="matchOpposite"/, "匹配流程必须提供互补模式");
+assert.match(
+  source,
+  /\$\("clashTitle"\)\.textContent[\s\S]*\$\("clashSubtitle"\)\.textContent/,
+  "匹配模式文案只能更新观点碰撞弹层",
+);
 assert.match(
   cardSource,
   /知乎兴趣底色/,
@@ -377,11 +900,253 @@ assert.match(
   /accountChanged[\s\S]*setPortrait\(null\)/,
   "切换账号时必须立即清空旧画像",
 );
+assert.match(
+  oauthAccountSource,
+  /<dialog[\s\S]*className="portrait-calibration"/,
+  "首页必须提供可聚焦的兴趣星谱校准台",
+);
+assert.match(
+  oauthAccountSource,
+  /查看我的兴趣星谱[\s\S]*oauth-account__identity-arrow/,
+  "已连接账号入口必须用动作文案和方向箭头提示可点击",
+);
+assert.match(
+  oauthAccountSource,
+  /jiupai:oauth-profile-hint:v1:[\s\S]*sessionStorage\.getItem[\s\S]*sessionStorage\.setItem/,
+  "兴趣星谱入口的首次提示必须在当前账号会话内只展示一次",
+);
+const profileHintEffect = oauthAccountSource.match(
+  /const storageKey = `jiupai:oauth-profile-hint:v1:[\s\S]*?\n  }, \[\n    calibrationOpen/,
+)?.[0];
+assert.ok(profileHintEffect, "必须能够读取兴趣星谱首次提示 Effect");
+assert.match(
+  profileHintEffect,
+  /profileHintShownRef\.current/,
+  "sessionStorage 不可用时必须用当前挂载状态阻止提示重复播放",
+);
+assert.match(
+  oauthAccountSource,
+  /const profileHintShownAccounts = new Set<string>\(\)/,
+  "sessionStorage 不可用时必须跨组件重新挂载保留首次提示状态",
+);
+assert.match(
+  profileHintEffect,
+  /profileHintShownAccounts\.has[\s\S]*profileHintShownAccounts\.add/,
+  "首次提示 Effect 必须读取并更新模块生命周期兜底状态",
+);
+assert.ok(
+  profileHintEffect.indexOf("sessionStorage.setItem") <
+    profileHintEffect.indexOf("window.setTimeout"),
+  "首次提示必须在动画开始前标记为已展示",
+);
+assert.doesNotMatch(
+  oauthAccountSource,
+  /removeEventListener\("close", close\);\s*if \(dialog\.open\) dialog\.close\(\)/,
+  "dialog Effect 清理不得在 Strict Mode 下触发延迟 close 事件",
+);
+assert.match(
+  oauthAccountSource,
+  /if \(event\.target !== event\.currentTarget\) return;/,
+  "dialog 内部按钮的键盘点击不得被误判为背景点击",
+);
+assert.match(
+  oauthAccountSource,
+  /useState\(oauthResult === "success"\)/,
+  "OAuth 成功回跳后必须自动打开兴趣星谱",
+);
+assert.match(
+  oauthAccountSource,
+  /接口返回前不显示推测结果/,
+  "画像等待态不得展示模拟进度或推测结果",
+);
+assert.match(
+  oauthAccountSource,
+  /portrait\.stats\.contents[\s\S]*portrait\.stats\.followees[\s\S]*portrait\.stats\.favlists[\s\S]*portrait\.stats\.collections/,
+  "校准台必须只展示画像接口返回的汇总数量",
+);
+assert.match(
+  oauthAccountSource,
+  /原始收藏与关注明细不会进入星云/,
+  "校准台必须向用户说明画像隐私边界",
+);
 assert.doesNotMatch(
   source,
   /trailMat|ME_LANE_[YZ]/,
   "“我”节点不得保留穿过头像的立场尾迹",
 );
+assert.match(
+  source,
+  /id="guideBtn"/,
+  "星云必须提供星图向导入口",
+);
+assert.match(
+  source,
+  /current\.choices\.forEach[\s\S]*choices\.appendChild\(button\)/,
+  "星图向导必须把每道选择题的按钮挂载到页面",
+);
+assert.match(
+  source,
+  /renderGuideQuizStep\(true\)[\s\S]*choices\.querySelector\("button"\)\?\.focus\(\)/,
+  "星图向导换题后必须把焦点移到新题选项",
+);
+assert.match(
+  source,
+  /uiNode\("button", "guide-quiz-btn"[\s\S]*event\.repeat[\s\S]*event\.preventDefault\(\)/,
+  "星图向导必须忽略长按按键产生的重复答题",
+);
+assert.match(
+  source,
+  /GUIDE_QUIZ_INPUT_GUARD_MS\s*=\s*800[\s\S]*now < guideQuizInputReadyAt[\s\S]*showToast\("请先读完本题再选择"\)[\s\S]*now \+ GUIDE_QUIZ_INPUT_GUARD_MS/,
+  "星图向导必须防止快速双击跨题提交",
+);
+assert.match(
+  source,
+  /intent === "representatives"[\s\S]*renderGuidePicks\(\)/,
+  "“代表性观点”必须展示完整代表集合而不是固定跳到左端",
+);
+assert.match(
+  source,
+  /event\.isComposing/,
+  "星图向导不得在中文输入法组词时提前提交",
+);
+assert.match(
+  source,
+  /function trapGuideFocus[\s\S]*guideCloseButton\.focus\(\)/,
+  "星图向导必须把键盘焦点限制在模态框内",
+);
+assert.match(
+  source,
+  /\.guide-suggestion\s*\{[\s\S]{0,500}min-height:\s*44px/,
+  "星图向导建议按钮必须满足移动端 44px 触控区域",
+);
+assert.match(
+  source,
+  /function resumeCirclePrompt[\s\S]*!circlePromptBlocked\(\)[\s\S]*queueNextChip/,
+  "关闭星图向导后必须恢复被延后的圈子提示",
+);
+assert.match(
+  source,
+  /function deferCirclePrompt[\s\S]*chipQueue\.unshift\(chipCluster\)[\s\S]*hideChip\(\)/,
+  "打开阻挡层时必须保留并隐藏当前圈子提示",
+);
+const circlePromptQueue = source.match(
+  /function queueNextChip\(delay\) \{[\s\S]*?\n\s*\}\n\s*chipQueue = rankedCircles/,
+)?.[0];
+assert.ok(circlePromptQueue, "圈子提示队列逻辑不存在");
+assert.match(
+  circlePromptQueue,
+  /if \(circlePromptBlocked\(\)\) return/,
+  "圈子提示被弹层阻挡时必须暂停",
+);
+assert.match(
+  source,
+  /function circlePromptBlocked\(\)[\s\S]*document\.body\.classList\.contains\("entry-active"\)/,
+  "星云入口流程必须暂停圈子提示",
+);
+assert.match(
+  source,
+  /function circlePromptBlocked\(\)[\s\S]*Boolean\(hovered\)[\s\S]*Boolean\(cameraTransition\)/,
+  "人物定位和观点浮层必须暂停圈子提示",
+);
+assert.match(
+  source,
+  /function setHovered\(u\)[\s\S]*if \(u\) \{\s*deferCirclePrompt\(\)[\s\S]*else \{[\s\S]*resumeCirclePrompt\(\)/,
+  "人物观点浮层打开时必须挂起圈子提示，关闭后恢复",
+);
+assert.match(
+  source,
+  /followedOnly[\s\S]*cameraFocusUser[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true, \(\) => \{[\s\S]*resumeCirclePrompt\(\)/,
+  "关注筛选触发相机回位后必须恢复圈子提示",
+);
+assert.match(
+  source,
+  /function finishEntryGeneration\(\)[\s\S]*document\.body\.classList\.remove\("entry-active"\)[\s\S]*resumeCirclePrompt\(\)/,
+  "星云入口完成后必须恢复圈子提示",
+);
+assert.match(
+  source,
+  /function showEntryConfirmFromScene\(\)[\s\S]*deferCirclePrompt\(\)[\s\S]*classList\.add\("entry-active"\)/,
+  "从星云返回入口时必须挂起当前圈子提示",
+);
+assert.doesNotMatch(
+  circlePromptQueue,
+  /resumeCirclePrompt/,
+  "圈子提示被弹层阻挡时不得周期性轮询",
+);
+assert.match(
+  source,
+  /if \(e\.key === "Escape"\) \{\s*if \(e\.isComposing \|\| e\.repeat\) return/,
+  "输入法组词或长按 Escape 时不得连续关闭界面层级",
+);
+assert.match(
+  source,
+  /nebula-view-change/,
+  "阅读流必须通知 React 外壳切换视图",
+);
+assert.match(
+  source,
+  /const spectrumGroup = new THREE\.Group\(\);[\s\S]*nebula\.add\(spectrumGroup\)/,
+  "观点尘埃与人物节点必须共享可旋转的光谱容器",
+);
+assert.match(
+  source,
+  /spectrumGroup\.add\(userGroup\)[\s\S]*spectrumGroup\.add\(commentGroup\)[\s\S]*spectrumGroup\.add\(dustGroup\)/,
+  "回答者、评论者和观点尘埃必须位于同一坐标系",
+);
+assert.match(
+  source,
+  /spectrumGroup\.localToWorld\(anchor\.clone\(\)\)\.project\(camera\)/,
+  "光谱两端标签必须跟随旋转后的观点坐标",
+);
+assert.match(
+  source,
+  /spectrumGroup\.add\(focusLines\)/,
+  "小圈子连线必须跟随人物节点旋转",
+);
+assert.match(
+  source,
+  /function focusCluster\(c\)\s*\{[\s\S]*setPersonaFilter\(null\);[\s\S]*focusSet = new Set\(c\.members\)/,
+  "小圈子聚焦必须接管并清除已有的人格筛选",
+);
+assert.match(
+  source,
+  /const personaOpacity = reduceMotion\s*\?\s*0\.48[\s\S]*u\.ring\.material\.opacity \+= \(target - u\.ring\.material\.opacity\) \* ringRate/,
+  "减少动态模式下人格高亮环必须固定并立即收敛",
+);
+assert.doesNotMatch(
+  source,
+  /dustGroup\.rotation\.[yz]/,
+  "观点尘埃不得脱离人物节点独立旋转",
+);
+
+const personaCatalog = buildPersonaCatalog(
+  {
+    fox: ["长答派", "万字长答", "#aeb6d6"],
+    owl: ["深夜派", "三点的诚实", "#dde08a"],
+    goat: ["杠精派", "先找反例", "#bccf96"],
+  },
+  [
+    ["无效人物", -0.9, "missing", "不应进入目录"],
+    ["低赞作者", -0.5, "fox", "低赞观点", "", "", 3],
+    ["高赞作者", 0.1, "fox", "代表观点", "", "", 18],
+    ["夜间作者", 0.4, "owl", "夜间观点"],
+  ],
+);
+assert.deepEqual(
+  personaCatalog.map(({ key, count, representative }) => ({
+    key,
+    count,
+    representativeIndex: representative.index,
+  })),
+  [
+    { key: "fox", count: 2, representativeIndex: 2 },
+    { key: "owl", count: 1, representativeIndex: 3 },
+  ],
+  "人格目录必须省略空人格，并保留代表观点的原始人物索引",
+);
+assert.equal(personaCatalog[0].share, 2 / 3, "人格占比必须只统计合法人物");
+assert.equal(cyclePersonaIndex(0, -1, 2), 1, "人格卡群向前切换必须首尾循环");
+assert.equal(cyclePersonaIndex(1, 1, 2), 0, "人格卡群向后切换必须首尾循环");
 
 const path = "goat?self=1&preset=ai-math&version=20260912";
 
@@ -425,6 +1190,16 @@ for (const preset of staticPresets) {
   assert.ok(`${preset.id}:${preset.version}`.length <= 64);
   assert.ok(!likeStorageKeys.has(likeStorageKey), "快照点赞存储键必须唯一");
   likeStorageKeys.add(likeStorageKey);
+  const detail = getNebulaPreset(preset.id);
+  if (detail.avatarBase) {
+    for (let index = 0; index < preset.answerCount; index += 1) {
+      const avatar = new URL(
+        `../public/nebula-scene/${detail.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`,
+        import.meta.url,
+      );
+      assert.ok(existsSync(avatar), `${preset.id} 缺少第 ${index + 1} 位回答者头像`);
+    }
+  }
 }
 assert.deepEqual(
   homePresets.slice().sort((left, right) => left.id.localeCompare(right.id)),
@@ -443,6 +1218,18 @@ assert.deepEqual(
     .map(({ id, version }) => [id, version])
     .sort(([left], [right]) => left.localeCompare(right)),
   "React 与静态场景的快照版本目录必须双向一致",
+);
+assert.deepEqual(
+  [...reactAnswerCounts.entries()].sort(([left], [right]) => left.localeCompare(right)),
+  staticPresets
+    .map(({ id, answerCount }) => [id, answerCount])
+    .sort(([left], [right]) => left.localeCompare(right)),
+  "React 与静态场景的快照人数目录必须双向一致",
+);
+assert.deepEqual(
+  presetMetaIds.slice().sort((left, right) => left.localeCompare(right)),
+  [...reactCatalog.keys()].sort((left, right) => left.localeCompare(right)),
+  "朋友对照元数据必须覆盖全部已发布快照",
 );
 
 console.log("nebula navigation checks passed");

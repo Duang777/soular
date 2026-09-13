@@ -52,6 +52,6 @@ export const PANGDONGLAI_LABOR = {
   me: {
     name: "我",
     castKey: "fox",
-    claim: "点赞真实回答，看看你更在意传统守护，还是研究加速。",
+    claim: "点赞真实回答，看看你更在意劳动权益，还是企业经营自主。",
   },
 };

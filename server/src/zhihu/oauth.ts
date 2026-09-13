@@ -54,16 +54,6 @@ function payloadError(payload: unknown, fallback: string): ZhihuOAuthError {
   return new ZhihuOAuthError(code, String(message).slice(0, 200));
 }
 
-function shouldRetryWithOAuthBearer(
-  response: Response,
-  payload: unknown,
-): boolean {
-  if (response.status === 401 || response.status === 403) return true;
-  const record = asRecord(payload);
-  const code = String(record?.code ?? record?.Code ?? "");
-  return /^40[13]/.test(code);
-}
-
 export interface TokenExchangeInput {
   appId: string;
   appKey: string;
@@ -170,41 +160,22 @@ export async function exchangeCodeForToken(
 }
 
 export async function fetchProfile(
-  accessSecret: string,
   oauthToken: string,
 ): Promise<ZhihuProfile | null> {
-  const safeAccessSecret = assertSafe(accessSecret, "Access Secret");
   const safeOAuthToken = assertSafe(oauthToken, "OAuth token");
-  const signal = AbortSignal.timeout(PROFILE_REQUEST_TIMEOUT_MS);
-  const primaryResponse = await fetch(`${OPENAPI_BASE}/user`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${safeAccessSecret}`,
-      "X-OAuth-Token": safeOAuthToken,
-      "X-Request-Timestamp": String(Math.floor(Date.now() / 1000)),
-      "Content-Type": "application/json",
-    },
-    signal,
-  });
-  const primaryPayload: unknown =
-    await primaryResponse.json().catch(() => null);
-  const primaryProfile = profileFromPayload(primaryPayload);
-  if (primaryProfile) return primaryProfile;
-  if (!shouldRetryWithOAuthBearer(primaryResponse, primaryPayload)) {
-    if (!primaryResponse.ok) {
-      throw payloadError(primaryPayload, "用户资料接口请求失败");
-    }
-    return null;
-  }
-
-  const oauthResponse = await fetch(`${OPENAPI_BASE}/user`, {
+  const response = await fetch(`${OPENAPI_BASE}/user`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${safeOAuthToken}`,
       "Content-Type": "application/json",
     },
-    signal,
+    signal: AbortSignal.timeout(PROFILE_REQUEST_TIMEOUT_MS),
   });
-  const oauthPayload: unknown = await oauthResponse.json().catch(() => null);
-  return profileFromPayload(oauthPayload);
+  const payload: unknown = await response.json().catch(() => null);
+  const profile = profileFromPayload(payload);
+  if (profile) return profile;
+  if (!response.ok) {
+    throw payloadError(payload, "用户资料接口请求失败");
+  }
+  return null;
 }

@@ -154,15 +154,6 @@ export const SCHOLARS_AI_MATH = {
             36
         ],
         [
-            "我是机器人",
-            0,
-            "frog",
-            "ai对做研究太有帮助了，我感觉ai起码让我做研究的速度变成了以前的两倍",
-            "https://www.zhihu.com/question/2049420510811967937/answer/2075655184592660376",
-            "如何看待现在有学者用 AI 做数学科研？",
-            2
-        ],
-        [
             "无心糖",
             0,
             "owl",
@@ -413,6 +404,15 @@ export const SCHOLARS_AI_MATH = {
             "https://www.zhihu.com/question/2049420510811967937/answer/2050172368014816752",
             "如何看待现在有学者用 AI 做数学科研？",
             33
+        ],
+        [
+            "我是机器人",
+            0.6,
+            "frog",
+            "AI 对做研究很有帮助，让我的研究速度变成了以前的两倍。",
+            "https://www.zhihu.com/question/2049420510811967937/answer/2075655184592660376",
+            "如何看待现在有学者用 AI 做数学科研？",
+            2
         ],
         [
             "Levis",
