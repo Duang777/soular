@@ -67,7 +67,7 @@ function storeNavigationContext(kind: "self" | "subject", value: unknown): strin
   }
 }
 
-export function Nebula() {
+export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
   const navigate = useNavigate();
   const nebulaFrameRef = useRef<HTMLIFrameElement>(null);
   const userProfileRef = useRef<NebulaUserProfile | null>(null);
@@ -75,6 +75,9 @@ export function Nebula() {
   const [isCardsView, setIsCardsView] = useState(false);
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
+  const entryState = entryMode
+    ? searchParams.get("confirm") === "1" ? "confirm" : "discover"
+    : null;
 
   useEffect(() => {
     if (window.location.origin !== OFFICIAL_ORIGIN) return undefined;
@@ -119,7 +122,8 @@ export function Nebula() {
   }, []);
 
   useEffect(() => {
-    const lobby = `/nebula?preset=${encodeURIComponent(presetId)}`;
+    const lobbyPath = entryMode ? "/" : "/nebula";
+    const lobby = `${lobbyPath}?preset=${encodeURIComponent(presetId)}`;
     try {
       window.sessionStorage.setItem("jiupai:lobby", lobby);
     } catch {
@@ -157,7 +161,8 @@ export function Nebula() {
         typeof data.preset === "string" &&
         /^[a-z0-9-]+$/.test(data.preset)
       ) {
-        navigate(`/nebula?preset=${encodeURIComponent(data.preset)}`, { replace: true });
+        const confirm = entryMode && data.entry === "confirm" ? "&confirm=1" : "";
+        navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${confirm}`, { replace: true });
         return;
       }
       const cast = data?.cast;
@@ -228,12 +233,12 @@ export function Nebula() {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [navigate, presetId]);
+  }, [entryMode, navigate, presetId]);
 
   return (
     <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>
-      <NebulaStage presetId={presetId} iframeRef={nebulaFrameRef} />
-      {!isCardsView && (
+      <NebulaStage entryState={entryState} presetId={presetId} iframeRef={nebulaFrameRef} />
+      {!entryMode && !isCardsView && (
         <nav className="shelf-nav shelf-nav--nebula" aria-label="星云导航">
           <div className="shelf-nav__tags">
             <Link to="/" className="shelf-tag">

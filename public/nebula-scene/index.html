@@ -89,8 +89,8 @@
 
       .axis {
         position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 0;
+        left: 0;
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -98,8 +98,8 @@
         letter-spacing: 0.08em;
         color: var(--mute);
       }
-      .axis-left { left: 20px; align-items: flex-start; text-align: left; }
-      .axis-right { right: 20px; align-items: flex-end; text-align: right; }
+      .axis-left { align-items: flex-end; text-align: right; transform: translate(-100%, -50%); }
+      .axis-right { align-items: flex-start; text-align: left; transform: translate(0, -50%); }
       .axis .pole {
         font-size: 13px;
         font-weight: 600;
@@ -115,7 +115,7 @@
         .scene-brand { gap: 7px; }
         .scene-brand img { width: 32px; height: 32px; }
         .question { display: none; }
-        .axis { top: auto; bottom: 74px; transform: none; }
+        .axis { bottom: auto; }
         .axis .sub { display: none; }
       }
 
@@ -130,6 +130,207 @@
         color: var(--faint);
         white-space: nowrap;
       }
+
+      /* ===== 首页：问题场 → 确认 → 原地生成 ===== */
+      .entry-flow {
+        position: fixed;
+        inset: 0;
+        z-index: 14;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(33, 75, 92, 0.18), transparent 34%),
+          linear-gradient(180deg, rgba(5, 9, 13, 0.2), rgba(5, 9, 13, 0.72));
+        transition: opacity 0.5s ease;
+      }
+      .entry-flow[hidden], .entry-flow.is-done { opacity: 0; pointer-events: none; }
+      .entry-brand {
+        position: absolute;
+        top: max(20px, env(safe-area-inset-top));
+        left: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--cream);
+      }
+      .entry-brand img { width: 38px; height: 38px; }
+      .entry-brand b { display: block; font-size: 17px; letter-spacing: 0.08em; }
+      .entry-brand small {
+        display: block;
+        margin-top: 4px;
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+      }
+      .entry-center {
+        position: absolute;
+        z-index: 2;
+        top: 50%;
+        left: 50%;
+        width: min(560px, calc(100vw - 48px));
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+      .entry-eyebrow {
+        margin: 0 0 14px;
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+      }
+      .entry-center h1 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 66px);
+        font-weight: 560;
+        letter-spacing: 0.03em;
+        line-height: 1.12;
+      }
+      .entry-lead {
+        max-width: 470px;
+        margin: 18px auto 0;
+        color: var(--mute);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+      .entry-search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 48px;
+        width: min(440px, 100%);
+        min-height: 48px;
+        margin: 26px auto 0;
+        border: 1px solid var(--line-2);
+        background: rgba(14, 16, 22, 0.88);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+      }
+      .entry-search input {
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        padding: 0 16px;
+        background: transparent;
+        color: var(--cream);
+        font: inherit;
+      }
+      .entry-search button {
+        border: 0;
+        border-left: 1px solid var(--line);
+        background: transparent;
+        color: var(--gold);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .entry-search-status {
+        min-height: 20px;
+        margin: 10px 0 0;
+        color: var(--faint);
+        font-size: 11px;
+      }
+      .entry-topics { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+      .entry-topic {
+        position: absolute;
+        width: min(270px, 23vw);
+        min-height: 112px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(14, 18, 25, 0.82);
+        color: var(--cream);
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
+        text-align: left;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+      }
+      .entry-topic:hover, .entry-topic:focus-visible {
+        z-index: 2;
+        outline: none;
+        border-color: rgba(231, 201, 140, 0.66);
+        transform: translateY(-5px);
+      }
+      .entry-topic[hidden] { display: none; }
+      .entry-topic:nth-child(1) { top: 18%; left: 4%; }
+      .entry-topic:nth-child(2) { top: 18%; right: 4%; }
+      .entry-topic:nth-child(3) { top: 46%; left: 1.5%; }
+      .entry-topic:nth-child(4) { top: 46%; right: 1.5%; }
+      .entry-topic:nth-child(5) { bottom: 9%; left: 8%; }
+      .entry-topic:nth-child(6) { right: 8%; bottom: 9%; }
+      .entry-topic-serial {
+        color: var(--gold);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+      }
+      .entry-topic b {
+        display: -webkit-box;
+        margin-top: 10px;
+        overflow: hidden;
+        font-size: 14px;
+        font-weight: 560;
+        line-height: 1.5;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .entry-topic small {
+        display: block;
+        margin-top: 10px;
+        color: var(--faint);
+        font-size: 10px;
+      }
+      .entry-confirm { display: none; }
+      .entry-flow[data-state="confirm"] .entry-discover { display: none; }
+      .entry-flow[data-state="confirm"] .entry-confirm { display: block; }
+      .entry-flow[data-state="confirm"] .entry-topic { opacity: 0.3; }
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected { opacity: 0.76; border-color: rgba(231, 201, 140, 0.5); }
+      .entry-confirm h1 { font-size: clamp(28px, 4vw, 52px); line-height: 1.24; }
+      .entry-confirm-meta {
+        margin: 22px 0 0;
+        color: var(--mute);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+      .entry-confirm-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      .entry-primary, .entry-secondary, .entry-skip {
+        min-height: 46px;
+        padding: 0 20px;
+        border: 1px solid var(--line-2);
+        border-radius: 8px;
+        font: inherit;
+        cursor: pointer;
+      }
+      .entry-primary { border-color: transparent; background: var(--cta); color: var(--cta-ink); font-weight: 650; }
+      .entry-secondary, .entry-skip { background: rgba(14, 16, 22, 0.82); color: var(--txt); }
+      .entry-generation {
+        position: absolute;
+        left: 50%;
+        bottom: max(34px, env(safe-area-inset-bottom));
+        display: none;
+        width: min(520px, calc(100vw - 40px));
+        transform: translateX(-50%);
+        text-align: center;
+        pointer-events: auto;
+      }
+      .entry-flow[data-state="generating"] { background: transparent; pointer-events: none; }
+      .entry-flow[data-state="generating"] .entry-brand,
+      .entry-flow[data-state="generating"] .entry-center,
+      .entry-flow[data-state="generating"] .entry-topics { display: none; }
+      .entry-flow[data-state="generating"] .entry-generation { display: block; }
+      .entry-generation b { font-size: 13px; letter-spacing: 0.08em; }
+      .entry-generation p { margin: 8px 0 14px; color: var(--faint); font-size: 11px; }
+      .entry-progress { height: 1px; overflow: hidden; background: rgba(255, 255, 255, 0.12); }
+      .entry-progress i { display: block; width: 0; height: 100%; background: var(--gold); }
+      .entry-skip { min-height: 44px; margin-top: 14px; padding: 0 16px; }
+      body.entry-active .hud,
+      body.entry-active .explore-shell,
+      body.entry-active .circle-chip,
+      body.entry-active .focus-banner,
+      body.entry-active .verdict,
+      body.entry-active #tip { visibility: hidden; opacity: 0; pointer-events: none; }
+      body.entry-active #scene { pointer-events: none; cursor: default; }
 
       #tip {
         position: fixed;
@@ -353,6 +554,14 @@
         border-color: #e7c17f;
         background: #202329;
         transform: translateY(-2px);
+      }
+      .self-draw-entry:disabled,
+      .dock-action:disabled,
+      .pcard-me-btn:disabled,
+      .tip-like:disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+        transform: none;
       }
       .self-draw-entry > i {
         color: #e7c17f;
@@ -2058,6 +2267,45 @@
         .pcard::before { display: none; }
       }
       @media (max-width: 720px) {
+        .entry-brand { top: max(16px, env(safe-area-inset-top)); left: 16px; }
+        .entry-brand img { width: 32px; height: 32px; }
+        .entry-center { top: 39%; width: calc(100vw - 32px); }
+        .entry-center h1 { font-size: clamp(30px, 10vw, 42px); }
+        .entry-lead { margin-top: 14px; font-size: 12px; }
+        .entry-search { margin-top: 18px; }
+        .entry-topics {
+          top: auto;
+          bottom: max(16px, env(safe-area-inset-bottom));
+          display: flex;
+          gap: 10px;
+          padding: 0 16px;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+        }
+        .entry-topic {
+          position: static;
+          flex: 0 0 min(78vw, 270px);
+          width: auto;
+          min-height: 108px;
+          scroll-snap-align: start;
+        }
+        .entry-flow[data-state="confirm"] .entry-topics { display: none; }
+        .entry-confirm-actions { flex-direction: column; }
+        .entry-primary, .entry-secondary { width: 100%; }
+        .seg-btn,
+        .gbtn--text,
+        .tip-like,
+        .v-clear,
+        #error .retry-btn,
+        .cards-search { min-height: 44px; }
+        .v-clear { min-width: 44px; }
+        .modal-x { width: 44px; min-width: 44px; height: 44px; }
+        .pcard-source {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          min-height: 44px;
+        }
         .explore-shell {
           left: 14px;
           bottom: max(20px, calc(env(safe-area-inset-bottom) + 14px));
@@ -2099,7 +2347,7 @@
           min-height: 44px;
           padding: 0 2px;
         }
-        .axis { bottom: 82px !important; }
+        .axis { bottom: auto !important; }
         .hint { display: none; }
         .circle-chip {
           right: 12px;
@@ -2116,7 +2364,7 @@
         }
         .focus-mark { width: 26px; height: 26px; border-radius: 7px; font-size: 13px; }
         #focusText { font-size: 11.5px; line-height: 1.6; }
-        .focus-exit { width: 32px; min-width: 32px; height: 32px; }
+        .focus-exit { width: 44px; min-width: 44px; height: 44px; }
         .verdict { font-size: 11.5px; padding: 8px 14px; }
         .cards-bar {
           grid-template-columns: 44px minmax(0, 1fr);
@@ -2171,6 +2419,7 @@
         .gbtn--text { grid-column: auto; justify-self: center; }
       }
       @media (prefers-reduced-motion: reduce) {
+        .entry-flow, .entry-topic { transition: none !important; }
         .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
@@ -2183,7 +2432,10 @@
         function $(id) { return document.getElementById(id); }
         function hideLoading() {
           var el = $("loading");
-          if (el) el.classList.add("hide");
+          if (el) {
+            el.classList.add("hide");
+            el.setAttribute("aria-hidden", "true");
+          }
         }
         function showError(detail) {
           var el = $("error");
@@ -2236,6 +2488,39 @@
   </head>
   <body>
     <canvas id="scene"></canvas>
+
+    <section class="entry-flow" id="entryFlow" data-state="discover" aria-label="选择要探索的问题" hidden>
+      <div class="entry-brand">
+        <img src="../brand/soular-mark.svg?v=3" alt="" />
+        <div><b>思想银河</b><small>SOULAR · QUESTION FIELD</small></div>
+      </div>
+      <div class="entry-center entry-discover">
+        <p class="entry-eyebrow">连接思想 · 看见观点的星系</p>
+        <h1>选择一个问题<br />进入思想银河</h1>
+        <p class="entry-lead">从讨论的全貌出发，找到你认同、反对，以及尚未遇见的声音。</p>
+        <form class="entry-search" id="entrySearch">
+          <input id="entryQuery" type="search" maxlength="80" autocomplete="off" aria-label="搜索已发布的观点星云" placeholder="搜索已发布的问题…" />
+          <button type="submit" aria-label="搜索">⌕</button>
+        </form>
+        <p class="entry-search-status" id="entrySearchStatus" role="status">或从周围的问题开始探索</p>
+      </div>
+      <div class="entry-center entry-confirm">
+        <p class="entry-eyebrow">即将展开 · <span id="entryConfirmSerial">01</span></p>
+        <h1 id="entryConfirmQuestion"></h1>
+        <p class="entry-confirm-meta" id="entryConfirmMeta"></p>
+        <div class="entry-confirm-actions">
+          <button class="entry-primary" id="entryGenerate" type="button">开始生成思想银河</button>
+          <button class="entry-secondary" id="entryBack" type="button">重新选择问题</button>
+        </div>
+      </div>
+      <div class="entry-topics" id="entryTopics" aria-label="已发布的观点星云"></div>
+      <div class="entry-generation" id="entryGeneration" role="status" aria-live="polite">
+        <b id="entryGenerationTitle">正在汇聚观点</b>
+        <p id="entryGenerationText">光点正在进入这片思想银河</p>
+        <div class="entry-progress" aria-hidden="true"><i id="entryProgress"></i></div>
+        <button class="entry-skip" id="entrySkip" type="button">跳过生成动画</button>
+      </div>
+    </section>
 
     <div class="hud">
       <div class="hud-top">
@@ -2544,7 +2829,7 @@
       </div>
     </div>
 
-    <div class="circle-chip" id="circleChip">
+    <div class="circle-chip" id="circleChip" aria-hidden="true">
       <div class="cc-title"><span class="cc-spark">✦</span> 发现一个小圈子</div>
       <div class="cc-text" id="circleText"></div>
       <div class="cc-actions">
@@ -2553,7 +2838,7 @@
       </div>
     </div>
 
-    <div class="focus-banner" id="focusBanner">
+    <div class="focus-banner" id="focusBanner" aria-hidden="true">
       <span class="focus-mark" aria-hidden="true">◎</span>
       <span id="focusText"></span>
       <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
@@ -2731,6 +3016,12 @@
       const presetPickerEl = document.getElementById("presetPicker");
       const presetPickerTriggerEl = document.getElementById("presetPickerTrigger");
       const presetPickerOptionsEl = document.getElementById("presetPickerOptions");
+      const entryFlowEl = document.getElementById("entryFlow");
+      const entryTopicsEl = document.getElementById("entryTopics");
+      const entryQueryEl = document.getElementById("entryQuery");
+      const entrySearchStatusEl = document.getElementById("entrySearchStatus");
+      const entryMode = sceneParams.get("entry");
+      const entryEnabled = entryMode === "discover" || entryMode === "confirm";
       document.getElementById("presetPickerSerial").textContent = PRESET.serial;
       document.getElementById("presetPickerCurrent").textContent = PRESET.question;
       const availablePresets = listNebulaPresets();
@@ -2755,7 +3046,88 @@
         kind.textContent = preset.kind === "real" ? "真实" : "示例";
         option.append(serial, question, kind);
         presetPickerOptionsEl.appendChild(option);
+
+        const entryTopic = document.createElement("button");
+        entryTopic.type = "button";
+        entryTopic.className = "entry-topic";
+        entryTopic.dataset.entryPreset = preset.id;
+        entryTopic.dataset.searchText = `${preset.question} ${preset.axis.left} ${preset.axis.center} ${preset.axis.right}`.toLowerCase();
+        entryTopic.setAttribute("aria-label", `探索问题：${preset.question}`);
+        const entrySerial = document.createElement("span");
+        entrySerial.className = "entry-topic-serial";
+        entrySerial.textContent = `${preset.serial} · ${preset.kind === "real" ? "真实讨论" : "示例星云"}`;
+        const entryQuestion = document.createElement("b");
+        entryQuestion.textContent = preset.question;
+        const entryMeta = document.createElement("small");
+        entryMeta.textContent = `${preset.answerCount} 个代表观点 · ${preset.axis.left} ↔ ${preset.axis.right}`;
+        entryTopic.append(entrySerial, entryQuestion, entryMeta);
+        entryTopicsEl.appendChild(entryTopic);
       });
+      const entryTopicEls = [...entryTopicsEl.querySelectorAll("[data-entry-preset]")];
+      function setEntryState(state) {
+        entryFlowEl.dataset.state = state;
+        entryTopicEls.forEach((topic) => {
+          topic.classList.toggle("is-selected", topic.dataset.entryPreset === PRESET.id);
+        });
+      }
+      function showEntryConfirm() {
+        document.getElementById("entryConfirmSerial").textContent = PRESET.serial;
+        document.getElementById("entryConfirmQuestion").textContent = PRESET.question;
+        document.getElementById("entryConfirmMeta").textContent =
+          `${PEOPLE.length} 个代表观点正在等待展开 · ${PRESET.axis.left} ↔ ${PRESET.axis.right}`;
+        setEntryState("confirm");
+        document.getElementById("entryGenerate").focus();
+      }
+      function selectEntryPreset(presetId) {
+        if (presetId === PRESET.id) {
+          showEntryConfirm();
+          return;
+        }
+        if (window.parent !== window.self) {
+          window.parent.postMessage(
+            { type: "nebula-preset-change", preset: presetId, entry: "confirm" },
+            location.origin,
+          );
+          return;
+        }
+        const next = new URL(location.href);
+        next.searchParams.set("preset", presetId);
+        next.searchParams.set("entry", "confirm");
+        location.href = next.href;
+      }
+      entryTopicsEl.addEventListener("click", (event) => {
+        const topic = event.target.closest("[data-entry-preset]");
+        if (topic) selectEntryPreset(topic.dataset.entryPreset);
+      });
+      function filterEntryTopics() {
+        const query = entryQueryEl.value.trim().toLowerCase();
+        let visible = 0;
+        entryTopicEls.forEach((topic) => {
+          const match = !query || topic.dataset.searchText.includes(query);
+          topic.hidden = !match;
+          if (match) visible += 1;
+        });
+        entrySearchStatusEl.textContent = query
+          ? visible ? `找到 ${visible} 个已发布星云` : "这个话题还没有已发布星云"
+          : "或从周围的问题开始探索";
+      }
+      document.getElementById("entrySearch").addEventListener("submit", (event) => {
+        event.preventDefault();
+        filterEntryTopics();
+        const visibleTopic = entryTopicEls.find((topic) => !topic.hidden);
+        if (visibleTopic && entryQueryEl.value.trim()) visibleTopic.focus();
+      });
+      entryQueryEl.addEventListener("input", filterEntryTopics);
+      document.getElementById("entryBack").addEventListener("click", () => {
+        setEntryState("discover");
+        entryQueryEl.focus();
+      });
+      if (entryEnabled) {
+        entryFlowEl.hidden = false;
+        document.body.classList.add("entry-active");
+        if (entryMode === "confirm") showEntryConfirm();
+        else setEntryState("discover");
+      }
       const presetOptionEls = [...presetPickerOptionsEl.querySelectorAll("[role='option']")];
       let activePresetIndex = Math.max(0, presetOptionEls.findIndex((option) => option.getAttribute("aria-selected") === "true"));
       const captureMode = sceneParams.has("capture");
@@ -2797,7 +3169,8 @@
       controls.minPolarAngle = Math.PI * 0.32;
       controls.maxPolarAngle = Math.PI * 0.82;
       controls.rotateSpeed = 0.55;
-      controls.autoRotate = !reduceMotion;
+      controls.enabled = !entryEnabled;
+      controls.autoRotate = !entryEnabled && !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
       controls.addEventListener("start", () => {
@@ -3234,6 +3607,10 @@
       // 中间派聚成发光核球，两股臂在中段张开、向两端收束成对立极；立场越近越聚拢（引力）。
       const XSPAN = 6.4;
       const ARM_TWIST = Math.PI * 1.45;
+      const axisLeftEl = document.querySelector(".axis-left");
+      const axisRightEl = document.querySelector(".axis-right");
+      const axisLeftAnchor = new THREE.Vector3(-XSPAN - 0.35, 0, 0);
+      const axisRightAnchor = new THREE.Vector3(XSPAN + 0.35, 0, 0);
       function armPoint(s, tight) {
         const k = tight ? 0.5 : 1;
         const ab = Math.min(Math.abs(s), 1);
@@ -3528,6 +3905,124 @@
       dustGroup.add(buildCoreDust(quality.armDust, 0.036, 0.8));
       dustGroup.add(buildCoreDust(quality.brightDust, 0.064, 0.72));
 
+      const entryAnswerUsers = users.filter((user) => !user.isMe);
+      entryAnswerUsers.forEach((user, index) => {
+        user.revealTarget = user.group.position.clone();
+        const side = index % 2 ? 1 : -1;
+        user.revealOrigin = new THREE.Vector3(
+          side * (11 + Math.random() * 7),
+          (Math.random() - 0.5) * 8,
+          (Math.random() - 0.5) * 5,
+        );
+        user.revealCenter = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.8,
+          (Math.random() - 0.5) * 0.8,
+          (Math.random() - 0.5) * 0.8,
+        );
+      });
+      let entryGenerationStartedAt = 0;
+      let entryGenerationPhase = -1;
+      const entryGenerationTitleEl = document.getElementById("entryGenerationTitle");
+      const entryGenerationTextEl = document.getElementById("entryGenerationText");
+      const entryProgressEl = document.getElementById("entryProgress");
+      const easeInOut = (value) => value < 0.5
+        ? 2 * value * value
+        : 1 - Math.pow(-2 * value + 2, 2) / 2;
+      const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+      function finishEntryGeneration() {
+        entryGenerationStartedAt = 0;
+        userGroup.visible = true;
+        entryAnswerUsers.forEach((user) => {
+          user.group.visible = true;
+          user.group.position.copy(user.revealTarget);
+          user.group.scale.setScalar(1);
+          user.avatar.material.opacity = 1;
+        });
+        meUser.group.visible = true;
+        dustGroup.visible = true;
+        dustGroup.scale.set(1, 1, 1);
+        fogGroup.visible = true;
+        fogGroup.scale.set(1, 1, 1);
+        controls.enabled = true;
+        controls.autoRotate = !reduceMotion;
+        entryFlowEl.classList.add("is-done");
+        entryFlowEl.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("entry-active");
+        window.setTimeout(() => { entryFlowEl.hidden = true; }, reduceMotion ? 0 : 500);
+      }
+
+      function setEntryGenerationCopy(phase) {
+        if (entryGenerationPhase === phase) return;
+        entryGenerationPhase = phase;
+        const copy = [
+          ["正在展开观点样本", "保持同一片星空，准备汇聚观点"],
+          ["光点正在汇聚", `${PEOPLE.length} 个代表观点正在进入银河`],
+          ["观点正在分离", `${PRESET.axis.left}与${PRESET.axis.right}逐渐显现`],
+          ["光谱正在形成", "浅 S 型星云正在包裹每一个观点"],
+          ["回答者正在浮现", "头像从光谱内部生长出来"],
+        ][phase];
+        entryGenerationTitleEl.textContent = copy[0];
+        entryGenerationTextEl.textContent = copy[1];
+      }
+
+      function updateEntryGeneration(now) {
+        if (!entryGenerationStartedAt) return;
+        const elapsed = (now - entryGenerationStartedAt) / 1000;
+        entryProgressEl.style.width = `${Math.min(100, elapsed / 12 * 100)}%`;
+        setEntryGenerationCopy(elapsed < 1 ? 0 : elapsed < 4 ? 1 : elapsed < 6 ? 2 : elapsed < 8 ? 3 : 4);
+
+        userGroup.visible = elapsed >= 1;
+        dustGroup.visible = elapsed >= 5.5;
+        fogGroup.visible = elapsed >= 4.5;
+        meUser.group.visible = false;
+        const spectrum = easeInOut(clamp01((elapsed - 6) / 2));
+        dustGroup.scale.set(0.08 + spectrum * 0.92, 0.35 + spectrum * 0.65, 0.35 + spectrum * 0.65);
+        fogGroup.scale.setScalar(0.45 + spectrum * 0.55);
+
+        entryAnswerUsers.forEach((user, index) => {
+          const flightDelay = index / Math.max(1, entryAnswerUsers.length - 1) * 1.1;
+          const gather = easeInOut(clamp01((elapsed - 1 - flightDelay) / 2.7));
+          const separate = easeInOut(clamp01((elapsed - 4 - flightDelay * 0.35) / 1.8));
+          if (elapsed < 4 + flightDelay * 0.35) {
+            user.group.position.lerpVectors(user.revealOrigin, user.revealCenter, gather);
+          } else {
+            user.group.position.lerpVectors(user.revealCenter, user.revealTarget, separate);
+          }
+          const avatarDelay = index / Math.max(1, entryAnswerUsers.length - 1) * 2.2;
+          const avatarReveal = easeInOut(clamp01((elapsed - 8 - avatarDelay) / 1.4));
+          user.group.scale.setScalar(elapsed < 8 ? 0.5 : 0.5 + avatarReveal * 0.5);
+          user.avatar.material.opacity = avatarReveal;
+          user.glow.material.opacity = elapsed < 8 ? 0.72 : 0.72 - avatarReveal * 0.54;
+          if (user.star) user.star.material.opacity = avatarReveal * 0.9;
+        });
+
+        if (elapsed >= 12) finishEntryGeneration();
+      }
+
+      function startEntryGeneration() {
+        setEntryState("generating");
+        entryFlowEl.classList.remove("is-done");
+        entryGenerationPhase = -1;
+        entryProgressEl.style.width = "0";
+        controls.enabled = false;
+        controls.autoRotate = false;
+        if (reduceMotion) {
+          finishEntryGeneration();
+          return;
+        }
+        entryGenerationStartedAt = performance.now();
+      }
+
+      if (entryEnabled) {
+        userGroup.visible = false;
+        dustGroup.visible = false;
+        fogGroup.visible = false;
+        meUser.group.visible = false;
+        document.getElementById("entryGenerate").addEventListener("click", startEntryGeneration);
+        document.getElementById("entrySkip").addEventListener("click", finishEntryGeneration);
+      }
+
       let loaded = 0;
       function loadUserAvatar(u, file, onSettled, onApplied) {
         const requestVersion = (u.avatarLoadVersion || 0) + 1;
@@ -3592,6 +4087,7 @@
 
       // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
       const PRESET_VERSION = String(PRESET.version || "1");
+      const PERSONA_MIN_LIKES = 3;
       const LEGACY_LIKE_VERSIONS = { "career-35": "1", "ai-math": "20260912" };
       const LIKE_KEY = getNebulaLikeStorageKey(PRESET);
       const LEGACY_LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
@@ -3619,6 +4115,10 @@
       let verdictText = "";
       const verdictEl = document.getElementById("verdict");
       const verdictTextEl = document.getElementById("verdictText");
+
+      function personaUnlocked() {
+        return liked.size >= PERSONA_MIN_LIKES;
+      }
 
       function computeStance(ids) {
         const n = ids.length;
@@ -3722,9 +4222,16 @@
           verdictEl.classList.remove("show");
         }
         const profile = inferSelfProfile();
-        document.getElementById("selfDrawHint").textContent = v
+        const unlocked = personaUnlocked();
+        const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+        const drawEntry = document.getElementById("selfDrawEntry");
+        drawEntry.disabled = !unlocked;
+        drawEntry.setAttribute("aria-disabled", String(!unlocked));
+        document.getElementById("selfDrawHint").textContent = unlocked
           ? `已根据 ${v.n} 个点赞匹配${CASTS[profile.cast][0]}`
-          : "点赞后更贴近你的立场";
+          : `再表态 ${remaining} 次解锁人格`;
+        document.getElementById("clashBtn").disabled = !unlocked;
+        document.getElementById("circleBtn").disabled = !unlocked;
       }
 
       users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
@@ -3732,6 +4239,7 @@
 
       function toggleLike(i) {
         if (!Number.isInteger(i) || i < 0 || i >= N) return false;
+        const wasUnlocked = personaUnlocked();
         if (liked.has(i)) liked.delete(i);
         else liked.add(i);
         saveLikesLocally();
@@ -3739,6 +4247,11 @@
         if (u) setHeart(u, liked.has(i));
         applyStance(true);
         renderCardsIfOpen();
+        if (!wasUnlocked && personaUnlocked()) {
+          showToast("已完成 3 次表态，你的人格与同频发现已解锁");
+          if (CLUSTERS.length) queueNextChip(4200);
+        }
+        if (wasUnlocked && !personaUnlocked()) hideChip();
         return liked.has(i);
       }
       function resetLikes() {
@@ -3937,6 +4450,10 @@
         );
       }
       function openSelf() {
+        if (!personaUnlocked()) {
+          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次即可解锁人格`);
+          return;
+        }
         const profile = inferSelfProfile();
         const profileKey = stageStandaloneContext("self", profile);
         requestOpen(
@@ -4005,9 +4522,15 @@
             uiNode("span", "tip-follow tip-me", "我的星位"),
           );
           const actions = uiNode("div", "tip-actions");
-          const button = uiNode("button", "tip-like", "抽我的人格卡 →");
+          const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+          const button = uiNode(
+            "button",
+            "tip-like",
+            personaUnlocked() ? "查看我的人格卡 →" : `再表态 ${remaining} 次解锁`,
+          );
           button.type = "button";
           button.dataset.go = "self";
+          button.disabled = !personaUnlocked();
           actions.appendChild(button);
           tip.replaceChildren(row, claim, actions);
         } else if (u.kind === "comment") {
@@ -4153,6 +4676,22 @@
         }
       }
 
+      function updateAxisLabels() {
+        nebula.updateMatrixWorld();
+        const place = (element, anchor, side) => {
+          const projected = nebula.localToWorld(anchor.clone()).project(camera);
+          const width = element.offsetWidth || 96;
+          const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+          const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+          const minX = side === "left" ? width + 14 : 14;
+          const maxX = side === "left" ? window.innerWidth - 14 : window.innerWidth - width - 14;
+          element.style.left = `${Math.max(minX, Math.min(maxX, x))}px`;
+          element.style.top = `${Math.max(82, Math.min(window.innerHeight - 82, y))}px`;
+        };
+        place(axisLeftEl, axisLeftAnchor, "left");
+        place(axisRightEl, axisRightAnchor, "right");
+      }
+
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -4217,6 +4756,7 @@
 
         users.forEach((u) => animateNode(u, t, u.baseAvatar, u.baseGlow));
         cusers.forEach((u) => animateNode(u, t, 0.48, 0.62));
+        updateEntryGeneration(performance.now());
 
         // 「我」沿光谱漂移到由点赞计算出的立场。
         meUser.group.position.x += (meUser.baseX - meUser.group.position.x) * 0.08;
@@ -4229,6 +4769,7 @@
         }
 
         controls.update();
+        updateAxisLabels();
         updateTipPosition();
         composer.render();
         scheduleFrame();
@@ -4752,13 +5293,22 @@
           uiNode(
             "strong",
             "",
-            `${CASTS[selfProfile.cast][0]} · ${CASTS[selfProfile.cast][1]}`,
+            personaUnlocked()
+              ? `${CASTS[selfProfile.cast][0]} · ${CASTS[selfProfile.cast][1]}`
+              : `人格待解锁 · ${liked.size}/${PERSONA_MIN_LIKES}`,
           ),
           meSpectrum,
         );
-        const meButton = uiNode("button", "pcard-me-btn", "生成人格卡 →");
+        const meButton = uiNode(
+          "button",
+          "pcard-me-btn",
+          personaUnlocked()
+            ? "查看我的人格卡 →"
+            : `再表态 ${PERSONA_MIN_LIKES - liked.size} 次解锁`,
+        );
         meButton.type = "button";
         meButton.dataset.self = "";
+        meButton.disabled = !personaUnlocked();
         head.append(meAvatar, meCopy, mePosition, meButton);
 
         cardsListEl.replaceChildren(head);
@@ -4897,6 +5447,10 @@
         return pool[Math.floor(Math.random() * pool.length)].i;
       }
       function openClash() {
+        if (!personaUnlocked()) {
+          showToast(`完成 ${PERSONA_MIN_LIKES} 次表态后解锁观点碰撞`);
+          return;
+        }
         clashGoBtn.disabled = false;
         setClashButtonLabel("翻开人格卡");
         clashCurrent = pickClash(-1);
@@ -4976,19 +5530,26 @@
         );
       }
       function showChip(c) {
+        if (!personaUnlocked()) return;
         chipCluster = c;
         renderClusterBlurb($("circleText"), c);
         chipEl.classList.add("show");
+        chipEl.setAttribute("aria-hidden", "false");
+      }
+      function hideChip() {
+        chipEl.classList.remove("show");
+        chipEl.setAttribute("aria-hidden", "true");
       }
       function queueNextChip(delay) {
         clearTimeout(chipTimer);
         chipTimer = setTimeout(() => {
+          if (!personaUnlocked()) return;
           if (cardsEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) return;
           if (chipQueue.length) showChip(chipQueue.shift());
         }, delay);
       }
       chipQueue = CLUSTERS.slice();
-      queueNextChip(5200);
+      if (personaUnlocked()) queueNextChip(5200);
 
       function exitFocus() {
         focusSet = null;
@@ -4999,6 +5560,7 @@
           focusLines = null;
         }
         focusBannerEl.classList.remove("show");
+        focusBannerEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("is-focusing");
         commentGroup.visible = includeComments;
       }
@@ -5023,23 +5585,24 @@
         commentGroup.visible = false;
         renderClusterBlurb($("focusText"), c);
         focusBannerEl.classList.add("show");
+        focusBannerEl.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-focusing");
       }
       $("circleFocus").addEventListener("click", () => {
         if (chipCluster) focusCluster(chipCluster);
-        chipEl.classList.remove("show");
+        hideChip();
       });
       $("circleSkip").addEventListener("click", () => {
-        chipEl.classList.remove("show");
+        hideChip();
         if (chipQueue.length) queueNextChip(9000);
       });
       $("circleBtn").addEventListener("click", () => {
-        if (!CLUSTERS.length) return;
+        if (!CLUSTERS.length || !personaUnlocked()) return;
         setExploreOpen(false);
         if (focusSet) { exitFocus(); return; }
         const c = CLUSTERS[manualCircleIdx];
         manualCircleIdx = (manualCircleIdx + 1) % CLUSTERS.length;
-        chipEl.classList.remove("show");
+        hideChip();
         focusCluster(c);
       });
       $("focusExit").addEventListener("click", exitFocus);
@@ -5054,7 +5617,7 @@
         if (clashEl.classList.contains("show")) closeClash();
         else if (cardsEl.classList.contains("show")) closeCards();
         else if (focusSet) exitFocus();
-        else if (chipEl.classList.contains("show")) chipEl.classList.remove("show");
+        else if (chipEl.classList.contains("show")) hideChip();
         else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
       });
 

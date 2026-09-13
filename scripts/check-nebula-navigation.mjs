@@ -9,6 +9,7 @@ import {
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
+const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const reactCatalogSource = readFileSync(new URL("../src/people.ts", import.meta.url), "utf8");
 const reactSourceFile = ts.createSourceFile(
   "src/people.ts",
@@ -57,6 +58,9 @@ assert.match(
   /DISCOVERY_CACHE_TTL_MS\s*=\s*10\s*\*\s*60\s*\*\s*1000/,
   "热榜浏览器缓存必须在 10 分钟后失效",
 );
+assert.match(appSource, /path="\/" element=\{<Nebula entryMode \/>\}/, "首页必须进入星云问题场");
+assert.match(source, /PERSONA_MIN_LIKES\s*=\s*3/, "人格必须在三次有效表态后解锁");
+assert.match(source, /entryMode === "discover" \|\| entryMode === "confirm"/, "星云必须支持发现与确认入口态");
 assert.doesNotMatch(
   source,
   /new AbortController\(|discoveryController/,
