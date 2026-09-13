@@ -111,13 +111,27 @@ for (const persona of lifeChoices.personas) {
   assert.deepEqual(dimensions, { width: 512, height: 512 });
 }
 
+const presetThemeIds = Object.fromEntries(
+  listNebulaPresets()
+    .filter(({ personaTheme }) => typeof personaTheme === "string")
+    .map(({ id, personaTheme }) => [id, personaTheme]),
+);
+assert.deepEqual(
+  presetThemeIds,
+  PERSONA_PRESET_THEME_IDS,
+  "snapshot personaTheme bindings and persona library mappings must stay in sync",
+);
+for (const [presetId, themeId] of Object.entries(PERSONA_PRESET_THEME_IDS)) {
+  assert.ok(getPersonaTheme(themeId), `${presetId} must reference a ready theme`);
+  assert.ok(
+    resolvePersonaCastsForPreset(presetId)
+      .every(({ themeId: resolvedThemeId }) => resolvedThemeId === themeId),
+    `${presetId} must resolve one complete themed cast set`,
+  );
+}
 assert.equal(PERSONA_PRESET_THEME_IDS["career-35"], "life-choices");
 assert.equal(getNebulaPreset("career-35").personaTheme, "life-choices");
 assert.equal(getNebulaPreset("ai-math").personaTheme, undefined);
-assert.equal(
-  listNebulaPresets().find(({ id }) => id === "career-35")?.personaTheme,
-  "life-choices",
-);
 
 const themedCasts = resolvePersonaCastsForPreset("career-35");
 assert.equal(themedCasts.length, 9);
@@ -139,6 +153,99 @@ assert.deepEqual(
     return { key, name, role, portrait };
   }),
   "missing themes must preserve the existing nine casts",
+);
+
+const [
+  cardDrawSource,
+  matchRevealSource,
+  personaThemeSource,
+  shelfPageSource,
+  shelfSceneSource,
+  nebulaSceneSource,
+] = await Promise.all([
+  readFile(join(root, "src/CardDraw.tsx"), "utf8"),
+  readFile(join(root, "src/MatchReveal.tsx"), "utf8"),
+  readFile(join(root, "src/personaTheme.ts"), "utf8"),
+  readFile(join(root, "src/Shelf.tsx"), "utf8"),
+  readFile(join(publicRoot, "books/shelf.html"), "utf8"),
+  readFile(join(publicRoot, "nebula-scene/index.html"), "utf8"),
+]);
+assert.match(
+  cardDrawSource,
+  /selfProfile\?\.claim\s*\?\?\s*cast\.description/,
+  "self posters must preserve the user's current-question conclusion",
+);
+assert.match(
+  personaThemeSource,
+  /personaLibraryPromise\s*=\s*null;[\s\S]*personaLibraryAttempt\s*=\s*attempt\s*\+\s*1/,
+  "failed React persona imports must advance to a fresh retry URL",
+);
+assert.match(
+  personaThemeSource,
+  /libraryUrl\.searchParams\.set\("retry", String\(attempt\)\)/,
+  "React persona retries must bypass a rejected browser module entry",
+);
+assert.match(
+  personaThemeSource,
+  /attempt\s*>\s*0[\s\S]*PERSONA_LIBRARY_RETRY_TIMEOUT_MS/,
+  "React persona retries must allow a slower recovery request",
+);
+assert.match(
+  shelfPageSource,
+  /disabled=\{personaLoading\}[\s\S]*!personaLoading\s*&&\s*phase/,
+  "persona card actions must wait for the theme decision",
+);
+assert.match(
+  shelfPageSource,
+  /shelfParams\.set\("personaRetry", String\(personaState\.loadAttempt\)\)/,
+  "the 3D shelf must receive the active persona retry attempt",
+);
+assert.match(
+  shelfPageSource,
+  /usesSnapshotPersona\s*&&\s*personaState\.status\s*===\s*"ready"/,
+  "the 3D shelf must only receive a theme after React accepts the library",
+);
+assert.match(
+  shelfPageSource,
+  /!reactPersonaLoading\s*&&\s*\(\s*<iframe/,
+  "the 3D shelf must wait for React's persona decision",
+);
+assert.match(
+  shelfPageSource,
+  /event\.origin\s*!==\s*window\.location\.origin[\s\S]*event\.source\s*!==\s*shelfFrameRef\.current\?\.contentWindow/,
+  "the 3D shelf fallback handshake must validate origin and source window",
+);
+assert.match(
+  matchRevealSource,
+  /personaState\.status\s*===\s*"loading"/,
+  "friend comparison must wait for the theme decision",
+);
+for (const source of [shelfSceneSource, nebulaSceneSource]) {
+  assert.match(
+    source,
+    /Promise\.race\(\[[\s\S]*persona library load timed out/,
+    "optional persona modules must not block a static scene indefinitely",
+  );
+}
+assert.match(
+  shelfSceneSource,
+  /syncStaticFallbackCatalog\(\);/,
+  "the WebGL fallback catalog must use the resolved theme",
+);
+assert.match(
+  shelfSceneSource,
+  /personaLibraryUrl\.searchParams\.set\("retry", String\(personaLoadAttempt\)\)/,
+  "the 3D shelf must use a fresh module URL when React retries",
+);
+assert.match(
+  shelfSceneSource,
+  /isPersonaRetry[\s\S]*OPTIONAL_PERSONA_RETRY_TIMEOUT_MS/,
+  "the 3D shelf must allow a slower recovery request",
+);
+assert.match(
+  shelfSceneSource,
+  /window\.parent\.postMessage\(\{[\s\S]*type:\s*"persona-shelf-status"[\s\S]*status[\s\S]*\}, location\.origin\)/,
+  "the 3D shelf must report its final persona mode to the parent",
 );
 
 console.log(

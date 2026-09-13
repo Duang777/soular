@@ -34,7 +34,8 @@ function markerStyle(stance: number): { left: string } {
 export function MatchRevealPage() {
   const [searchParams] = useSearchParams();
   const payload = useMemo(() => parseShareMatchQuery(searchParams), [searchParams]);
-  const casts = usePersonaCasts(payload?.preset);
+  const personaState = usePersonaCasts(payload?.preset);
+  const casts = personaState.casts;
   const [phase, setPhase] = useState<Phase>("intro");
   const [quizStep, setQuizStep] = useState(0);
   const [quizStances, setQuizStances] = useState<number[]>([]);
@@ -79,6 +80,19 @@ export function MatchRevealPage() {
             >
               查看当前星云
             </Link>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (personaState.status === "loading") {
+    return (
+      <div className="match-page">
+        <MatchHeader />
+        <main className="match-main">
+          <section className="match-panel" aria-live="polite">
+            <p className="match-copy">正在载入这道题的人格主题…</p>
           </section>
         </main>
       </div>

@@ -2095,17 +2095,72 @@
             }
     ];
 
+    const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
+    const OPTIONAL_PERSONA_RETRY_TIMEOUT_MS = 8000;
+    async function importOptionalPersonaLibrary(url, timeoutMs) {
+      let timeoutId = 0;
+      try {
+        return await Promise.race([
+          import(url),
+          new Promise((_, reject) => {
+            timeoutId = window.setTimeout(
+              () => reject(new Error("persona library load timed out")),
+              timeoutMs
+            );
+          })
+        ]);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    }
+
+    function syncStaticFallbackCatalog() {
+      const fallbackBooks = [...document.querySelectorAll(".fallback-book")];
+      if (fallbackBooks.length !== BOOKS.length) return;
+      fallbackBooks.forEach((element, index) => {
+        const book = BOOKS[index];
+        const description = element.querySelector("span");
+        const title = element.querySelector("strong");
+        if (description) description.textContent = book.note;
+        if (title) title.textContent = book.title;
+      });
+    }
+
     const pageParams = new URLSearchParams(location.search);
     const requestedPresetId = pageParams.get("preset");
+    const requestedPersonaRetry = pageParams.get("personaRetry");
+    const personaLoadAttempt =
+      requestedPersonaRetry && /^(?:0|[1-9]\d{0,5})$/.test(requestedPersonaRetry)
+        ? Number(requestedPersonaRetry)
+        : 0;
+    function notifyParentPersonaStatus(status) {
+      if (!requestedPresetId || window.parent === window) return;
+      window.parent.postMessage({
+        type: "persona-shelf-status",
+        preset: requestedPresetId,
+        loadAttempt: personaLoadAttempt,
+        status
+      }, location.origin);
+    }
+
     if (requestedPresetId) {
       try {
         const personaLibraryUrl = new URL("../persona-library.js", import.meta.url);
         const sceneVersion = pageParams.get("v");
         if (sceneVersion) personaLibraryUrl.searchParams.set("v", sceneVersion);
+        const isPersonaRetry = personaLoadAttempt > 0;
+        if (isPersonaRetry) {
+          personaLibraryUrl.searchParams.set("retry", String(personaLoadAttempt));
+        }
         const {
           getPersonaThemeForPreset,
           resolvePersonaCastsForPreset
-        } = await import(personaLibraryUrl.href);
+        } = await importOptionalPersonaLibrary(
+          personaLibraryUrl.href,
+          isPersonaRetry
+            ? OPTIONAL_PERSONA_RETRY_TIMEOUT_MS
+            : OPTIONAL_PERSONA_TIMEOUT_MS
+        );
         const personaTheme = getPersonaThemeForPreset(requestedPresetId);
         const personaCasts = resolvePersonaCastsForPreset(requestedPresetId);
         const personasBySlot = new Map(
@@ -2132,8 +2187,11 @@
             book.aside = `你在当前问题里更重视${persona.signals.join("、")}。${persona.selectionReason} 这张人物书只记录这一次选择，不替你定义长期人格。`;
             book.colophon = `本卷以${persona.name}为思想原型，不使用历史人物肖像，也不推断用户的长期人格。`;
           });
+          syncStaticFallbackCatalog();
         }
+        notifyParentPersonaStatus("ready");
       } catch {
+        notifyParentPersonaStatus("fallback");
         // Keep the classic nine books when the optional persona library is unavailable.
       }
     }

@@ -16,12 +16,50 @@ type PersonaLibraryModule = {
   resolvePersonaCastsForPreset?: (presetId: string) => unknown;
 };
 
+export type PersonaCastState = {
+  casts: readonly Cast[];
+  status: "idle" | "loading" | "ready" | "fallback";
+  loadAttempt: number;
+};
+
+const PERSONA_LIBRARY_TIMEOUT_MS = 4_000;
+const PERSONA_LIBRARY_RETRY_TIMEOUT_MS = 8_000;
 let personaLibraryPromise: Promise<PersonaLibraryModule> | null = null;
+let personaLibraryAttempt = 0;
 
 function loadPersonaLibrary(): Promise<PersonaLibraryModule> {
-  personaLibraryPromise ??= import(
-    /* @vite-ignore */ withVersion(asset("persona-library.js"))
+  if (personaLibraryPromise) return personaLibraryPromise;
+
+  const attempt = personaLibraryAttempt;
+  const libraryUrl = new URL(
+    withVersion(asset("persona-library.js")),
+    window.location.href,
+  );
+  if (attempt > 0) {
+    libraryUrl.searchParams.set("retry", String(attempt));
+  }
+  const importPromise = import(
+    /* @vite-ignore */ libraryUrl.href
   ) as Promise<PersonaLibraryModule>;
+  let timeoutId = 0;
+  const timeoutPromise = new Promise<PersonaLibraryModule>((_, reject) => {
+    timeoutId = window.setTimeout(
+      () => reject(new Error("persona library load timed out")),
+      attempt > 0
+        ? PERSONA_LIBRARY_RETRY_TIMEOUT_MS
+        : PERSONA_LIBRARY_TIMEOUT_MS,
+    );
+  });
+  const load = Promise.race([importPromise, timeoutPromise])
+    .finally(() => window.clearTimeout(timeoutId))
+    .catch((error: unknown) => {
+      if (personaLibraryPromise === load) {
+        personaLibraryPromise = null;
+        personaLibraryAttempt = attempt + 1;
+      }
+      throw error;
+    });
+  personaLibraryPromise = load;
   return personaLibraryPromise;
 }
 
@@ -84,23 +122,38 @@ export async function loadPersonaCasts(
 
 export function usePersonaCasts(
   presetId: string | null | undefined,
-): readonly Cast[] {
-  const [casts, setCasts] = useState<readonly Cast[]>(CASTS);
+): PersonaCastState {
+  const [state, setState] = useState<PersonaCastState>(() => ({
+    casts: CASTS,
+    status: presetId ? "loading" : "idle",
+    loadAttempt: personaLibraryAttempt,
+  }));
 
   useEffect(() => {
     let active = true;
-    setCasts(CASTS);
+    const loadAttempt = personaLibraryAttempt;
+    setState({
+      casts: CASTS,
+      status: presetId ? "loading" : "idle",
+      loadAttempt,
+    });
     if (!presetId) return () => {
       active = false;
     };
 
     void loadPersonaCasts(presetId).then((next) => {
-      if (active) setCasts(next);
+      if (active) {
+        setState({
+          casts: next,
+          status: next === CASTS ? "fallback" : "ready",
+          loadAttempt,
+        });
+      }
     });
     return () => {
       active = false;
     };
   }, [presetId]);
 
-  return casts;
+  return state;
 }

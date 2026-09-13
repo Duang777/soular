@@ -199,7 +199,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     ctx.font = `400 40px ${fontStack}`;
     ctx.fillText(cast.role, W / 2, 1150);
 
-    const personaDescription = cast.description ?? selfProfile?.claim;
+    const personaDescription = selfProfile?.claim ?? cast.description;
     if (personaDescription) {
       ctx.fillStyle = "rgba(243, 240, 233, 0.72)";
       ctx.font = `400 27px ${fontStack}`;

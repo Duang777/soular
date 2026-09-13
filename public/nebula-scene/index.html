@@ -4591,9 +4591,26 @@
       } = await import(
         `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
       );
+      const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
+      async function importOptionalPersonaLibrary(url) {
+        let timeoutId = 0;
+        try {
+          return await Promise.race([
+            import(url),
+            new Promise((_, reject) => {
+              timeoutId = window.setTimeout(
+                () => reject(new Error("persona library load timed out")),
+                OPTIONAL_PERSONA_TIMEOUT_MS
+              );
+            })
+          ]);
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
       let resolvePersonaCastMap = null;
       try {
-        ({ resolvePersonaCastMap } = await import(
+        ({ resolvePersonaCastMap } = await importOptionalPersonaLibrary(
           `../persona-library.js?v=${encodeURIComponent(presetModuleVersion)}`
         ));
       } catch {
