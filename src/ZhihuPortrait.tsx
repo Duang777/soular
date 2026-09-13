@@ -43,7 +43,7 @@ async function fetchWithTimeout(
   }
 }
 
-export function ZhihuPortrait() {
+export function ZhihuPortrait({ embedded = false }: { embedded?: boolean }) {
   const isOfficialOrigin = window.location.origin === OFFICIAL_ORIGIN;
   const [portrait, setPortrait] = useState<PortraitData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -126,7 +126,7 @@ export function ZhihuPortrait() {
 
   return (
     <section
-      className="zhihu-portrait"
+      className={`zhihu-portrait${embedded ? " zhihu-portrait--embedded" : ""}`}
       aria-label="知乎兴趣画像"
       aria-live="polite"
     >

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { AppChrome } from "./AppChrome";
 import { CASTS } from "./cast";
 import { NebulaStage } from "./NebulaStage";
 import {
@@ -233,15 +234,10 @@ export function Nebula() {
   return (
     <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>
       <NebulaStage presetId={presetId} iframeRef={nebulaFrameRef} />
-      {!isCardsView && (
-        <nav className="shelf-nav shelf-nav--nebula" aria-label="星云导航">
-          <div className="shelf-nav__tags">
-            <Link to="/" className="shelf-tag">
-              返回首页
-            </Link>
-          </div>
-        </nav>
-      )}
+      <AppChrome
+        hidden={isCardsView}
+        backLink={{ to: "/", label: "返回首页" }}
+      />
     </div>
   );
 }
