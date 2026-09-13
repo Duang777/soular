@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 4325",
-    "build": "tsc -b && npm run check:navigation && npm run check:share-match && npm run check:peer-discovery && npm run check:identity-revision && vite build",
+    "build": "tsc -b && npm run check:navigation && npm run check:share-match && npm run check:peer-discovery && npm run check:identity-revision && npm run check:lod && vite build",
     "check:navigation": "node scripts/check-nebula-navigation.mjs",
     "check:share-match": "node scripts/check-share-match.mjs",
     "check:peer-discovery": "node scripts/check-peer-discovery.mjs",
     "check:identity-revision": "node --experimental-strip-types scripts/check-identity-revision.mjs",
+    "check:lod": "node scripts/check-nebula-lod.mjs",
     "preview": "vite preview --port 4325",
     "server:dev": "npm --prefix server run dev",
     "server:check": "npm --prefix server run check",
