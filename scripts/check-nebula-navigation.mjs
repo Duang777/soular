@@ -82,6 +82,16 @@ assert.doesNotMatch(
   /trailMat|ME_LANE_[YZ]/,
   "“我”节点不得保留穿过头像的立场尾迹",
 );
+assert.match(
+  source,
+  /id="guideBtn"/,
+  "星云必须提供星图向导入口",
+);
+assert.match(
+  source,
+  /nebula-view-change/,
+  "阅读流必须通知 React 外壳切换视图",
+);
 
 const path = "goat?self=1&preset=ai-math&version=20260912";
 

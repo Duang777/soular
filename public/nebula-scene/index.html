@@ -1649,24 +1649,6 @@
       }
       .pcard-me-btn:hover { transform: translate(-1px, -1px); border-color: rgba(231, 193, 127, 0.8); }
       .pcard-me-btn:active { transform: translate(1px, 1px); }
-      .cards-section {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 38px;
-        margin-top: 10px;
-        border-bottom: 1px solid rgba(143, 216, 220, 0.12);
-        color: rgba(200, 209, 212, 0.58);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0;
-      }
-      .cards-section b {
-        color: #9fd8db;
-        font-family: var(--mono);
-        font-size: 8px;
-        font-weight: 500;
-      }
       .cards-empty {
         padding: 54px 0;
         color: rgba(180, 193, 197, 0.46);
@@ -1886,6 +1868,117 @@
         box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
       }
       .gbtn--primary:hover { transform: translateY(-1px); box-shadow: 0 11px 26px rgba(0, 0, 0, 0.48); }
+      .guide-picks {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 16px;
+      }
+      .guide-pick {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(143, 216, 220, 0.14);
+        border-radius: 10px;
+        background: rgba(143, 216, 220, 0.04);
+        color: #edf1f1;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-pick:hover { border-color: rgba(23, 114, 246, 0.55); background: rgba(23, 114, 246, 0.06); }
+      .guide-pick b { display: block; font-size: 11px; font-weight: 620; }
+      .guide-pick span { display: block; margin-top: 3px; color: rgba(180, 193, 197, 0.58); font-size: 9.5px; line-height: 1.45; }
+      .guide-pick em {
+        flex: none;
+        color: rgba(143, 216, 220, 0.62);
+        font-family: var(--mono);
+        font-size: 8px;
+        font-style: normal;
+      }
+      .guide-body {
+        margin: 0 24px 18px;
+        color: rgba(204, 212, 214, 0.72);
+        font-size: 11.5px;
+        line-height: 1.65;
+      }
+      .guide-body strong { color: #f3eee0; font-weight: 620; }
+      .guide-quiz {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 14px;
+      }
+      .guide-quiz-q {
+        color: rgba(143, 216, 220, 0.58);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-quiz-choices { display: grid; gap: 6px; }
+      .guide-quiz-btn {
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 9px;
+        background: #111820;
+        color: #edf1f1;
+        font: inherit;
+        font-size: 11px;
+        text-align: left;
+        cursor: pointer;
+      }
+      .guide-quiz-btn:hover { border-color: rgba(23, 114, 246, 0.55); }
+      .guide-input {
+        display: grid;
+        gap: 8px;
+        margin: 0 24px 20px;
+        padding-top: 12px;
+        border-top: 1px dashed rgba(143, 216, 220, 0.12);
+      }
+      .guide-input label {
+        color: rgba(180, 193, 197, 0.48);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .guide-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 8px;
+      }
+      .guide-input-row input {
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid rgba(143, 216, 220, 0.14);
+        border-radius: 9px;
+        background: #080e13;
+        color: #edf1f1;
+        font: inherit;
+        font-size: 11px;
+      }
+      .guide-input-row input:focus {
+        outline: 0;
+        border-color: rgba(23, 114, 246, 0.72);
+        box-shadow: 0 0 0 3px rgba(23, 114, 246, 0.1);
+      }
+      .guide-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .guide-suggestion {
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid rgba(143, 216, 220, 0.14);
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(180, 193, 197, 0.62);
+        font: inherit;
+        font-size: 9.5px;
+        cursor: pointer;
+      }
+      .guide-suggestion:hover { color: #edf1f1; border-color: rgba(143, 216, 220, 0.42); }
       .gbtn--primary:disabled {
         cursor: wait;
         opacity: 0.72;
@@ -2127,7 +2220,7 @@
         .cards-title { margin-top: 0; font-size: 17px; }
         .cards-question { font-size: 9.5px; }
         .cards-meta { font-size: 7.5px; }
-        .cards-search { grid-column: 1 / -1; min-height: 40px; }
+        .cards-search { grid-column: 1 / -1; min-height: 44px; }
         .cards-spectrum {
           gap: 8px;
           padding: 9px 14px;
@@ -2354,6 +2447,20 @@
           <ol class="discovery-results" id="discoveryResults"></ol>
         </section>
         <div class="explore-section-label">盒内隐藏功能</div>
+        <button type="button" class="dock-action" id="guideBtn">
+          <span class="dock-action-icon" aria-hidden="true">
+            <svg class="ui-icon" viewBox="0 0 24 24">
+              <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"></path>
+              <path d="M5 19h14"></path>
+              <path d="M8 16h8"></path>
+            </svg>
+          </span>
+          <span class="dock-action-copy">
+            <b>星图向导</b>
+            <span>一句话看懂争议，帮你定位起点</span>
+          </span>
+          <span class="dock-arrow" aria-hidden="true">›</span>
+        </button>
         <button type="button" class="dock-action" id="clashBtn">
           <span class="dock-action-icon" aria-hidden="true">
             <svg class="ui-icon" viewBox="0 0 24 24">
@@ -2443,7 +2550,7 @@
           </svg>
         </button>
         <div class="cards-heading">
-          <div class="cards-series">SPECTRUM INDEX · 48 SIGNALS</div>
+          <div class="cards-series" id="cardsSeries">SPECTRUM INDEX</div>
           <div class="cards-title">观点光谱索引</div>
           <div class="cards-question" id="presetCardsQuestion">35 岁程序员该不该转行？</div>
           <div class="cards-meta" id="cardsMeta"></div>
@@ -2464,7 +2571,7 @@
       <div class="cards-layout">
         <aside class="cards-rail" aria-label="筛选观点">
           <div class="cards-rail-title">FILTER · 立场筛选</div>
-          <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">48</b></button>
+          <button type="button" class="cards-filter is-active" data-card-filter="all"><span>全部观点</span><b id="filterAllCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="left"><span id="presetFilterLeft">倾向转行</span><b id="filterLeftCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="center"><span id="presetFilterCenter">中立观察</span><b id="filterCenterCount">0</b></button>
           <button type="button" class="cards-filter" data-card-filter="right"><span id="presetFilterRight">倾向深耕</span><b id="filterRightCount">0</b></button>
@@ -2540,6 +2647,42 @@
             </svg>
             <span>在评论区 @TA 提问（演示）</span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-mask" id="guide">
+      <div class="modal guide-modal" role="dialog" aria-modal="true" aria-label="星图向导">
+        <button type="button" class="modal-x" id="guideX" aria-label="关闭">
+          <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="modal-head">
+          <span class="modal-signal" aria-hidden="true">
+            <svg class="ui-icon icon-sparkles" viewBox="0 0 24 24">
+              <path class="sparkle-bottom" d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-top" d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2z"></path>
+              <path class="sparkle-main" d="M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6z"></path>
+            </svg>
+          </span>
+          <div>
+            <div class="modal-kicker">星图向导 · LOCAL GUIDE</div>
+            <div class="modal-title">先读懂这片星云</div>
+            <p class="modal-sub" id="guideHeadline"></p>
+          </div>
+        </div>
+        <div class="guide-picks" id="guidePicks"></div>
+        <div class="guide-body" id="guideBody"></div>
+        <div class="guide-quiz" id="guideQuiz" hidden></div>
+        <div class="guide-input">
+          <label for="guideAsk">试着问我（本地匹配，不调用大模型）</label>
+          <div class="guide-input-row">
+            <input id="guideAsk" type="search" maxlength="80" autocomplete="off" placeholder="例如：代表性观点 / 我是什么立场" />
+            <button type="button" class="gbtn gbtn--ghost" id="guideAskBtn" aria-label="提交问题">问</button>
+          </div>
+          <div class="guide-suggestions" id="guideSuggestions"></div>
         </div>
       </div>
     </div>
@@ -2712,6 +2855,8 @@
       document.getElementById("presetFilterLeft").textContent = PRESET.axis.leftTendency;
       document.getElementById("presetFilterCenter").textContent = PRESET.axis.center;
       document.getElementById("presetFilterRight").textContent = PRESET.axis.rightTendency;
+      document.getElementById("cardsSeries").textContent =
+        `SPECTRUM INDEX · ${PEOPLE.length} SIGNALS`;
       document.getElementById("filterAllCount").textContent = PEOPLE.length;
       document.getElementById("filterLeftCount").textContent =
         PEOPLE.filter((person) => person[1] < -0.2).length;
@@ -4742,7 +4887,7 @@
         meTitle.appendChild(uiNode(
           "span",
           "",
-          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "待形成",
+          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "尚未形成坐标",
         ));
         meCopy.append(meTitle, uiNode("div", "me-strip-desc", meClaim));
         const mePosition = uiNode("div", "me-strip-position");
@@ -4763,24 +4908,12 @@
 
         cardsListEl.replaceChildren(head);
         if (visibleAnswers.length) {
-          const section = uiNode("div", "cards-section");
-          section.append(
-            uiNode("span", "", PRESET.peopleLabel || "回答者观点"),
-            uiNode("b", "", visibleAnswers.length),
-          );
           cardsListEl.append(
-            section,
             ...visibleAnswers.map(({ index }) => personCard(index)),
           );
         }
         if (visibleComments.length) {
-          const section = uiNode("div", "cards-section");
-          section.append(
-            uiNode("span", "", "评论区观点"),
-            uiNode("b", "", visibleComments.length),
-          );
           cardsListEl.append(
-            section,
             ...visibleComments.map(({ data, index }) => commentCard(data, index)),
           );
         }
@@ -4877,6 +5010,277 @@
         if (!includeComments && hovered && hovered.kind === "comment") setHovered(null);
         renderCardsIfOpen();
         if (includeComments) showToast(`已纳入 ${COMMENTS.length} 条评论区观点，空心圆即评论者`);
+      });
+
+      // ---- 星图向导 ----
+      const guideEl = $("guide");
+      const guideHeadlineEl = $("guideHeadline");
+      const guidePicksEl = $("guidePicks");
+      const guideBodyEl = $("guideBody");
+      const guideQuizEl = $("guideQuiz");
+      const guideAskEl = $("guideAsk");
+      const guideSuggestionsEl = $("guideSuggestions");
+      const GUIDE_SUGGESTIONS = [
+        "代表性观点有哪些？",
+        "和我相反的人怎么看？",
+        "我现在的立场是什么？",
+        "帮我定位起点",
+      ];
+      let guideQuizStep = 0;
+      let guideQuizStances = [];
+
+      function findPersonNearStance(target) {
+        let best = 0;
+        let bestDistance = Infinity;
+        PEOPLE.forEach((person, index) => {
+          const distance = Math.abs(person[1] - target);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = index;
+          }
+        });
+        return best;
+      }
+      function guideHeadline() {
+        if (PRESET.guide && typeof PRESET.guide.headline === "string") {
+          return PRESET.guide.headline;
+        }
+        return `${PRESET.question}：讨论主要围绕「${PRESET.axis.left}」与「${PRESET.axis.right}」两种方向展开。`;
+      }
+      function guideQuizQuestions() {
+        if (Array.isArray(PRESET.guide?.quiz) && PRESET.guide.quiz.length) {
+          return PRESET.guide.quiz;
+        }
+        const axis = PRESET.axis;
+        return [
+          {
+            question: "你更认同哪一侧？",
+            choices: [
+              { label: axis.leftTendency, stance: -0.75 },
+              { label: axis.center, stance: 0 },
+              { label: axis.rightTendency, stance: 0.75 },
+            ],
+          },
+          {
+            question: "如果只能选一种态度？",
+            choices: [
+              { label: axis.leftChoice || axis.left, stance: -0.85 },
+              { label: "两者都有道理", stance: 0 },
+              { label: axis.rightChoice || axis.right, stance: 0.85 },
+            ],
+          },
+          {
+            question: "你更接近光谱哪一端？",
+            choices: [
+              { label: axis.left, stance: -0.65 },
+              { label: axis.center, stance: 0 },
+              { label: axis.right, stance: 0.65 },
+            ],
+          },
+        ];
+      }
+      function guideRepresentatives() {
+        const left = findPersonNearStance(-0.85);
+        const middle = findPersonNearStance(0);
+        const right = findPersonNearStance(0.85);
+        const my = liked.size ? myStanceVal : 0;
+        let opposite = 0;
+        let oppositeDistance = -1;
+        PEOPLE.forEach((person, index) => {
+          const distance = Math.abs(person[1] - my);
+          if (distance > oppositeDistance) {
+            oppositeDistance = distance;
+            opposite = index;
+          }
+        });
+        return { left, middle, right, opposite };
+      }
+      function renderGuidePick(label, index, note) {
+        const [name, stance, castKey, claim] = PEOPLE[index];
+        const button = uiNode("button", "guide-pick");
+        button.type = "button";
+        button.dataset.person = String(index);
+        button.append(
+          uiNode("em", "", label),
+          (() => {
+            const copy = uiNode("div");
+            copy.append(
+              uiNode("b", "", `@${name}`),
+              uiNode("span", "", claim),
+            );
+            return copy;
+          })(),
+          uiNode("em", "", `${stance > 0 ? "+" : ""}${stance.toFixed(2)}`),
+        );
+        button.title = note;
+        return button;
+      }
+      function renderGuidePicks() {
+        const picks = guideRepresentatives();
+        guidePicksEl.replaceChildren(
+          renderGuidePick("代表·左端", picks.left, PRESET.axis.leftTendency),
+          renderGuidePick("中间观察", picks.middle, PRESET.axis.center),
+          renderGuidePick("代表·右端", picks.right, PRESET.axis.rightTendency),
+          renderGuidePick("对立声音", picks.opposite, "与你当前坐标距离最远"),
+        );
+      }
+      function renderGuideSelfSection() {
+        const profile = inferSelfProfile();
+        const [castName, castRole] = CASTS[profile.cast];
+        if (liked.size) {
+          const stanceText = myStanceVal > 0 ? "+" : "";
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "根据你的点赞"),
+            document.createTextNode(
+              `，当前坐标约为 ${stanceText}${myStanceVal.toFixed(2)}，更接近「${stanceLabel(myStanceVal)}」。`,
+            ),
+            document.createElement("br"),
+            document.createTextNode(
+              `九派人格暂定为「${castName}」——${castRole}。这来自本次快照内的观点分布，不是你的永久画像。`,
+            ),
+          );
+          guideQuizEl.hidden = true;
+          return;
+        }
+        guideBodyEl.replaceChildren(
+          uiNode("strong", "", "尚未点赞"),
+          document.createTextNode("。回答下面 3 道选择题，向导会帮你估计一个起始星位（不会写入点赞记录）。"),
+        );
+        guideQuizStep = 0;
+        guideQuizStances = [];
+        renderGuideQuizStep();
+      }
+      function renderGuideQuizStep() {
+        const questions = guideQuizQuestions();
+        if (guideQuizStep >= questions.length) {
+          const avg = guideQuizStances.reduce((sum, value) => sum + value, 0) / guideQuizStances.length;
+          guideQuizEl.hidden = true;
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "建议起点"),
+            document.createTextNode(
+              `：坐标约 ${avg > 0 ? "+" : ""}${avg.toFixed(2)}，更接近「${stanceLabel(avg)}」。去光谱阅读里找相近观点，再点赞形成你的真实星位。`,
+            ),
+          );
+          return;
+        }
+        const current = questions[guideQuizStep];
+        guideQuizEl.hidden = false;
+        guideQuizEl.replaceChildren(
+          uiNode("div", "guide-quiz-q", `第 ${guideQuizStep + 1} / ${questions.length} 题 · ${current.question}`),
+          (() => {
+            const choices = uiNode("div", "guide-quiz-choices");
+            current.choices.forEach((choice) => {
+              const button = uiNode("button", "guide-quiz-btn", choice.label);
+              button.type = "button";
+              button.addEventListener("click", () => {
+                guideQuizStances.push(choice.stance);
+                guideQuizStep += 1;
+                renderGuideQuizStep();
+              });
+            });
+            return choices;
+          })(),
+        );
+      }
+      function matchGuideIntent(query) {
+        const text = query.trim().toLowerCase();
+        if (!text) return null;
+        if (/代表|典型|主流|左端|转行|警惕|伤害/.test(text)) return "left";
+        if (/中间|中立|观望|审慎/.test(text)) return "middle";
+        if (/右端|深耕|拥抱|加速|协同/.test(text)) return "right";
+        if (/相反|对立|最远|反面/.test(text)) return "opposite";
+        if (/我|立场|人格|坐标|赞/.test(text)) return "self";
+        if (/起点|定位|开始|没赞|未赞/.test(text)) return "quiz";
+        return null;
+      }
+      function answerGuideIntent(intent) {
+        const picks = guideRepresentatives();
+        if (intent === "left") {
+          openPerson(picks.left);
+          return;
+        }
+        if (intent === "middle") {
+          openPerson(picks.middle);
+          return;
+        }
+        if (intent === "right") {
+          openPerson(picks.right);
+          return;
+        }
+        if (intent === "opposite") {
+          openPerson(picks.opposite);
+          return;
+        }
+        if (intent === "self") {
+          renderGuideSelfSection();
+          showToast(liked.size ? "已根据你的点赞更新说明" : "请先完成下方选择题");
+          return;
+        }
+        if (intent === "quiz") {
+          guideBodyEl.replaceChildren(
+            uiNode("strong", "", "起点定位"),
+            document.createTextNode("：请完成下方 3 道选择题。"),
+          );
+          guideQuizStep = 0;
+          guideQuizStances = [];
+          renderGuideQuizStep();
+          return;
+        }
+        guideSuggestionsEl.replaceChildren(
+          ...GUIDE_SUGGESTIONS.map((label) => {
+            const button = uiNode("button", "guide-suggestion", label);
+            button.type = "button";
+            button.addEventListener("click", () => {
+              guideAskEl.value = label;
+              answerGuideIntent(matchGuideIntent(label));
+            });
+            return button;
+          }),
+        );
+        showToast("暂时只能回答代表性观点、对立观点、立场说明和起点定位。试试下方建议问题。");
+      }
+      function openGuide() {
+        guideHeadlineEl.textContent = guideHeadline();
+        renderGuidePicks();
+        renderGuideSelfSection();
+        guideSuggestionsEl.replaceChildren(
+          ...GUIDE_SUGGESTIONS.map((label) => {
+            const button = uiNode("button", "guide-suggestion", label);
+            button.type = "button";
+            button.addEventListener("click", () => {
+              guideAskEl.value = label;
+              answerGuideIntent(matchGuideIntent(label));
+            });
+            return button;
+          }),
+        );
+        guideAskEl.value = "";
+        guideEl.classList.add("show");
+      }
+      function closeGuide() {
+        guideEl.classList.remove("show");
+      }
+      $("guideBtn").addEventListener("click", () => {
+        setExploreOpen(false);
+        openGuide();
+      });
+      $("guideX").addEventListener("click", closeGuide);
+      guideEl.addEventListener("click", (event) => {
+        if (event.target === guideEl) closeGuide();
+      });
+      guidePicksEl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-person]");
+        if (!button) return;
+        openPerson(Number(button.getAttribute("data-person")));
+      });
+      $("guideAskBtn").addEventListener("click", () => {
+        answerGuideIntent(matchGuideIntent(guideAskEl.value));
+      });
+      guideAskEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          answerGuideIntent(matchGuideIntent(guideAskEl.value));
+        }
       });
 
       // ---- 观点碰撞 ----
@@ -4983,7 +5387,7 @@
       function queueNextChip(delay) {
         clearTimeout(chipTimer);
         chipTimer = setTimeout(() => {
-          if (cardsEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) return;
+          if (cardsEl.classList.contains("show") || guideEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) return;
           if (chipQueue.length) showChip(chipQueue.shift());
         }, delay);
       }
@@ -5051,7 +5455,8 @@
 
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
-        if (clashEl.classList.contains("show")) closeClash();
+        if (guideEl.classList.contains("show")) closeGuide();
+        else if (clashEl.classList.contains("show")) closeClash();
         else if (cardsEl.classList.contains("show")) closeCards();
         else if (focusSet) exitFocus();
         else if (chipEl.classList.contains("show")) chipEl.classList.remove("show");

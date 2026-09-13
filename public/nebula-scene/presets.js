@@ -94,6 +94,9 @@ const CAREER_35 = {
     castKey: "fox",
     claim: "点赞几个回答，星云会标出你此刻的立场位置。",
   },
+  guide: {
+    headline: "35 岁要不要转行：一边是趁早换赛道，一边是继续深耕技术护城河。",
+  },
 };
 
 const PRESETS = new Map([

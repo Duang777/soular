@@ -1158,6 +1158,87 @@ textarea.field:focus-visible,
   transform: scale(0.96);
 }
 
+.zhihu-portrait {
+  position: fixed;
+  top: max(68px, calc(env(safe-area-inset-top) + 62px));
+  left: max(14px, calc(env(safe-area-inset-left) + 10px));
+  z-index: 31;
+  box-sizing: border-box;
+  width: min(320px, calc(100vw - 28px));
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #f5f5f5;
+  background: rgba(8, 9, 12, 0.9);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.32);
+  pointer-events: auto;
+}
+
+.zhihu-portrait__head {
+  display: grid;
+  gap: 3px;
+}
+
+.zhihu-portrait__head b {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.zhihu-portrait__head small {
+  color: rgba(243, 240, 233, 0.52);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.zhihu-portrait__stats,
+.zhihu-portrait__status,
+.zhihu-portrait__warning {
+  margin: 10px 0 0;
+  color: rgba(243, 240, 233, 0.68);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.zhihu-portrait__warning {
+  color: #f0b34c;
+}
+
+.zhihu-portrait__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.zhihu-portrait__tag {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(23, 114, 246, 0.28);
+  border-radius: 999px;
+  color: #9ec7ff;
+  background: rgba(23, 114, 246, 0.08);
+  font-size: 10px;
+  line-height: 28px;
+}
+
+.zhihu-portrait__retry {
+  margin-top: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  color: rgba(243, 240, 233, 0.82);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.zhihu-portrait__retry:hover {
+  border-color: rgba(23, 114, 246, 0.72);
+  color: #fff;
+}
+
 .nebula-entry {
   position: fixed;
   left: 50%;

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CASTS } from "./cast";
 import { OAuthAccount } from "./OAuthAccount";
+import { ZhihuPortrait } from "./ZhihuPortrait";
 import { WaveStage } from "./WaveStage";
 
 export function Home() {
@@ -29,6 +30,7 @@ export function Home() {
     <>
       <WaveStage iframeRef={waveFrameRef} />
       <OAuthAccount />
+      <ZhihuPortrait />
       <Link to="/nebula" className="nebula-entry" aria-label="进入观点星云，抽取我的人格卡">
         <span className="nebula-entry__star" aria-hidden="true">✦</span>
         <span className="nebula-entry__copy">
