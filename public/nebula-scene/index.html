@@ -2362,6 +2362,10 @@
         background: #11171d;
         box-shadow: 0 28px 90px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
+      .modal:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.72);
+        outline-offset: 3px;
+      }
       .modal::before {
         content: "";
         position: absolute;
@@ -2680,6 +2684,146 @@
         letter-spacing: 0.1em;
         color: var(--faint);
       }
+      .match-evidence {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .match-evidence-item {
+        display: grid;
+        gap: 8px;
+      }
+      .match-evidence-copy {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--txt-faint);
+        font-size: 9px;
+      }
+      .match-evidence-copy b {
+        color: rgba(231, 235, 238, 0.82);
+        font-family: var(--mono);
+        font-size: 8.5px;
+        font-weight: 500;
+      }
+      .match-evidence-track {
+        position: relative;
+        display: block;
+        height: 3px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .match-evidence-track > span {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: #82c8ce;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .match-evidence-item--interest .match-evidence-track > span {
+        background: #e6c17f;
+      }
+      .match-weight-note {
+        grid-column: 1 / -1;
+        margin: 0;
+        color: rgba(180, 193, 197, 0.42);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .match-candidates {
+        margin-top: 17px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .match-candidates-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .match-candidates-head span {
+        color: rgba(231, 235, 238, 0.68);
+        font-size: 9.5px;
+      }
+      .match-candidates-head small {
+        color: rgba(131, 185, 189, 0.58);
+        font-family: var(--mono);
+        font-size: 8px;
+      }
+      .match-candidate-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .match-candidate {
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr);
+        min-width: 0;
+        min-height: 48px;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 7px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+        color: rgba(231, 235, 238, 0.66);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, transform 0.12s ease;
+      }
+      .match-candidate.is-active {
+        border-color: rgba(131, 185, 189, 0.52);
+        color: var(--hi);
+        background: rgba(131, 185, 189, 0.06);
+      }
+      .match-candidate img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        filter: saturate(0.72);
+        outline: 1px solid rgba(255, 255, 255, 0.12);
+        outline-offset: -1px;
+      }
+      .match-candidate > span {
+        display: grid;
+        min-width: 0;
+        gap: 3px;
+      }
+      .match-candidate b {
+        overflow-wrap: anywhere;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .match-candidate small {
+        color: rgba(180, 193, 197, 0.44);
+        font-family: var(--mono);
+        font-size: 7px;
+      }
+      .match-candidate:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.72);
+        outline-offset: 2px;
+      }
+      @media (hover: hover) {
+        .match-candidate:hover {
+          border-color: rgba(131, 185, 189, 0.34);
+          background: rgba(131, 185, 189, 0.035);
+        }
+      }
+      .match-candidate:active { transform: scale(0.96); }
+      .modal.is-keyboard-nav .seg-btn,
+      .modal.is-keyboard-nav .match-candidate,
+      .modal.is-keyboard-nav .match-evidence-track > span {
+        transition: none;
+      }
       .modal-actions {
         margin: 0;
         padding: 18px 24px 22px;
@@ -2722,6 +2866,10 @@
         color: rgba(232, 234, 245, 0.82);
       }
       .gbtn--ghost:hover { border-color: rgba(255, 255, 255, 0.32); color: var(--hi); background: rgba(255, 255, 255, 0.04); }
+      .gbtn--ghost:disabled {
+        cursor: default;
+        opacity: 0.48;
+      }
       .gbtn--text {
         grid-column: 1 / -1;
         justify-self: start;
@@ -3258,6 +3406,15 @@
         .modal-title { font-size: 20px; }
         .modal-sub { margin-right: 0; }
         .clash-card { margin: 0; padding: 18px; }
+        .match-evidence { grid-template-columns: 1fr; }
+        .match-weight-note { grid-column: auto; }
+        .match-candidate {
+          grid-template-columns: 26px minmax(0, 1fr);
+          gap: 5px;
+          padding-right: 5px;
+          padding-left: 5px;
+        }
+        .match-candidate img { width: 25px; height: 25px; }
         .modal-actions { grid-template-columns: 1fr; padding: 15px 18px 18px; }
         .gbtn--text { grid-column: auto; justify-self: center; }
         .modal-mask { padding: 10px; }
@@ -3768,7 +3925,15 @@
     </div>
 
     <div class="modal-mask" id="clash">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="观点碰撞">
+      <div
+        class="modal"
+        id="clashDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="clashTitle"
+        aria-describedby="clashReason"
+        tabindex="-1"
+      >
         <button type="button" class="modal-x" id="clashX" aria-label="关闭">
           <svg class="ui-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -3787,7 +3952,7 @@
             <div class="modal-kicker">观点碰撞 · VIEWPOINT MATCH</div>
             <div class="modal-title" id="clashTitle">听听对立面怎么想</div>
             <p class="modal-sub" id="clashSubtitle">已找到与你立场距离最远的一种声音。</p>
-            <p class="modal-personalization" id="clashReason">当前根据本题表态进行匹配。</p>
+            <p class="modal-personalization" id="clashReason" aria-live="polite">当前根据本题表态进行匹配。</p>
           </div>
         </div>
         <div class="seg match-mode" role="tablist" aria-label="观点匹配方式">
@@ -3818,6 +3983,44 @@
             </div>
             <div class="clash-labels"><span>必须转行</span><span>深耕不转</span></div>
           </div>
+          <div class="match-evidence" aria-label="推荐排序依据">
+            <div class="match-evidence-item">
+              <span class="match-evidence-copy">
+                <span>本题立场</span>
+                <b id="clashStanceScore"></b>
+              </span>
+              <i
+                class="match-evidence-track"
+                id="clashStanceTrack"
+                role="progressbar"
+                aria-label="本题立场匹配度"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ><span id="clashStanceBar"></span></i>
+            </div>
+            <div class="match-evidence-item match-evidence-item--interest">
+              <span class="match-evidence-copy">
+                <span>知乎兴趣</span>
+                <b id="clashInterestScore"></b>
+              </span>
+              <i
+                class="match-evidence-track"
+                id="clashInterestTrack"
+                role="progressbar"
+                aria-label="知乎兴趣交集"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ><span id="clashInterestBar"></span></i>
+            </div>
+            <p class="match-weight-note" id="clashWeightNote"></p>
+          </div>
+          <div class="match-candidates">
+            <div class="match-candidates-head">
+              <span id="clashQueueLabel">推荐候选</span>
+              <small>选择一位切换观点</small>
+            </div>
+            <div class="match-candidate-list" id="clashCandidates"></div>
+          </div>
         </div>
         <div class="modal-actions">
           <button type="button" class="gbtn gbtn--primary" id="clashGo">
@@ -3832,7 +4035,7 @@
               <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path>
               <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"></path>
             </svg>
-            <span>换一位</span>
+            <span id="clashAgainLabel">换一位</span>
           </button>
           <button type="button" class="gbtn gbtn--text" id="clashAsk">
             <svg class="ui-icon icon-message" viewBox="0 0 24 24" aria-hidden="true">
@@ -5672,6 +5875,11 @@
           if (!identityChanged && peerDiscoveryEl.classList.contains("show")) {
             refreshPeerDiscoveryBatch();
           }
+          if (!identityChanged && clashEl.classList.contains("show")) {
+            refreshMatchCandidates(false);
+            renderClash();
+          }
+          if (discoveryMode === "recommend") renderRecommendations();
           renderCardsIfOpen();
         }
         if (e.data && e.data.type === "nebula-open-peer-discovery") {
@@ -6452,27 +6660,29 @@
             .filter(Number.isInteger)
             .filter((index, position, indexes) => indexes.indexOf(index) === position);
         }
-        return PEOPLE
-          .map((person, index) => ({
-            index,
-            distance: Math.abs(person[1] - stance),
-            liked: liked.has(index),
-          }))
-          .filter((item) => !item.liked)
-          .sort((left, right) => left.distance - right.distance)
+        return rankMatchCandidates("same")
           .slice(0, 5)
-          .map((item) => item.index);
+          .map((item) => item.i);
       }
 
       function renderRecommendations() {
         const indexes = recommendationIndexes();
+        const personalized = liked.size
+          ? new Map(rankMatchCandidates("same").map((item) => [item.i, item]))
+          : new Map();
         discoveryResultsEl.replaceChildren();
         indexes.forEach((index) => {
           const [name, stance, , claim] = PEOPLE[index];
+          const candidate = personalized.get(index);
+          const interestText = candidate?.interest.word && candidate.interest.score >= 0.34
+            ? ` · 兴趣「${candidate.interest.word}」`
+            : userPortrait
+              ? " · 兴趣画像已参与排序"
+              : "";
           appendLocalDiscoveryResult({
             titleText: `@${name}：${claim}`,
             metaText: liked.size
-              ? `${stanceLabel(stance)} · 与你当前立场接近`
+              ? `${stanceLabel(stance)} · 同频 ${Math.round((candidate?.stanceScore || 0) * 100)}${interestText}`
               : `${stanceLabel(stance)} · 代表观点`,
             avatarIndex: index,
             onClick: () => {
@@ -7684,6 +7894,8 @@
       const clashGoBtn = $("clashGo");
       let clashCurrent = -1;
       let matchMode = "opposite";
+      let matchCandidates = [];
+      let matchCursor = 0;
       function setClashButtonLabel(label) {
         const slot = clashGoBtn.querySelector(".gbtn-label");
         if (slot) slot.textContent = label;
@@ -7693,36 +7905,56 @@
         const person = PEOPLE[index];
         const sourceText = `${person[0] || ""} ${person[3] || ""} ${person[5] || ""}`
           .toLocaleLowerCase("zh-CN");
+        const sourceLatin = new Set(sourceText.match(/[a-z0-9]+/g) || []);
         const maxWeight = Math.max(1, ...userPortrait.keywords.map((item) => item.score));
         let best = { score: 0, word: "" };
         userPortrait.keywords.forEach(({ word, score }) => {
           const normalized = word.toLocaleLowerCase("zh-CN");
-          let relevance = sourceText.includes(normalized) ? 1 : 0;
-          if (!relevance && Array.from(normalized).length >= 3) {
-            const units = [...new Set(Array.from(normalized).filter((char) =>
-              /[a-z0-9\u4e00-\u9fff]/i.test(char)
-            ))];
-            const overlap = units.filter((char) => sourceText.includes(char)).length;
-            if (overlap >= 2) relevance = overlap / units.length * 0.55;
+          const normalizedLatin = /^[a-z0-9]+$/.test(normalized);
+          let relevance = normalizedLatin
+            ? Number(sourceLatin.has(normalized))
+            : Number(sourceText.includes(normalized));
+          if (!relevance) {
+            const units = [];
+            const latinUnits = normalized.match(/[a-z0-9]+/g) || [];
+            latinUnits.filter((unit) => unit.length >= 2).forEach((unit) => units.push(unit));
+            const cjkRuns = normalized.match(/[\u4e00-\u9fff]+/g) || [];
+            cjkRuns.forEach((run) => {
+              if (run.length <= 2) {
+                units.push(run);
+                return;
+              }
+              for (let offset = 0; offset < run.length - 1; offset += 1) {
+                units.push(run.slice(offset, offset + 2));
+              }
+            });
+            const uniqueUnits = [...new Set(units)];
+            const overlap = uniqueUnits.filter((unit) =>
+              /^[a-z0-9]+$/.test(unit) ? sourceLatin.has(unit) : sourceText.includes(unit)
+            ).length;
+            if (overlap) {
+              relevance = Math.min(0.68, 0.34 + overlap / uniqueUnits.length * 0.34);
+            }
           }
           const weighted = relevance * (0.75 + 0.25 * Math.min(1, score / maxWeight));
           if (weighted > best.score) best = { score: weighted, word };
         });
         return best;
       }
-      function pickMatch(exclude) {
+      function rankMatchCandidates(mode, exclude = -1) {
         const my = (computeStance([...liked]) || { avg: 0 }).avg;
         const candidates = PEOPLE
           .map((p, i) => {
             const interest = interestMatchForPerson(i);
             const distance = Math.abs(p[1] - my);
-            const stanceScore = matchMode === "same"
+            const stanceScore = mode === "same"
               ? 1 - Math.min(2, distance) / 2
               : distance / 2;
             return {
               i,
               d: distance,
               interest,
+              stanceScore,
               score: stanceScore * 0.82 + interest.score * 0.18,
             };
           });
@@ -7735,10 +7967,62 @@
         )
           .sort((a, b) =>
             b.score - a.score ||
-            (matchMode === "same" ? a.d - b.d : b.d - a.d)
+            (mode === "same" ? a.d - b.d : b.d - a.d) ||
+            a.i - b.i
           );
-        const pool = ranked.slice(0, userPortrait ? 3 : 6);
-        return pool.length ? pool[Math.floor(Math.random() * pool.length)].i : 0;
+        return ranked;
+      }
+      function renderMatchCandidates() {
+        const container = $("clashCandidates");
+        const signature = `${matchMode}:${matchCandidates
+          .map(({ i, score }) => `${i}:${score.toFixed(5)}`)
+          .join(",")}`;
+        if (container.dataset.signature !== signature) {
+          container.dataset.signature = signature;
+          container.replaceChildren();
+          matchCandidates.forEach((candidate, position) => {
+            const [name] = PEOPLE[candidate.i];
+            const button = uiNode("button", "match-candidate");
+            button.type = "button";
+            button.setAttribute(
+              "aria-label",
+              `选择${name}，综合排序 ${Math.round(candidate.score * 100)}`,
+            );
+            const avatar = uiNode("img", "");
+            avatar.src = personAvatarPath(candidate.i);
+            avatar.alt = "";
+            const copy = uiNode("span", "");
+            copy.append(
+              uiNode("b", "", `@${name}`),
+              uiNode("small", "", `综合 ${Math.round(candidate.score * 100)}`),
+            );
+            button.append(avatar, copy);
+            button.addEventListener("click", () => {
+              matchCursor = position;
+              clashCurrent = candidate.i;
+              renderClash();
+            });
+            container.appendChild(button);
+          });
+        }
+        [...container.children].forEach((button, position) => {
+          const active = matchCandidates[position]?.i === clashCurrent;
+          button.classList.toggle("is-active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        $("clashQueueLabel").textContent =
+          `${matchMode === "same" ? "同频" : "互补"}候选 · ${matchCandidates.length} 位`;
+        $("clashAgainLabel").textContent = matchCandidates.length > 1
+          ? `换一位 · ${matchCursor + 1}/${matchCandidates.length}`
+          : "当前仅一位";
+        $("clashAgain").disabled = matchCandidates.length < 2;
+      }
+      function refreshMatchCandidates(preserveCurrent) {
+        const current = preserveCurrent ? clashCurrent : -1;
+        matchCandidates = rankMatchCandidates(matchMode).slice(0, 3);
+        const currentPosition = matchCandidates.findIndex((item) => item.i === current);
+        matchCursor = currentPosition >= 0 ? currentPosition : 0;
+        clashCurrent = matchCandidates[matchCursor]?.i ?? 0;
       }
       function setMatchMode(mode) {
         matchMode = mode === "same" ? "same" : "opposite";
@@ -7749,7 +8033,7 @@
         $("matchOpposite").setAttribute("aria-selected", String(!same));
         $("clashMetricLabel").textContent = same ? "你们的立场相似度" : "你们的立场距离";
         $("clashTitle").textContent = same
-          ? "遇见与你同频的声音"
+          ? "遇见同频的声音"
           : "听听对立面怎么想";
         $("clashSubtitle").textContent = same
           ? "从未点赞的回答中，寻找立场相近且兴趣相关的一种声音。"
@@ -7761,12 +8045,15 @@
           return;
         }
         setFollowedOnly(false, false);
+        clearTimeout(toastTimer);
+        toastEl.classList.remove("show");
         clashGoBtn.disabled = false;
         setClashButtonLabel("翻开人格卡");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
         deferCirclePrompt();
         clashEl.classList.add("show");
+        $("clashX").focus({ preventScroll: true });
       }
       function renderClash() {
         const i = clashCurrent;
@@ -7790,19 +8077,46 @@
         taMk.style.left = pct(stance);
         meMk.title = liked.size ? `你（${my.toFixed(2)}）` : "你（中立，尚未点赞）";
         const distance = Math.abs(stance - my);
+        const activeMatch = matchCandidates.find((item) => item.i === i) ||
+          rankMatchCandidates(matchMode).find((item) => item.i === i);
+        const stanceScore = activeMatch?.stanceScore ??
+          (matchMode === "same" ? 1 - Math.min(2, distance) / 2 : distance / 2);
         $("clashDistance").textContent = matchMode === "same"
-          ? `相似 ${Math.round((1 - Math.min(2, distance) / 2) * 100)} / 100`
+          ? `相似 ${Math.round(stanceScore * 100)} / 100`
           : `相距 ${Math.round(distance * 50)} / 100`;
-        const interest = interestMatchForPerson(i);
+        const interest = activeMatch?.interest || interestMatchForPerson(i);
+        const stancePercent = Math.round(stanceScore * 100);
+        const interestPercent = Math.round(interest.score * 100);
+        $("clashStanceScore").textContent =
+          `${matchMode === "same" ? "同频" : "互补"} ${stancePercent}`;
+        $("clashStanceBar").style.transform = `scaleX(${stancePercent / 100})`;
+        $("clashStanceTrack").setAttribute("aria-valuenow", String(stancePercent));
+        $("clashInterestScore").textContent = userPortrait
+          ? interest.word && interest.score >= 0.34
+            ? `${interest.word} ${interestPercent}`
+            : "暂无明显交集"
+          : "未连接";
+        $("clashInterestBar").style.transform =
+          `scaleX(${userPortrait ? interestPercent / 100 : 0})`;
+        $("clashInterestTrack").setAttribute(
+          "aria-valuenow",
+          String(userPortrait ? interestPercent : 0),
+        );
+        $("clashWeightNote").textContent = userPortrait
+          ? "排序权重 · 本题立场 82 / 知乎兴趣 18"
+          : "当前仅按本题立场排序，连接知乎后加入兴趣交集";
         $("clashReason").textContent = interest.word && interest.score >= 0.34
           ? `结合你的知乎兴趣「${interest.word}」，优先呈现相关的${matchMode === "same" ? "同频" : "互补"}观点。`
           : userPortrait
             ? "兴趣画像已参与排序，本题立场距离仍是主要依据。"
             : "当前仅根据本题点赞形成的立场距离匹配。";
+        renderMatchCandidates();
         matchIndex = i;
         matchUntil = performance.now() + 6000;
       }
       function closeClash() {
+        const wasOpen = clashEl.classList.contains("show");
+        if (wasOpen) exploreToggleEl.focus({ preventScroll: true });
         clashEl.classList.remove("show");
         matchIndex = -1;
         resumeCirclePrompt();
@@ -7815,15 +8129,71 @@
       clashEl.addEventListener("click", (e) => { if (e.target === clashEl) closeClash(); });
       $("matchSame").addEventListener("click", () => {
         setMatchMode("same");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
       });
       $("matchOpposite").addEventListener("click", () => {
         setMatchMode("opposite");
-        clashCurrent = pickMatch(-1);
+        refreshMatchCandidates(false);
         renderClash();
       });
-      $("clashAgain").addEventListener("click", () => { clashCurrent = pickMatch(clashCurrent); renderClash(); });
+      $("clashAgain").addEventListener("click", () => {
+        if (matchCandidates.length < 2) return;
+        matchCursor = (matchCursor + 1) % matchCandidates.length;
+        clashCurrent = matchCandidates[matchCursor].i;
+        renderClash();
+      });
+      function runClashKeyboardAction(action) {
+        const dialog = $("clashDialog");
+        dialog.classList.add("is-keyboard-nav");
+        action();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => dialog.classList.remove("is-keyboard-nav"));
+        });
+      }
+      clashEl.addEventListener("keydown", (event) => {
+        if (!clashEl.classList.contains("show")) return;
+        const modeButton = event.target.closest(".match-mode .seg-btn");
+        if (modeButton && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+          event.preventDefault();
+          const target = event.key === "ArrowLeft" ? $("matchSame") : $("matchOpposite");
+          runClashKeyboardAction(() => target.click());
+          target.focus();
+          return;
+        }
+        const candidateButton = event.target.closest(".match-candidate");
+        if (candidateButton && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+          const buttons = [...$("clashCandidates").querySelectorAll(".match-candidate")];
+          const current = buttons.indexOf(candidateButton);
+          const next = event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? buttons.length - 1
+              : (current + (event.key === "ArrowLeft" ? -1 : 1) + buttons.length) % buttons.length;
+          runClashKeyboardAction(() => buttons[next]?.click());
+          buttons[next]?.focus();
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const focusable = [...$("clashDialog").querySelectorAll(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )].filter((element) => element.getClientRects().length > 0);
+        if (!focusable.length) {
+          event.preventDefault();
+          $("clashDialog").focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (event.target === first || event.target === $("clashDialog"))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && event.target === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
       clashGoBtn.addEventListener("click", () => {
         if (clashGoBtn.disabled) return;
         clashGoBtn.disabled = true;
@@ -8364,6 +8734,12 @@
         matchMode: () => matchMode,
         peerIndexes: () => peerBatch.map(({ index }) => index),
         peerSeenIndexes: () => [...peerSeenIndexes],
+        matchCandidates: () => matchCandidates.map(({ i, score, stanceScore, interest }) => ({
+          index: i,
+          score,
+          stanceScore,
+          interest,
+        })),
         portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
         play: () => { running = true; clock.getDelta(); scheduleFrame(); },
         randomDiscover: (animate = false) => randomDiscover(animate),

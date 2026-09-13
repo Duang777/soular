@@ -351,6 +351,11 @@ assert.match(
 );
 assert.match(
   source,
+  /function recommendationIndexes\(\)[\s\S]*rankMatchCandidates\("same"\)[\s\S]*slice\(0,\s*5\)/,
+  "相关推荐必须复用画像驱动的同频排序",
+);
+assert.match(
+  source,
   /Math\.abs\(left\.stance\)[\s\S]*rankedByStance\[0\]\?\.index[\s\S]*rankedByStance\[rankedByStance\.length - 1\]\?\.index/,
   "无点赞推荐必须按实际立场选择两端与中点",
 );
@@ -719,6 +724,69 @@ assert.match(
   /e\.data\.type === "nebula-open-peer-discovery"[\s\S]*openPeerDiscovery\(\)/,
   "星云场景必须处理父页的同频打开请求",
 );
+assert.match(
+  source,
+  /function rankMatchCandidates\(mode,[\s\S]*b\.score - a\.score[\s\S]*a\.i - b\.i/,
+  "同频与互补候选必须使用稳定排序",
+);
+const viewpointMatchSource = source.slice(
+  source.indexOf("function rankMatchCandidates"),
+  source.indexOf("// ---- 小圈子 ----"),
+);
+assert.ok(
+  viewpointMatchSource.includes("function rankMatchCandidates"),
+  "必须找到观点碰撞候选实现",
+);
+assert.doesNotMatch(
+  viewpointMatchSource,
+  /Math\.floor\(Math\.random\(\) \* pool\.length\)/,
+  "画像候选不得从高分池随机抽取",
+);
+assert.match(
+  source,
+  /matchCandidates = rankMatchCandidates\(matchMode\)\.slice\(0,\s*3\)/,
+  "观点碰撞必须保留前三位稳定候选",
+);
+assert.match(
+  source,
+  /id="clashStanceScore"[\s\S]*id="clashInterestScore"[\s\S]*id="clashCandidates"/,
+  "观点碰撞必须展示立场、兴趣双依据与候选队列",
+);
+assert.match(
+  source,
+  /排序权重 · 本题立场 82 \/ 知乎兴趣 18/,
+  "观点碰撞必须解释画像推荐权重",
+);
+assert.match(
+  source,
+  /cjkRuns[\s\S]*run\.slice\(offset,\s*offset \+ 2\)/,
+  "兴趣相关性必须使用中文短语片段，不能退化为单字重叠",
+);
+assert.doesNotMatch(
+  source,
+  /Array\.from\(normalized\)\.filter/,
+  "兴趣相关性不得按单字重叠制造弱相关误命中",
+);
+assert.match(
+  source,
+  /id="clashDialog"[\s\S]*aria-labelledby="clashTitle"[\s\S]*aria-describedby="clashReason"/,
+  "观点碰撞弹层必须关联动态标题和推荐解释",
+);
+assert.match(
+  source,
+  /container\.dataset\.signature[\s\S]*button\.classList\.toggle\("is-active", active\)/,
+  "切换候选时必须复用按钮 DOM 并保留键盘焦点",
+);
+assert.match(
+  source,
+  /clashEl\.addEventListener\("keydown"[\s\S]*ArrowLeft[\s\S]*ArrowRight[\s\S]*event\.key !== "Tab"/,
+  "观点碰撞必须支持方向键切换和 Tab 焦点锁定",
+);
+assert.match(
+  source,
+  /if \(wasOpen\) exploreToggleEl\.focus[\s\S]*clashEl\.classList\.remove\("show"\)/,
+  "关闭观点碰撞前必须把焦点恢复到可见入口",
+);
 assert.match(source, /id="matchSame"/, "匹配流程必须提供同频模式");
 assert.match(source, /id="matchOpposite"/, "匹配流程必须提供互补模式");
 assert.match(
@@ -740,6 +808,41 @@ assert.match(
   oauthAccountSource,
   /accountChanged[\s\S]*setPortrait\(null\)/,
   "切换账号时必须立即清空旧画像",
+);
+assert.match(
+  oauthAccountSource,
+  /<dialog[\s\S]*className="portrait-calibration"/,
+  "首页必须提供可聚焦的兴趣星谱校准台",
+);
+assert.doesNotMatch(
+  oauthAccountSource,
+  /removeEventListener\("close", close\);\s*if \(dialog\.open\) dialog\.close\(\)/,
+  "dialog Effect 清理不得在 Strict Mode 下触发延迟 close 事件",
+);
+assert.match(
+  oauthAccountSource,
+  /if \(event\.target !== event\.currentTarget\) return;/,
+  "dialog 内部按钮的键盘点击不得被误判为背景点击",
+);
+assert.match(
+  oauthAccountSource,
+  /useState\(oauthResult === "success"\)/,
+  "OAuth 成功回跳后必须自动打开兴趣星谱",
+);
+assert.match(
+  oauthAccountSource,
+  /接口返回前不显示推测结果/,
+  "画像等待态不得展示模拟进度或推测结果",
+);
+assert.match(
+  oauthAccountSource,
+  /portrait\.stats\.contents[\s\S]*portrait\.stats\.followees[\s\S]*portrait\.stats\.favlists[\s\S]*portrait\.stats\.collections/,
+  "校准台必须只展示画像接口返回的汇总数量",
+);
+assert.match(
+  oauthAccountSource,
+  /原始收藏与关注明细不会进入星云/,
+  "校准台必须向用户说明画像隐私边界",
 );
 assert.doesNotMatch(
   source,
