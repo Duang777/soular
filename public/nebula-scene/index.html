@@ -297,38 +297,24 @@
         width: 58px;
         height: 58px;
         padding: 0;
-        border: 1.5px solid rgba(143, 216, 220, 0.7);
-        border-radius: 18px 15px 20px 16px / 16px 20px 15px 19px;
-        background: #0c1720;
+        border: 1px solid rgba(143, 216, 220, 0.28);
+        border-radius: 14px;
+        background: rgba(10, 14, 22, 0.88);
         color: #f4f0df;
-        box-shadow:
-          4px 5px 0 #05090d,
-          0 16px 34px rgba(0, 0, 0, 0.46),
-          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
         cursor: pointer;
-        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      }
-      .explore-toggle::after {
-        content: "";
-        position: absolute;
-        inset: 4px 5px 5px 4px;
-        border: 1px dashed rgba(164, 220, 222, 0.24);
-        border-radius: 14px 12px 16px 12px / 12px 16px 11px 15px;
-        transform: rotate(-1.2deg);
-        pointer-events: none;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
       }
       .explore-toggle:hover {
-        transform: translate(-1px, -2px) rotate(-0.8deg);
-        border-color: rgba(231, 193, 127, 0.82);
-        box-shadow:
-          6px 7px 0 #05090d,
-          0 20px 40px rgba(0, 0, 0, 0.52),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+        border-color: rgba(23, 114, 246, 0.48);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.48);
       }
       .explore-toggle[aria-expanded="true"] {
-        border-color: rgba(231, 193, 127, 0.86);
+        border-color: rgba(231, 193, 127, 0.62);
         color: #e7c17f;
-        box-shadow: 3px 4px 0 #05090d, 0 14px 36px rgba(0, 0, 0, 0.5);
       }
       .self-draw-entry {
         position: absolute;
@@ -341,11 +327,13 @@
         width: 182px;
         height: 58px;
         padding: 0 12px;
-        border: 1px solid rgba(231, 193, 127, 0.62);
-        border-radius: 8px;
-        background: #171a20;
+        border: 1px solid rgba(231, 193, 127, 0.38);
+        border-radius: 12px;
+        background: rgba(10, 14, 22, 0.88);
         color: #f4f0df;
-        box-shadow: 4px 5px 0 #05090d, 0 14px 32px rgba(0, 0, 0, 0.46);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
         cursor: pointer;
         text-align: left;
       }

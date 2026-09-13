@@ -1,13 +1,12 @@
 import { useState } from "react";
 import {
-  Link,
   Navigate,
   useLocation,
   useNavigate,
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { BrandMark } from "./BrandMark";
+import { AppChrome } from "./AppChrome";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
 import {
@@ -134,22 +133,24 @@ export function ShelfPage() {
     <div className="shelf-root">
       <iframe className="landing-page-frame" src={src} title={`${cast.name} · 思想银河`} />
       <img src={asset("kanshan/wave.gif")} alt="" className="kanshan kanshan-shelf" />
-      <nav className="shelf-nav" aria-label="书页">
-        <BrandMark className="brand-lockup--shelf" />
-        <div className="shelf-nav__tags">
-          <Link to={lobbyTarget} className="shelf-tag">
-            {lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回首页"}
-          </Link>
-        </div>
-        <p className="shelf-nav__cast">
-          {cast.volume} · {cast.name}
-        </p>
-        <div className="shelf-nav__share">
-          <button type="button" className="shelf-tag shelf-tag--share" onClick={() => setPhase("card")}>
-            <span aria-hidden="true">✦</span> {subject.kind === "person" ? "分享这个观点" : "分享人格卡"}
+      <AppChrome
+        backLink={{
+          to: lobbyTarget,
+          label: lobbyTarget.startsWith("/nebula") ? "返回星云" : "返回首页",
+        }}
+        center={`${cast.volume} · ${cast.name}`}
+        showAccount={false}
+        trailing={(
+          <button
+            type="button"
+            className="app-chrome__action app-chrome__action--gold"
+            onClick={() => setPhase("card")}
+          >
+            <span aria-hidden="true">✦</span>
+            {subject.kind === "person" ? "分享观点" : "分享人格卡"}
           </button>
-        </div>
-      </nav>
+        )}
+      />
 
       {phase !== "book" && (
         <CardDraw

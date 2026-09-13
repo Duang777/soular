@@ -5,12 +5,16 @@ import { BrandMark } from "./BrandMark";
 
 export function AppChrome({
   backLink,
+  center,
   trailing,
   hidden = false,
+  showAccount = true,
 }: {
   backLink?: { to: string; label: string };
+  center?: string;
   trailing?: ReactNode;
   hidden?: boolean;
+  showAccount?: boolean;
 }) {
   if (hidden) return null;
 
@@ -24,9 +28,12 @@ export function AppChrome({
           </Link>
         ) : null}
       </div>
+      {center ? (
+        <p className="app-chrome__center" title={center}>{center}</p>
+      ) : null}
       <div className="app-chrome__end">
         {trailing}
-        <AccountPanel />
+        {showAccount ? <AccountPanel /> : null}
       </div>
     </header>
   );
