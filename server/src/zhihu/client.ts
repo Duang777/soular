@@ -25,7 +25,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const HOT_LIST_TTL_SECONDS = 10 * 60;
+const HOT_LIST_TTL_SECONDS = 6 * 60 * 60;
+const HOT_LIST_LIMIT = 30;
 const SEARCH_TTL_SECONDS = 5 * 60;
 const QUESTION_ANSWERS_TTL_SECONDS = 10 * 60;
 
@@ -229,17 +230,18 @@ export class ZhihuClient {
     return `${pathname}?${params.toString()}`;
   }
 
-  hotList(limit = 30): Promise<HotListData> {
-    const normalizedLimit = clamp(limit, 1, 30, 30);
-    const query: Query = { Limit: normalizedLimit };
-    return this.cached(
+  async hotList(limit = HOT_LIST_LIMIT): Promise<HotListData> {
+    const normalizedLimit = clamp(limit, 1, HOT_LIST_LIMIT, HOT_LIST_LIMIT);
+    const query: Query = { Limit: HOT_LIST_LIMIT };
+    const result = await this.cached(
       this.queryKey("/api/v1/content/hot_list", query),
       HOT_LIST_TTL_SECONDS,
       async () => normalizeHotListData(
         await this.envelope<HotListData>("/api/v1/content/hot_list", query),
-        normalizedLimit,
+        HOT_LIST_LIMIT,
       ),
     );
+    return { ...result, Items: result.Items.slice(0, normalizedLimit) };
   }
 
   globalSearch(

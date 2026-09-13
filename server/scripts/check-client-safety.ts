@@ -28,10 +28,10 @@ try {
   const client = new ZhihuClient("test-secret");
   const hotLists = await Promise.all([
     client.hotList(8),
-    client.hotList(8),
+    client.hotList(12),
   ]);
-  assert.equal(requests, 1, "同一查询的并发请求必须合并");
-  assert.deepEqual(hotLists.map((value) => value.Items.length), [8, 8]);
+  assert.equal(requests, 1, "不同展示条数必须复用同一份热榜请求");
+  assert.deepEqual(hotLists.map((value) => value.Items.length), [8, 12]);
 
   let cacheReads = 0;
   requests = 0;
@@ -89,7 +89,7 @@ try {
   assert.match(storedKey, /^cache:[0-9a-f]{64}$/);
   assert.ok(new TextEncoder().encode(storedKey).length <= 512);
 
-  const legacyRawKey = "/api/v1/content/hot_list?Limit=8";
+  const legacyRawKey = "/api/v1/content/hot_list?Limit=30";
   const legacyStoredKey = `cache:${encodeURIComponent(legacyRawKey)}`;
   const reads: string[] = [];
   const migrationKv: KVNamespaceLike = {
