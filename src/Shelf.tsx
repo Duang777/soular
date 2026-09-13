@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   Navigate,
@@ -19,13 +19,20 @@ import {
   selfProfileFromValue,
   stagedPersonByIndex,
   stagedSelfProfile,
+  transientSelfProfile,
 } from "./people";
+import {
+  fetchZhihuPortrait,
+  toNebulaPortraitSignal,
+  type NebulaPortraitSignal,
+} from "./zhihuPortrait";
 
 type ShelfPhase = "draw" | "book" | "card";
 type ShelfNavigationState = {
   person?: unknown;
   selfProfile?: unknown;
 };
+const OFFICIAL_ORIGIN = "https://soular.top";
 
 export function ShelfPage() {
   const { cast: castKey = "" } = useParams();
@@ -33,6 +40,19 @@ export function ShelfPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ShelfPhase>("draw");
+  const [latePortrait, setLatePortrait] = useState<NebulaPortraitSignal | null>(null);
+  const requestedSelf = searchParams.get("self") === "1";
+  const requestedProfileKey = searchParams.get("profile") ?? "";
+
+  useEffect(() => {
+    setLatePortrait(null);
+    if (!requestedSelf || window.location.origin !== OFFICIAL_ORIGIN) return undefined;
+    const controller = new AbortController();
+    void fetchZhihuPortrait(controller.signal)
+      .then((portrait) => setLatePortrait(toNebulaPortraitSignal(portrait)))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [requestedProfileKey, requestedSelf]);
 
   if (!CASTS.some((item) => item.key === castKey)) {
     return <Navigate to="/" replace />;
@@ -51,7 +71,6 @@ export function ShelfPage() {
   const staleVersion = Boolean(
     validRequestedVersion && validRequestedVersion !== currentPresetVersion,
   );
-  const requestedProfileKey = searchParams.get("profile") ?? "";
   const profileKey = /^[a-z0-9-]{1,64}$/.test(requestedProfileKey)
     ? requestedProfileKey
     : "";
@@ -64,13 +83,29 @@ export function ShelfPage() {
     kind: "self",
     preset: presetId,
     version: presetVersion || undefined,
-    profile: selfProfileFromValue(
+    profile: transientSelfProfile(
+      presetId,
+      presetVersion,
+      cast.key,
+      profileKey,
+    ) ?? selfProfileFromValue(
       navigationState.selfProfile,
       presetId,
       presetVersion,
       cast.key,
     ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey) ?? undefined,
   };
+  if (
+    subject.kind === "self" &&
+    subject.profile &&
+    latePortrait &&
+    !subject.profile.interest
+  ) {
+    subject = {
+      ...subject,
+      profile: { ...subject.profile, interest: latePortrait },
+    };
+  }
   let missingPerson = false;
   const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {

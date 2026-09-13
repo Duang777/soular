@@ -1,12 +1,43 @@
-import { useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CASTS } from "./cast";
+import { Nebula } from "./Nebula";
 import { OAuthAccount } from "./OAuthAccount";
 import { WaveStage } from "./WaveStage";
 
-export function Home() {
+const QUESTION_PRESETS = [
+  {
+    id: "career-35",
+    serial: "01",
+    kind: "示例星云",
+    title: "35 岁程序员该不该转行？",
+    detail: "48 个观点",
+  },
+  {
+    id: "ai-math",
+    serial: "02",
+    kind: "真实讨论",
+    title: "AI 是否正在毁掉数学？",
+    detail: "31 个观点",
+  },
+] as const;
+
+function PersonaHome() {
   const navigate = useNavigate();
   const waveFrameRef = useRef<HTMLIFrameElement>(null);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
+  const matchingQuestions = normalizedQuery
+    ? QUESTION_PRESETS.filter(({ title }) =>
+        title.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+      )
+    : QUESTION_PRESETS;
+
+  function openQuestion(preset: string) {
+    navigate(`/?preset=${encodeURIComponent(preset)}&confirm=1`, {
+      state: { fromPersonaHome: true },
+    });
+  }
 
   useEffect(() => {
     try {
@@ -26,17 +57,70 @@ export function Home() {
   }, [navigate]);
 
   return (
-    <>
+    <main className="persona-home">
       <WaveStage iframeRef={waveFrameRef} />
       <OAuthAccount />
-      <Link to="/nebula" className="nebula-entry" aria-label="进入观点星云，抽取我的人格卡">
-        <span className="nebula-entry__star" aria-hidden="true">✦</span>
-        <span className="nebula-entry__copy">
-          <b>进入观点星云</b>
-          <small>点赞形成星位 · 抽我的人格卡</small>
-        </span>
-        <span className="nebula-entry__arrow" aria-hidden="true">→</span>
-      </Link>
-    </>
+      <section className="question-dock" aria-label="搜索观点星云">
+        <div className="question-dock__topics" aria-label="已发布问题">
+          {matchingQuestions.map((question, index) => (
+            <button
+              key={question.id}
+              type="button"
+              className={`question-ticket question-ticket--${index + 1}`}
+              onClick={() => openQuestion(question.id)}
+            >
+              <span className="question-ticket__meta">
+                {question.serial} · {question.kind}
+              </span>
+              <b>{question.title}</b>
+              <small>{question.detail} · 点击进入</small>
+            </button>
+          ))}
+        </div>
+        <form
+          className="question-search"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const target = matchingQuestions[0];
+            if (target) openQuestion(target.id);
+          }}
+        >
+          <span className="question-search__galaxy" aria-hidden="true">
+            <i className="question-search__orbit question-search__orbit--outer" />
+            <i className="question-search__orbit question-search__orbit--inner" />
+            <i className="question-search__core">✦</i>
+          </span>
+          <label className="question-search__field">
+            <span>
+              星图检索 · {String(matchingQuestions.length).padStart(2, "0")} 座星云
+            </span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="输入问题，寻找观点星系"
+              aria-label="搜索已发布的问题"
+            />
+          </label>
+          <button type="submit" disabled={matchingQuestions.length === 0}>
+            <span>进入银河</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <p className="question-dock__hint" role="status">
+          {matchingQuestions.length
+            ? "从一个问题出发，看见观点的星系"
+            : "还没有发布这个问题的观点星云"}
+        </p>
+      </section>
+    </main>
   );
+}
+
+export function Home() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get("confirm") === "1" ||
+    searchParams.get("explore") === "1"
+    ? <Nebula entryMode />
+    : <PersonaHome />;
 }

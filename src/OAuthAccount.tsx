@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  fetchZhihuPortrait,
+  type ZhihuPortrait,
+} from "./zhihuPortrait";
+import { clearSelfProfileContexts } from "./people";
 
 const OFFICIAL_ORIGIN = "https://soular.top";
 const REQUEST_TIMEOUT_MS = 8_000;
@@ -58,6 +63,8 @@ export function OAuthAccount() {
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
+  const [portrait, setPortrait] = useState<ZhihuPortrait | null>(null);
+  const [portraitState, setPortraitState] = useState<"idle" | "loading" | "unavailable">("idle");
   const [callbackFailed, setCallbackFailed] = useState(
     () => new URLSearchParams(window.location.search).get("oauth") === "error",
   );
@@ -81,6 +88,7 @@ export function OAuthAccount() {
         throw new Error("OAuth status unavailable");
       }
       const value = payload as Record<string, unknown>;
+      if (value.authorized !== true) clearSelfProfileContexts();
       const profileValue =
         value.profile && typeof value.profile === "object"
           ? (value.profile as Record<string, unknown>)
@@ -123,6 +131,28 @@ export function OAuthAccount() {
     return () => controller.abort();
   }, [isOfficialOrigin, loadStatus]);
 
+  useEffect(() => {
+    if (!isOfficialOrigin || status?.authorized !== true) {
+      setPortrait(null);
+      setPortraitState("idle");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setPortraitState("loading");
+    void fetchZhihuPortrait(controller.signal)
+      .then((value) => {
+        setPortrait(value);
+        setPortraitState("idle");
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setPortrait(null);
+        setPortraitState("unavailable");
+      });
+    return () => controller.abort();
+  }, [isOfficialOrigin, status?.authorized]);
+
   async function logout() {
     setBusy(true);
     setLogoutFailed(false);
@@ -140,6 +170,9 @@ export function OAuthAccount() {
         profile: null,
         error: null,
       });
+      setPortrait(null);
+      setPortraitState("idle");
+      clearSelfProfileContexts();
       setUnavailable(false);
       setCallbackFailed(false);
     } catch {
@@ -214,10 +247,20 @@ export function OAuthAccount() {
     : isTemporaryConnection
       ? "知乎账号已连接，仅适合临时联调"
       : "知乎账号已连接";
+  const portraitWords = portrait?.keywords
+    .slice(0, 2)
+    .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
+  const portraitDetail = portraitState === "loading"
+    ? "正在同步兴趣画像"
+    : portraitWords.length
+      ? "兴趣画像已校准"
+      : portraitState === "unavailable"
+        ? "兴趣画像暂不可用"
+        : null;
   return (
     <div
       className="oauth-account oauth-account--connected"
-      aria-label={connectionLabel}
+      aria-label={`${connectionLabel}${portraitWords.length ? `，兴趣底色 ${portraitWords.join("、")}` : ""}`}
     >
       {avatarUrl ? (
         <img className="oauth-account__avatar" src={avatarUrl} alt="" />
@@ -226,8 +269,15 @@ export function OAuthAccount() {
       )}
       <span className="oauth-account__name">
         <span>{status.profile?.name || "已连接知乎"}</span>
-        {connectionWarning ? (
-          <small className="oauth-account__warning">{connectionWarning}</small>
+        {connectionWarning || portraitDetail ? (
+          <small className={connectionWarning ? "oauth-account__warning" : "oauth-account__portrait"}>
+            {connectionWarning ?? portraitDetail}
+            {!connectionWarning && portraitWords.length > 0 ? (
+              <span className="oauth-account__portrait-words">
+                {` · ${portraitWords.join(" / ")}`}
+              </span>
+            ) : null}
+          </small>
         ) : null}
       </span>
       <button

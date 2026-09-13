@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { CASTS } from "./cast";
 import { NebulaStage } from "./NebulaStage";
 import {
   personFromValue,
   resolveNebulaPreset,
   selfProfileFromValue,
+  stageTransientSelfProfile,
 } from "./people";
+import {
+  fetchZhihuPortrait,
+  toNebulaPortraitSignal,
+  type NebulaPortraitSignal,
+} from "./zhihuPortrait";
 
 const NAVIGATION_CONTEXT_PREFIX = "jiupai:nebula:";
 const MAX_NAVIGATION_CONTEXTS = 24;
@@ -15,7 +26,12 @@ const OAUTH_STATUS_TIMEOUT_MS = 8_000;
 
 interface NebulaUserProfile {
   name: string | null;
-  avatarUrl: string;
+  avatarUrl: string | null;
+}
+
+interface NebulaUserContext {
+  profile: NebulaUserProfile;
+  portrait: NebulaPortraitSignal | null;
 }
 
 function safeZhihuAvatarUrl(value: unknown): string | null {
@@ -39,7 +55,35 @@ function navigationContextTimestamp(storageKey: string): number {
   return Number.isSafeInteger(timestamp) ? timestamp : 0;
 }
 
-function storeNavigationContext(kind: "self" | "subject", value: unknown): string | null {
+function createNavigationContextKey(): string | null {
+  try {
+    let uuid: string;
+    if (typeof crypto.randomUUID === "function") {
+      uuid = crypto.randomUUID();
+    } else {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+      uuid = [
+        hex.slice(0, 4).join(""),
+        hex.slice(4, 6).join(""),
+        hex.slice(6, 8).join(""),
+        hex.slice(8, 10).join(""),
+        hex.slice(10).join(""),
+      ].join("-");
+    }
+    return `${Date.now().toString(36)}-${uuid}`;
+  } catch {
+    return null;
+  }
+}
+
+function storeNavigationContext(
+  kind: "self" | "subject",
+  value: unknown,
+  contextKey?: string,
+): string | null {
   try {
     const existing: string[] = [];
     for (let index = 0; index < window.sessionStorage.length; index += 1) {
@@ -52,7 +96,8 @@ function storeNavigationContext(kind: "self" | "subject", value: unknown): strin
       navigationContextTimestamp(left) - navigationContextTimestamp(right) ||
       left.localeCompare(right)
     );
-    const key = `${Date.now().toString(36)}-${crypto.randomUUID()}`;
+    const key = contextKey ?? createNavigationContextKey();
+    if (!key) return null;
     window.sessionStorage.setItem(
       `${NAVIGATION_CONTEXT_PREFIX}${kind}:${key}`,
       JSON.stringify(value),
@@ -68,15 +113,26 @@ function storeNavigationContext(kind: "self" | "subject", value: unknown): strin
 }
 
 export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const nebulaFrameRef = useRef<HTMLIFrameElement>(null);
-  const userProfileRef = useRef<NebulaUserProfile | null>(null);
+  const userContextRef = useRef<NebulaUserContext | null>(null);
+  const selfOpenPendingRef = useRef(false);
   const [searchParams] = useSearchParams();
   const [isCardsView, setIsCardsView] = useState(false);
+  const fromPersonaHome =
+    location.state &&
+    typeof location.state === "object" &&
+    "fromPersonaHome" in location.state &&
+    location.state.fromPersonaHome === true;
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
   const entryState = entryMode
-    ? searchParams.get("confirm") === "1" ? "confirm" : "discover"
+    ? searchParams.get("confirm") === "1"
+      ? "confirm"
+      : searchParams.get("explore") === "1"
+        ? null
+        : "discover"
     : null;
 
   useEffect(() => {
@@ -87,12 +143,13 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       OAUTH_STATUS_TIMEOUT_MS,
     );
 
-    void (async () => {
+    const loadUserContext = (async () => {
       const response = await fetch("/api/oauth/status", {
         credentials: "include",
         headers: { Accept: "application/json" },
         signal: controller.signal,
       });
+      window.clearTimeout(timeout);
       const payload: unknown = await response.json();
       if (!response.ok || !payload || typeof payload !== "object") return;
       const status = payload as Record<string, unknown>;
@@ -100,18 +157,37 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         ? status.profile as Record<string, unknown>
         : null;
       const avatarUrl = safeZhihuAvatarUrl(profile?.avatarUrl);
-      if (status.authorized !== true || !avatarUrl) return;
+      if (status.authorized !== true) return;
 
-      const userProfile = {
-        name: typeof profile?.name === "string" ? profile.name : null,
-        avatarUrl,
+      const userContext: NebulaUserContext = {
+        profile: {
+          name: typeof profile?.name === "string" ? profile.name : null,
+          avatarUrl,
+        },
+        portrait: null,
       };
-      userProfileRef.current = userProfile;
+      userContextRef.current = userContext;
       nebulaFrameRef.current?.contentWindow?.postMessage(
-        { type: "nebula-user-profile", profile: userProfile },
+        { type: "nebula-user-profile", ...userContext },
         window.location.origin,
       );
-    })().catch(() => undefined).finally(() => {
+
+      try {
+        const portrait = await fetchZhihuPortrait(controller.signal);
+        const personalizedContext = {
+          ...userContext,
+          portrait: toNebulaPortraitSignal(portrait),
+        };
+        userContextRef.current = personalizedContext;
+        nebulaFrameRef.current?.contentWindow?.postMessage(
+          { type: "nebula-user-profile", ...personalizedContext },
+          window.location.origin,
+        );
+      } catch {
+        // 画像失败不影响头像、静态星云和本题表态流程。
+      }
+    })();
+    void loadUserContext.catch(() => undefined).finally(() => {
       window.clearTimeout(timeout);
     });
 
@@ -145,15 +221,37 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       if (data?.type === "nebula-scene-ready") {
         const source = event.source as Window | null;
         source?.postMessage({ type: "nebula-host-ready" }, event.origin);
-        if (userProfileRef.current) {
+        if (userContextRef.current) {
           source?.postMessage(
             {
               type: "nebula-user-profile",
-              profile: userProfileRef.current,
+              ...userContextRef.current,
             },
             event.origin,
           );
         }
+        return;
+      }
+      if (data?.type === "nebula-entry-back" && entryMode) {
+        if (fromPersonaHome) navigate(-1);
+        else navigate("/", { replace: true });
+        return;
+      }
+      if (
+        data?.type === "nebula-entry-explore" &&
+        entryMode &&
+        typeof data.preset === "string" &&
+        /^[a-z0-9-]+$/.test(data.preset)
+      ) {
+        const next = new URL(window.location.href);
+        next.search = "";
+        next.searchParams.set("preset", data.preset);
+        next.searchParams.set("explore", "1");
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${next.pathname}${next.search}${next.hash}`,
+        );
         return;
       }
       if (
@@ -162,7 +260,10 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         /^[a-z0-9-]+$/.test(data.preset)
       ) {
         const confirm = entryMode && data.entry === "confirm" ? "&confirm=1" : "";
-        navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${confirm}`, { replace: true });
+        navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${confirm}`, {
+          replace: true,
+          state: fromPersonaHome ? { fromPersonaHome: true } : undefined,
+        });
         return;
       }
       const cast = data?.cast;
@@ -187,7 +288,9 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         );
       }
       if (data?.self === true) {
-        const profile = activeVersion === null
+        if (selfOpenPendingRef.current) return;
+        selfOpenPendingRef.current = true;
+        const parsedProfile = activeVersion === null
           ? null
           : selfProfileFromValue(
               data.selfProfile,
@@ -195,18 +298,27 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
               activeVersion,
               cast,
             );
+        const portrait = userContextRef.current?.portrait ?? null;
+        const profile = parsedProfile && portrait && !parsedProfile.interest
+          ? { ...parsedProfile, interest: portrait }
+          : parsedProfile;
         let profileQuery = "";
+        let persistedProfile = profile;
         if (profile) {
-          const profileKey = storeNavigationContext("self", profile);
+          persistedProfile = { ...profile, interest: undefined };
+          const profileKey = createNavigationContextKey();
           if (profileKey) {
+            stageTransientSelfProfile(profileKey, profile);
+            storeNavigationContext("self", persistedProfile, profileKey);
             profileQuery = `&profile=${encodeURIComponent(profileKey)}`;
           }
         }
         navigate(
           `/shelf/${cast}?self=1&preset=${encodeURIComponent(activePreset)}${versionQuery}${profileQuery}`,
-          { state: profile ? { selfProfile: profile } : undefined },
         );
-      } else if (Number.isSafeInteger(data?.u) && data.u >= 0) {
+        return;
+      }
+      if (Number.isSafeInteger(data?.u) && data.u >= 0) {
         const person = activeVersion === null
           ? null
           : personFromValue(data.person, activePreset, activeVersion, data.u);
@@ -233,7 +345,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [entryMode, navigate, presetId]);
+  }, [entryMode, fromPersonaHome, navigate, presetId]);
 
   return (
     <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>

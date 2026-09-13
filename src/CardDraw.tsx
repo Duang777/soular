@@ -329,6 +329,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   const selfVersion = isSelf ? subject.version : undefined;
   const selfProfile = isSelf ? subject.profile : undefined;
   const isPeek = subject.kind === "peek";
+  const interestWords = selfProfile?.interest?.keywords
+    .slice(0, 3)
+    .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
   const personIndex = subject.kind === "person" ? subject.index : 0;
   const personPreset = subject.kind === "person" ? subject.preset : undefined;
   const resultIndex = Math.max(0, CASTS.findIndex((item) => item.key === cast.key));
@@ -563,6 +566,12 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 <span className="draw-face__volume">{person ? `${cast.volume} · ${cast.name}` : cast.volume}</span>
                 <strong className="draw-face__name">{personName}</strong>
                 <span className="draw-face__role">{cast.role}</span>
+                {interestWords.length > 0 && (
+                  <span className="draw-face__interest">
+                    <small>知乎兴趣底色</small>
+                    <span>{interestWords.join(" · ")}</span>
+                  </span>
+                )}
                 {person && <span className="draw-face__claim">“{person.claim}”</span>}
                 {selfProfile && <span className="draw-face__claim">{selfProfile.claim}</span>}
               </div>
@@ -578,7 +587,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
               ? person ? "正在翻开 TA 的人格…" : "正在翻开这一派的人格…"
               : (
                 isSelf
-                  ? "你在知乎上的观点人格"
+                  ? interestWords.length
+                    ? "本题表态 × 知乎兴趣画像"
+                    : "由本题表态形成的观点人格"
                   : person
                     ? `${personName} 的观点人格`
                     : "思想银河观点人格"

@@ -11,3 +11,15 @@ icons in `public/nebula-scene/index.html` are adapted from Its Hover:
 
 The original Motion-based interactions were reimplemented with CSS so the
 static Three.js scene does not require an additional runtime dependency.
+
+## Childlike Sketch Transformation
+
+The visual method used for `docs/images/soular-cover-childlike.svg` and its
+PNG export is adapted from Childlike Sketch Transformation by ZS:
+
+- Source: https://github.com/Zuo1204/childlike-sketch-skill
+- License: CC BY-NC 4.0
+- License text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+The original product-sketch method was modified into a single connected
+persona-and-nebula subject for the Soular project cover.

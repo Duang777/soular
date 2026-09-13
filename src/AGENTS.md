@@ -3,7 +3,7 @@
 ## 职责
 
 - `App.tsx` 管理 `/`、`/nebula` 和 `/shelf/:cast` 路由。
-- `Home.tsx` 承载人格卡波浪 iframe；`Nebula.tsx` 承载 Three.js 场景；`Shelf.tsx` 解析人格或人物并打开 `CardDraw.tsx`。
+- `Home.tsx` 组合人格卡波浪 iframe 与问题搜索入口；带 `confirm=1` 时交给 `Nebula.tsx` 承载 Three.js 确认流程；`Shelf.tsx` 解析人格或人物并打开 `CardDraw.tsx`。
 - 复杂场景实现保留在各自 iframe 中。React 负责路由、外壳、可恢复的导航状态和人格卡 UI，不重复场景逻辑。
 
 ## 本地约定
