@@ -3,11 +3,13 @@ import { BrandMark } from "./BrandMark";
 import { asset, CASTS, type Cast } from "./cast";
 import {
   DEFAULT_NEBULA_PRESET,
+  nebulaPresetVersion,
   personAvatarFile,
   personByIndex,
   type Person,
   type SelfProfile,
 } from "./people";
+import { buildShareMatchUrl } from "./shareMatch";
 import { WarmStars } from "./WarmStars";
 
 export type CardSubject =
@@ -17,6 +19,7 @@ export type CardSubject =
 
 type DrawMode = "enter" | "revisit";
 type Phase = "shuffle" | "flip" | "reveal";
+type CopyState = "idle" | "done" | "error";
 
 const SHUFFLE_MS = 1900;
 const FLIP_MS = 850;
@@ -343,9 +346,12 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   const [activeDot, setActiveDot] = useState(initialPhase === "flip" ? resultIndex : 0);
   const [leaving, setLeaving] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [matchCopyState, setMatchCopyState] = useState<CopyState>("idle");
   const [posterState, setPosterState] = useState<"idle" | "working" | "done">("idle");
   const timers = useRef<number[]>([]);
+  const copySequence = useRef({ share: 0, match: 0 });
+  const copyResetTimers = useRef({ share: 0, match: 0 });
 
   const personName = person ? `@${person.name}` : cast.name;
   const artSrc = asset(`personas/${cast.key}.jpg`);
@@ -373,6 +379,17 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     selfPreset,
     selfVersion,
   ]);
+  const matchShareUrl = useMemo(() => {
+    if (!isSelf || !selfProfile || selfProfile.cast !== cast.key) return null;
+    const preset = selfPreset ?? DEFAULT_NEBULA_PRESET;
+    const version = selfVersion ?? nebulaPresetVersion(preset) ?? "1";
+    return buildShareMatchUrl(window.location.origin, import.meta.env.BASE_URL, {
+      preset,
+      version,
+      cast: selfProfile.cast,
+      stance: selfProfile.stance,
+    });
+  }, [isSelf, selfProfile, cast.key, selfPreset, selfVersion]);
   const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   useEffect(() => {
@@ -420,7 +437,11 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     setPhase("reveal");
   }
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  useEffect(() => () => {
+    timers.current.forEach((timer) => window.clearTimeout(timer));
+    window.clearTimeout(copyResetTimers.current.share);
+    window.clearTimeout(copyResetTimers.current.match);
+  }, []);
 
   async function savePoster() {
     if (posterState === "working") return;
@@ -461,23 +482,39 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     return ok;
   }
 
-  async function copyLink() {
+  async function copyText(
+    text: string,
+    kind: "share" | "match",
+    setState: (state: CopyState) => void,
+  ) {
+    const sequence = ++copySequence.current[kind];
+    window.clearTimeout(copyResetTimers.current[kind]);
     let ok = false;
     try {
       if (window.isSecureContext && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(text);
         ok = true;
       } else {
-        ok = legacyCopy(shareUrl);
+        ok = legacyCopy(text);
       }
     } catch {
-      ok = legacyCopy(shareUrl);
+      ok = legacyCopy(text);
     }
-    setCopied(ok);
-    if (ok) {
-      const t = window.setTimeout(() => setCopied(false), 2200);
-      timers.current.push(t);
-    }
+    if (sequence !== copySequence.current[kind]) return;
+    setState(ok ? "done" : "error");
+    copyResetTimers.current[kind] = window.setTimeout(
+      () => setState("idle"),
+      ok ? 2200 : 3600,
+    );
+  }
+
+  async function copyLink() {
+    await copyText(shareUrl, "share", setCopyState);
+  }
+
+  async function copyMatchLink() {
+    if (!matchShareUrl) return;
+    await copyText(matchShareUrl, "match", setMatchCopyState);
   }
 
   async function nativeShare() {
@@ -643,8 +680,21 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   {posterState === "working" ? "正在生成海报…" : posterState === "done" ? "海报已保存 ✓" : "保存人格卡海报"}
                 </button>
                 <button type="button" className="draw-btn draw-btn--ghost" onClick={copyLink}>
-                  {copied ? "链接已复制 ✓" : person ? "复制观点链接" : "复制人格卡链接"}
+                  {copyState === "done"
+                    ? "链接已复制 ✓"
+                    : copyState === "error"
+                      ? "复制失败，请长按下方链接"
+                      : person ? "复制观点链接" : "复制人格卡链接"}
                 </button>
+                {matchShareUrl && (
+                  <button type="button" className="draw-btn draw-btn--ghost" onClick={copyMatchLink}>
+                    {matchCopyState === "done"
+                      ? "对照链接已复制 ✓"
+                      : matchCopyState === "error"
+                        ? "复制失败，请长按下方链接"
+                        : "复制对照链接"}
+                  </button>
+                )}
                 {canNativeShare && (
                   <button type="button" className="draw-btn draw-btn--ghost" onClick={nativeShare}>
                     系统分享
@@ -655,9 +705,14 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                 </button>
               </div>
               <p className="share-sheet__url">{shareUrl}</p>
+              {matchShareUrl && (
+                <p className="share-sheet__url">{matchShareUrl}</p>
+              )}
               <p className="share-sheet__tip">
                 {isSelf
-                  ? "朋友打开链接，会先抽到这张人格卡，再翻开你的书"
+                  ? matchShareUrl
+                    ? "人格卡链接展示你的书；对照链接会让朋友先独立表态，再揭晓双方星位"
+                    : "朋友打开链接，会先抽到这张人格卡，再翻开你的书"
                   : person
                     ? personSourceUrl
                       ? `朋友打开链接，会前往知乎查看 ${personName} 的原文`

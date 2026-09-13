@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 4325",
-    "build": "tsc -b && npm run check:navigation && vite build",
+    "build": "tsc -b && npm run check:navigation && npm run check:share-match && vite build",
     "check:navigation": "node scripts/check-nebula-navigation.mjs",
+    "check:share-match": "node scripts/check-share-match.mjs",
     "preview": "vite preview --port 4325",
     "server:dev": "npm --prefix server run dev",
     "server:check": "npm --prefix server run check",
