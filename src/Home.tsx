@@ -20,6 +20,35 @@ const QUESTION_PRESETS = [
     title: "AI 是否正在毁掉数学？",
     detail: "31 个观点",
   },
+  {
+    id: "tao-ai-tradition",
+    serial: "03",
+    kind: "真实讨论",
+    title: "陶哲轩发文称「AI 正杀死数学百年开放传统」，你如何看待这一观点？",
+    detail: "5 个观点",
+  },
+  {
+    id: "pangdonglai-labor",
+    serial: "04",
+    kind: "真实讨论",
+    title: "如何看待于东来发文称胖东来再招员工都是学员性质，合同四年，不续签？意味着什么？",
+    detail: "3 个观点",
+  },
+  {
+    id: "ai-math-revolution",
+    serial: "05",
+    kind: "真实讨论",
+    title: "数学已经被 AI 彻底革命了么？",
+    detail: "5 个观点",
+  },
+  {
+    id: "imu-ai-declaration",
+    serial: "06",
+    kind: "真实讨论",
+    title:
+      "国际数学联盟发布《人工智能与数学莱顿宣言》，回应 AI 对数学研究影响的问题，如何理解这份宣言？",
+    detail: "5 个观点",
+  },
 ] as const;
 
 function PersonaHome() {

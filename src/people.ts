@@ -26,6 +26,10 @@ export const DEFAULT_NEBULA_PRESET = "career-35";
 export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
   "career-35": "1",
   "ai-math": "20260912",
+  "tao-ai-tradition": "20260914",
+  "pangdonglai-labor": "20260914",
+  "ai-math-revolution": "20260914",
+  "imu-ai-declaration": "20260914",
 };
 const MAX_TRANSIENT_SELF_PROFILES = 24;
 const transientSelfProfiles = new Map<string, unknown>();
