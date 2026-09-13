@@ -252,7 +252,7 @@ assert.match(
 );
 assert.match(
   nebulaHostSource,
-  /data\.entry === "confirm"[\s\S]*entryState === "explore"[\s\S]*explore=1/,
+  /data\?\.type === "nebula-entry-explore"[\s\S]*history\.replaceState[\s\S]*data\.entry === "confirm"[\s\S]*new URLSearchParams\(window\.location\.search\)\.get\("explore"\) === "1"[\s\S]*explore=1/,
   "探索态切换快照时必须保留 explore=1",
 );
 assert.doesNotMatch(
@@ -279,6 +279,11 @@ assert.match(
   shelfSource,
   /fetchZhihuAccountStatus\([\s\S]*addEventListener\("focus",\s*refreshWhenVisible\)[\s\S]*addEventListener\("visibilitychange",\s*refreshWhenVisible\)/,
   "人格卡页必须在挂载和重新可见时复查账号版本",
+);
+assert.doesNotMatch(
+  shelfSource,
+  /now - lastRefreshAt < 500/,
+  "人格卡页不得丢弃唯一一次快速回焦校验",
 );
 assert.match(
   shelfSource,

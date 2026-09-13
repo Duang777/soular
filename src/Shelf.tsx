@@ -94,11 +94,7 @@ export function ShelfPage() {
 
     let controller: AbortController | null = null;
     let refreshSequence = 0;
-    let lastRefreshAt = 0;
     const refresh = () => {
-      const now = Date.now();
-      if (now - lastRefreshAt < 500) return;
-      lastRefreshAt = now;
       const sequence = ++refreshSequence;
       controller?.abort();
       controller = new AbortController();

@@ -359,7 +359,8 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       ) {
         const entryQuery = entryMode && data.entry === "confirm"
           ? "&confirm=1"
-          : entryMode && entryState === "explore"
+          : entryMode &&
+              new URLSearchParams(window.location.search).get("explore") === "1"
             ? "&explore=1"
             : "";
         navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${entryQuery}`, {
