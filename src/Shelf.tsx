@@ -23,6 +23,7 @@ import {
 } from "./people";
 import {
   fetchZhihuPortrait,
+  getActiveZhihuAccountVersion,
   toNebulaPortraitSignal,
   type NebulaPortraitSignal,
 } from "./zhihuPortrait";
@@ -47,9 +48,15 @@ export function ShelfPage() {
   useEffect(() => {
     setLatePortrait(null);
     if (!requestedSelf || window.location.origin !== OFFICIAL_ORIGIN) return undefined;
+    const expectedAccountVersion = getActiveZhihuAccountVersion();
+    if (!expectedAccountVersion) return undefined;
     const controller = new AbortController();
     void fetchZhihuPortrait(controller.signal)
-      .then((portrait) => setLatePortrait(toNebulaPortraitSignal(portrait)))
+      .then((portrait) => {
+        if (portrait.accountVersion === expectedAccountVersion) {
+          setLatePortrait(toNebulaPortraitSignal(portrait));
+        }
+      })
       .catch(() => undefined);
     return () => controller.abort();
   }, [requestedProfileKey, requestedSelf]);

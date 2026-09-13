@@ -2,6 +2,7 @@ import type { ZhihuProfile } from "../types.js";
 
 const OPENAPI_BASE = "https://openapi.zhihu.com";
 const REQUEST_TIMEOUT_MS = 20_000;
+const PROFILE_REQUEST_TIMEOUT_MS = 6_000;
 
 export class ZhihuOAuthError extends Error {
   code: string;
@@ -53,6 +54,16 @@ function payloadError(payload: unknown, fallback: string): ZhihuOAuthError {
   return new ZhihuOAuthError(code, String(message).slice(0, 200));
 }
 
+function shouldRetryWithOAuthBearer(
+  response: Response,
+  payload: unknown,
+): boolean {
+  if (response.status === 401 || response.status === 403) return true;
+  const record = asRecord(payload);
+  const code = String(record?.code ?? record?.Code ?? "");
+  return /^40[13]/.test(code);
+}
+
 export interface TokenExchangeInput {
   appId: string;
   appKey: string;
@@ -64,6 +75,38 @@ export interface TokenResult {
   accessToken: string;
   tokenType: string | null;
   expiresIn: number | null;
+}
+
+function profileFromPayload(payload: unknown): ZhihuProfile | null {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data) ?? asRecord(root?.Data);
+  const record =
+    asRecord(data?.user) ??
+    data ??
+    asRecord(root?.user) ??
+    root;
+  if (!record) return null;
+
+  const profile: ZhihuProfile = {
+    name:
+      asString(record.name) ??
+      asString(record.Fullname) ??
+      asString(record.fullname) ??
+      asString(record.Name),
+    avatarUrl:
+      asString(record.avatar_url) ??
+      asString(record.avatar_path) ??
+      asString(record.AvatarUrl) ??
+      asString(record.AvatarPath) ??
+      asString(record.avatarPath) ??
+      asString(record.avatarUrl),
+    headline:
+      asString(record.headline) ??
+      asString(record.Headline) ??
+      asString(record.headline2),
+    url: asString(record.url) ?? asString(record.Url) ?? asString(record.profileUrl),
+  };
+  return profile.name || profile.avatarUrl || profile.url ? profile : null;
 }
 
 export function buildAuthorizeUrl(
@@ -130,38 +173,38 @@ export async function fetchProfile(
   accessSecret: string,
   oauthToken: string,
 ): Promise<ZhihuProfile | null> {
-  const response = await fetch(`${OPENAPI_BASE}/user`, {
+  const safeAccessSecret = assertSafe(accessSecret, "Access Secret");
+  const safeOAuthToken = assertSafe(oauthToken, "OAuth token");
+  const signal = AbortSignal.timeout(PROFILE_REQUEST_TIMEOUT_MS);
+  const primaryResponse = await fetch(`${OPENAPI_BASE}/user`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${assertSafe(accessSecret, "Access Secret")}`,
-      "X-OAuth-Token": assertSafe(oauthToken, "OAuth token"),
+      Authorization: `Bearer ${safeAccessSecret}`,
+      "X-OAuth-Token": safeOAuthToken,
       "X-Request-Timestamp": String(Math.floor(Date.now() / 1000)),
       "Content-Type": "application/json",
     },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal,
   });
+  const primaryPayload: unknown =
+    await primaryResponse.json().catch(() => null);
+  const primaryProfile = profileFromPayload(primaryPayload);
+  if (primaryProfile) return primaryProfile;
+  if (!shouldRetryWithOAuthBearer(primaryResponse, primaryPayload)) {
+    if (!primaryResponse.ok) {
+      throw payloadError(primaryPayload, "用户资料接口请求失败");
+    }
+    return null;
+  }
 
-  const payload: unknown = await response.json().catch(() => null);
-  const source =
-    asRecord(payload)?.data ?? asRecord(payload)?.Data ?? asRecord(payload)?.user ?? null;
-  const record = asRecord(source);
-  if (!record) return null;
-
-  const profile: ZhihuProfile = {
-    name:
-      asString(record.name) ??
-      asString(record.Fullname) ??
-      asString(record.fullname) ??
-      asString(record.Name),
-    avatarUrl:
-      asString(record.avatar_url) ??
-      asString(record.AvatarUrl) ??
-      asString(record.avatarUrl),
-    headline:
-      asString(record.headline) ??
-      asString(record.Headline) ??
-      asString(record.headline2),
-    url: asString(record.url) ?? asString(record.Url) ?? asString(record.profileUrl),
-  };
-  return profile.name || profile.url ? profile : null;
+  const oauthResponse = await fetch(`${OPENAPI_BASE}/user`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${safeOAuthToken}`,
+      "Content-Type": "application/json",
+    },
+    signal,
+  });
+  const oauthPayload: unknown = await oauthResponse.json().catch(() => null);
+  return profileFromPayload(oauthPayload);
 }

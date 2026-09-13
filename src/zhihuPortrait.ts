@@ -1,5 +1,7 @@
 const PORTRAIT_TIMEOUT_MS = 20_000;
+const PROFILE_TIMEOUT_MS = 7_000;
 const MAX_KEYWORDS = 6;
+let activeAccountVersion: string | null = null;
 
 export interface ZhihuPortraitKeyword {
   word: string;
@@ -16,10 +18,67 @@ export interface ZhihuPortraitStats {
 }
 
 export interface ZhihuPortrait {
+  accountVersion: string | null;
   generatedAt: string;
   stats: ZhihuPortraitStats;
   keywords: ZhihuPortraitKeyword[];
   partial: boolean;
+}
+
+export interface ZhihuPublicProfile {
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+export function setActiveZhihuAccountVersion(value: unknown): void {
+  activeAccountVersion =
+    typeof value === "string" && /^[a-f0-9]{16}$/.test(value)
+      ? value
+      : null;
+}
+
+export function getActiveZhihuAccountVersion(): string | null {
+  return activeAccountVersion;
+}
+
+export async function fetchZhihuPublicProfile(
+  expectedAccountVersion: string,
+  signal?: AbortSignal,
+): Promise<ZhihuPublicProfile | null> {
+  const controller = new AbortController();
+  const abortFromParent = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener("abort", abortFromParent, { once: true });
+  const timeout = window.setTimeout(() => controller.abort(), PROFILE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch("/api/oauth/profile", {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    const payload: unknown = await response.json();
+    if (
+      !response.ok ||
+      !isRecord(payload) ||
+      payload.ok !== true ||
+      payload.accountVersion !== expectedAccountVersion
+    ) {
+      throw new Error("profile unavailable");
+    }
+    if (!isRecord(payload.profile)) return null;
+    return {
+      name: typeof payload.profile.name === "string"
+        ? payload.profile.name
+        : null,
+      avatarUrl: typeof payload.profile.avatarUrl === "string"
+        ? payload.profile.avatarUrl
+        : null,
+    };
+  } finally {
+    window.clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromParent);
+  }
 }
 
 export interface NebulaPortraitSignal {
@@ -65,6 +124,7 @@ function parsePortrait(value: unknown): ZhihuPortrait | null {
   }
 
   return {
+    accountVersion: null,
     generatedAt: typeof value.generatedAt === "string" ? value.generatedAt : "",
     stats: {
       contents: safeCount(value.stats.contents),
@@ -101,7 +161,14 @@ export async function fetchZhihuPortrait(signal?: AbortSignal): Promise<ZhihuPor
     }
     const portrait = parsePortrait(payload.data);
     if (!portrait) throw new Error("invalid portrait");
-    return portrait;
+    return {
+      ...portrait,
+      accountVersion:
+        typeof payload.accountVersion === "string" &&
+        /^[a-f0-9]{16}$/.test(payload.accountVersion)
+          ? payload.accountVersion
+          : null,
+    };
   } finally {
     window.clearTimeout(timeout);
     signal?.removeEventListener("abort", abortFromParent);

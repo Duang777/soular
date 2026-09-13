@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchZhihuPortrait,
+  fetchZhihuPublicProfile,
+  setActiveZhihuAccountVersion,
   type ZhihuPortrait,
 } from "./zhihuPortrait";
 import { clearSelfProfileContexts } from "./people";
@@ -16,6 +18,7 @@ interface OAuthProfile {
 interface OAuthStatus {
   configured: boolean;
   authorized: boolean;
+  accountVersion: string | null;
   stateVerified: boolean | null;
   profile: OAuthProfile | null;
   error: { code: string; message: string } | null;
@@ -88,7 +91,17 @@ export function OAuthAccount() {
         throw new Error("OAuth status unavailable");
       }
       const value = payload as Record<string, unknown>;
-      if (value.authorized !== true) clearSelfProfileContexts();
+      const accountVersion =
+        typeof value.accountVersion === "string" &&
+        /^[a-f0-9]{16}$/.test(value.accountVersion)
+          ? value.accountVersion
+          : null;
+      if (value.authorized !== true) {
+        clearSelfProfileContexts();
+        setActiveZhihuAccountVersion(null);
+      } else {
+        setActiveZhihuAccountVersion(accountVersion);
+      }
       const profileValue =
         value.profile && typeof value.profile === "object"
           ? (value.profile as Record<string, unknown>)
@@ -97,9 +110,10 @@ export function OAuthAccount() {
         value.error && typeof value.error === "object"
           ? (value.error as Record<string, unknown>)
           : null;
-      setStatus({
+      const nextStatus: OAuthStatus = {
         configured: value.configured === true,
         authorized: value.authorized === true,
+        accountVersion,
         stateVerified:
           typeof value.stateVerified === "boolean" ? value.stateVerified : null,
         profile: profileValue
@@ -115,6 +129,30 @@ export function OAuthAccount() {
           typeof errorValue.message === "string"
             ? { code: errorValue.code, message: errorValue.message }
             : null,
+      };
+      setStatus((current) => {
+        if (
+          current?.accountVersion &&
+          current.accountVersion !== nextStatus.accountVersion
+        ) {
+          clearSelfProfileContexts();
+        }
+        if (
+          current?.accountVersion &&
+          current.accountVersion === nextStatus.accountVersion
+        ) {
+          return {
+            ...nextStatus,
+            profile: {
+              name: nextStatus.profile?.name ?? current.profile?.name ?? null,
+              avatarUrl:
+                nextStatus.profile?.avatarUrl ??
+                current.profile?.avatarUrl ??
+                null,
+            },
+          };
+        }
+        return nextStatus;
       });
       setUnavailable(false);
       setLogoutFailed(false);
@@ -126,10 +164,58 @@ export function OAuthAccount() {
 
   useEffect(() => {
     if (!isOfficialOrigin) return undefined;
-    const controller = new AbortController();
-    void loadStatus(controller.signal);
-    return () => controller.abort();
+    let controller: AbortController | null = null;
+    let lastRefreshAt = 0;
+    const refresh = () => {
+      const now = Date.now();
+      if (now - lastRefreshAt < 500) return;
+      lastRefreshAt = now;
+      controller?.abort();
+      controller = new AbortController();
+      void loadStatus(controller.signal);
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      controller?.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [isOfficialOrigin, loadStatus]);
+
+  useEffect(() => {
+    if (
+      !isOfficialOrigin ||
+      status?.authorized !== true ||
+      !status.accountVersion ||
+      safeAvatarUrl(status.profile?.avatarUrl)
+    ) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    void fetchZhihuPublicProfile(status.accountVersion, controller.signal)
+      .then((profile) => {
+        if (!profile) return;
+        setStatus((current) =>
+          current?.accountVersion === status.accountVersion
+            ? {
+                ...current,
+                profile: {
+                  name: profile.name ?? current.profile?.name ?? null,
+                  avatarUrl: profile.avatarUrl ?? current.profile?.avatarUrl ?? null,
+                },
+              }
+            : current
+        );
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [isOfficialOrigin, status?.accountVersion, status?.authorized, status?.profile?.avatarUrl]);
 
   useEffect(() => {
     if (!isOfficialOrigin || status?.authorized !== true) {
@@ -142,6 +228,12 @@ export function OAuthAccount() {
     setPortraitState("loading");
     void fetchZhihuPortrait(controller.signal)
       .then((value) => {
+        if (
+          !status.accountVersion ||
+          value.accountVersion !== status.accountVersion
+        ) {
+          throw new Error("portrait account changed");
+        }
         setPortrait(value);
         setPortraitState("idle");
       })
@@ -151,7 +243,7 @@ export function OAuthAccount() {
         setPortraitState("unavailable");
       });
     return () => controller.abort();
-  }, [isOfficialOrigin, status?.authorized]);
+  }, [isOfficialOrigin, status?.accountVersion, status?.authorized]);
 
   async function logout() {
     setBusy(true);
@@ -166,12 +258,14 @@ export function OAuthAccount() {
       setStatus({
         configured: true,
         authorized: false,
+        accountVersion: null,
         stateVerified: null,
         profile: null,
         error: null,
       });
       setPortrait(null);
       setPortraitState("idle");
+      setActiveZhihuAccountVersion(null);
       clearSelfProfileContexts();
       setUnavailable(false);
       setCallbackFailed(false);

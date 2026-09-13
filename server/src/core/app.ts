@@ -16,8 +16,15 @@ import {
   fetchProfile,
   ZhihuOAuthError,
 } from "../zhihu/oauth.js";
+import type { ZhihuProfile } from "../types.js";
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const OAUTH_PROFILE_TTL_SECONDS = 10 * 60;
+const OAUTH_PROFILE_FAILURE_TTL_SECONDS = 60;
+
+type OAuthProfileCacheValue =
+  | ZhihuProfile
+  | { unavailable: true };
 
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest(
@@ -57,12 +64,104 @@ function zhihuErrorStatus(error: ZhihuApiError): number {
   return 502;
 }
 
+function mergeOAuthProfiles(
+  storedProfile: ZhihuProfile | null,
+  recoveredProfile: ZhihuProfile | null,
+): ZhihuProfile | null {
+  if (!storedProfile && !recoveredProfile) return null;
+  const profile: ZhihuProfile = {
+    name: recoveredProfile?.name ?? storedProfile?.name ?? null,
+    avatarUrl: recoveredProfile?.avatarUrl ?? storedProfile?.avatarUrl ?? null,
+    headline: recoveredProfile?.headline ?? storedProfile?.headline ?? null,
+    url: recoveredProfile?.url ?? storedProfile?.url ?? null,
+  };
+  return profile.name || profile.avatarUrl || profile.headline || profile.url
+    ? profile
+    : null;
+}
+
+function isUnavailableProfile(
+  value: OAuthProfileCacheValue,
+): value is { unavailable: true } {
+  return "unavailable" in value && value.unavailable === true;
+}
+
+function publicAccountVersion(accountFingerprint: string): string {
+  return accountFingerprint.slice(0, 16);
+}
+
 export function createHandler(deps: HandlerDeps): (request: Request) => Promise<Response> {
   const { config, sessions, contentCache = null } = deps;
   const client = config.dataApiConfigured
     ? new ZhihuClient(config.accessSecret, contentCache)
     : null;
   const portraitInflight = new Map<string, Promise<Portrait>>();
+  const profileInflight = new Map<string, Promise<ZhihuProfile | null>>();
+  const profileFailureUntil = new Map<string, number>();
+
+  async function resolveOAuthProfile(
+    oauthToken: string,
+    storedProfile: ZhihuProfile | null,
+    accountFingerprint: string,
+  ): Promise<ZhihuProfile | null> {
+    if (storedProfile?.avatarUrl || !config.dataApiConfigured) {
+      return storedProfile;
+    }
+
+    const cacheKey = `oauth-profile:${accountFingerprint}`;
+    if ((profileFailureUntil.get(cacheKey) ?? 0) > Date.now()) {
+      return storedProfile;
+    }
+    if (contentCache) {
+      try {
+        const cached = await contentCache.get<OAuthProfileCacheValue>(cacheKey);
+        if (cached && isUnavailableProfile(cached.value)) {
+          if (cached.ageMs <= OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000) {
+            profileFailureUntil.set(
+              cacheKey,
+              Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
+            );
+            return storedProfile;
+          }
+        } else if (
+          cached &&
+          !isUnavailableProfile(cached.value) &&
+          cached.ageMs <= OAUTH_PROFILE_TTL_SECONDS * 1000
+        ) {
+          return mergeOAuthProfiles(storedProfile, cached.value);
+        }
+      } catch {
+        // Profile cache outages must not hide an otherwise valid login.
+      }
+    }
+
+    let request = profileInflight.get(cacheKey);
+    if (!request) {
+      request = fetchProfile(config.accessSecret, oauthToken)
+        .catch(() => null)
+        .finally(() => profileInflight.delete(cacheKey));
+      profileInflight.set(cacheKey, request);
+    }
+    const profile = await request;
+    const mergedProfile = mergeOAuthProfiles(storedProfile, profile);
+    if (profile) profileFailureUntil.delete(cacheKey);
+    else {
+      profileFailureUntil.set(
+        cacheKey,
+        Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
+      );
+    }
+    if (contentCache) {
+      await contentCache.set(
+        cacheKey,
+        profile && mergedProfile ? mergedProfile : { unavailable: true },
+        profile
+          ? OAUTH_PROFILE_TTL_SECONDS
+          : OAUTH_PROFILE_FAILURE_TTL_SECONDS,
+      ).catch(() => undefined);
+    }
+    return mergedProfile;
+  }
 
   return async function handler(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -80,19 +179,50 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
             ...publicStatus(config),
             authorized: false,
             profile: null,
+            accountVersion: null,
             stateVerified: null,
             expiresAt: null,
             error: null,
           });
         }
+        const accountFingerprint = session.token
+          ? await sha256Hex(session.token)
+          : null;
         return jsonResponse(200, {
           ok: true,
           ...publicStatus(config),
           authorized: Boolean(session.token),
           profile: session.profile,
+          accountVersion: accountFingerprint
+            ? publicAccountVersion(accountFingerprint)
+            : null,
           stateVerified: session.stateVerified,
           expiresAt: session.expiresAt ? new Date(session.expiresAt).toISOString() : null,
           error: session.error,
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/oauth/profile") {
+        const session = await sessions.load(request);
+        if (!session?.token) {
+          return jsonResponse(401, {
+            ok: false,
+            error: {
+              code: "NOT_AUTHORIZED",
+              message: "请先完成知乎登录",
+            },
+          });
+        }
+        const accountFingerprint = await sha256Hex(session.token);
+        const profile = await resolveOAuthProfile(
+          session.token,
+          session.profile,
+          accountFingerprint,
+        );
+        return jsonResponse(200, {
+          ok: true,
+          accountVersion: publicAccountVersion(accountFingerprint),
+          profile,
         });
       }
 
@@ -248,6 +378,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
                 jsonResponse(200, {
                   ok: true,
                   cached: true,
+                  accountVersion: publicAccountVersion(accountFingerprint),
                   data: cached.value,
                 }),
                 setCookie,
@@ -313,7 +444,12 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
           ]);
         }
         return withCookie(
-          jsonResponse(200, { ok: true, cached: false, data: portrait }),
+          jsonResponse(200, {
+            ok: true,
+            cached: false,
+            accountVersion: publicAccountVersion(accountFingerprint),
+            data: portrait,
+          }),
           setCookie,
         );
       }

@@ -152,6 +152,7 @@ https://soular.top/?oauth=success
   "redirectUri": "https://soular.top/auth/callback",
   "authorized": false,
   "profile": null,
+  "accountVersion": null,
   "stateVerified": null,
   "expiresAt": null,
   "error": null
@@ -159,7 +160,21 @@ https://soular.top/?oauth=success
 ```
 
 首页根据该接口展示“知乎登录”、已连接账号或重试状态。`profile` 获取失败时仍保留
-已授权状态，不伪造昵称或头像。
+已授权状态，不伪造昵称或头像。知乎 `/user` 没有稳定响应 schema，服务端兼容嵌套或
+顶层用户对象以及 `avatar_url`、`avatar_path` 等已观测字段。状态接口只读取 Session，
+不等待资料补取。`accountVersion` 是 OAuth Token 指纹的短版本，只用于浏览器拒绝拼接
+不同登录账号的资料与画像。
+
+### GET `/api/oauth/profile`
+
+需要有效 Session。已有 Session 的 `profile` 为空或缺少头像时，前端通过该接口补取
+公开资料，不阻塞 `/api/oauth/status`。结果按 OAuth Token 指纹缓存 10 分钟；空结果
+和失败在 KV 与当前 Worker 实例内退避 60 秒。补取结果只覆盖非空字段，不会丢失 Session
+中已有的昵称、简介或主页地址。
+
+资料请求使用 6 秒统一总预算，先尝试开放平台双凭证头；只有明确的 401、403 或鉴权
+错误码才对同一官方 `/user` 地址使用标准 OAuth Bearer 回退。限流、服务端错误、超时
+和无效响应不会触发第二次请求。
 
 ### POST `/api/oauth/logout`
 
@@ -178,30 +193,37 @@ https://soular.top/?oauth=success
 不阻断其他画像数据，部分成功结果只缓存 60 秒。四项主要数据源全部失败时返回
 `PORTRAIT_UNAVAILABLE`，并对相同账号记录 60 秒失败退避，不缓存空画像。
 
-正式前端在确认用户已授权后调用该接口。首页只显示画像校准状态和最多两个兴趣词；
+响应顶层同时返回与状态接口相同的 `accountVersion`。正式前端在确认用户已授权后调用
+该接口，只有账号版本一致时才接收结果；标签重新可见时会重新校验登录账号。首页只显示
+画像校准状态和最多两个兴趣词；
 进入观点星云时，React 只向 iframe 发送最多六个关键词及分数、证据总数和部分数据标记。
 创作、关注、收藏明细不进入 iframe、URL 或持久化浏览器存储。画像接口失败不得阻断
 静态星云、本地表态、人格卡或无画像匹配。
 
-`data` 主要结构：
+响应主要结构：
 
 ```json
 {
-  "generatedAt": "2026-09-12T00:00:00.000Z",
-  "stats": {
-    "contents": 0,
-    "followees": 0,
-    "favlists": 0,
-    "collections": 0,
-    "likesReceived": 0,
-    "contentKinds": {}
-  },
-  "keywords": [{ "word": "数据分析", "score": 12.3 }],
-  "topContents": [],
-  "favlists": [],
-  "followees": [],
-  "recentCollections": [],
-  "warnings": []
+  "ok": true,
+  "cached": true,
+  "accountVersion": "0123456789abcdef",
+  "data": {
+    "generatedAt": "2026-09-12T00:00:00.000Z",
+    "stats": {
+      "contents": 0,
+      "followees": 0,
+      "favlists": 0,
+      "collections": 0,
+      "likesReceived": 0,
+      "contentKinds": {}
+    },
+    "keywords": [{ "word": "数据分析", "score": 12.3 }],
+    "topContents": [],
+    "favlists": [],
+    "followees": [],
+    "recentCollections": [],
+    "warnings": []
+  }
 }
 ```
 
@@ -333,8 +355,9 @@ if (!response.ok || !payload.ok) {
 浏览器中直接调用知乎开放平台，也不要持有 `ZHIHU_ACCESS_SECRET`、
 `ZHIHU_OAUTH_APP_KEY` 或 OAuth Token。
 
-正式站的 React 外壳从 `/api/oauth/status` 读取已登录用户的公开昵称和头像，并从
-`/api/me/portrait` 提取有限的画像信号，通过 `nebula-user-profile` 消息传给观点星云
+正式站的 React 外壳从 `/api/oauth/status` 读取授权状态和已有公开资料，必要时通过
+`/api/oauth/profile` 补取昵称和头像，并从 `/api/me/portrait` 提取有限的画像信号，
+通过 `nebula-user-profile` 消息传给观点星云
 iframe。父子页都必须校验消息来源；头像仅接受 HTTPS `zhimg.com` 子域名。消息不得包含
 OAuth Token、Session ID、原始创作、关注或收藏明细。未登录、资料读取失败、GitHub Pages
 镜像和本地预览继续使用本地“我”占位头像和无画像匹配。

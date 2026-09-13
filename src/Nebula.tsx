@@ -8,6 +8,7 @@ import {
 import { CASTS } from "./cast";
 import { NebulaStage } from "./NebulaStage";
 import {
+  clearSelfProfileContexts,
   personFromValue,
   resolveNebulaPreset,
   selfProfileFromValue,
@@ -15,6 +16,8 @@ import {
 } from "./people";
 import {
   fetchZhihuPortrait,
+  fetchZhihuPublicProfile,
+  setActiveZhihuAccountVersion,
   toNebulaPortraitSignal,
   type NebulaPortraitSignal,
 } from "./zhihuPortrait";
@@ -32,6 +35,7 @@ interface NebulaUserProfile {
 interface NebulaUserContext {
   profile: NebulaUserProfile;
   portrait: NebulaPortraitSignal | null;
+  accountVersion: string | null;
 }
 
 function safeZhihuAvatarUrl(value: unknown): string | null {
@@ -137,63 +141,148 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
 
   useEffect(() => {
     if (window.location.origin !== OFFICIAL_ORIGIN) return undefined;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(
-      () => controller.abort(),
-      OAUTH_STATUS_TIMEOUT_MS,
-    );
+    let controller: AbortController | null = null;
+    let timeout = 0;
+    let refreshSequence = 0;
+    let lastRefreshAt = 0;
 
-    const loadUserContext = (async () => {
-      const response = await fetch("/api/oauth/status", {
-        credentials: "include",
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeout);
-      const payload: unknown = await response.json();
-      if (!response.ok || !payload || typeof payload !== "object") return;
-      const status = payload as Record<string, unknown>;
-      const profile = status.profile && typeof status.profile === "object"
-        ? status.profile as Record<string, unknown>
-        : null;
-      const avatarUrl = safeZhihuAvatarUrl(profile?.avatarUrl);
-      if (status.authorized !== true) return;
-
-      const userContext: NebulaUserContext = {
-        profile: {
-          name: typeof profile?.name === "string" ? profile.name : null,
-          avatarUrl,
-        },
-        portrait: null,
-      };
+    function publishUserContext(userContext: NebulaUserContext) {
       userContextRef.current = userContext;
       nebulaFrameRef.current?.contentWindow?.postMessage(
-        { type: "nebula-user-profile", ...userContext },
+        {
+          type: "nebula-user-profile",
+          profile: userContext.profile,
+          portrait: userContext.portrait,
+        },
         window.location.origin,
       );
+    }
 
-      try {
-        const portrait = await fetchZhihuPortrait(controller.signal);
-        const personalizedContext = {
-          ...userContext,
-          portrait: toNebulaPortraitSignal(portrait),
-        };
-        userContextRef.current = personalizedContext;
-        nebulaFrameRef.current?.contentWindow?.postMessage(
-          { type: "nebula-user-profile", ...personalizedContext },
-          window.location.origin,
-        );
-      } catch {
-        // 画像失败不影响头像、静态星云和本题表态流程。
-      }
-    })();
-    void loadUserContext.catch(() => undefined).finally(() => {
+    function loadUserContext() {
+      const now = Date.now();
+      if (now - lastRefreshAt < 500) return;
+      lastRefreshAt = now;
+      const sequence = ++refreshSequence;
+      controller?.abort();
       window.clearTimeout(timeout);
-    });
+      const requestController = new AbortController();
+      controller = requestController;
+      const signal = requestController.signal;
+      const requestTimeout = window.setTimeout(
+        () => requestController.abort(),
+        OAUTH_STATUS_TIMEOUT_MS,
+      );
+      timeout = requestTimeout;
+
+      void (async () => {
+        const response = await fetch("/api/oauth/status", {
+          credentials: "include",
+          headers: { Accept: "application/json" },
+          signal,
+        });
+        window.clearTimeout(requestTimeout);
+        const payload: unknown = await response.json();
+        if (
+          sequence !== refreshSequence ||
+          !response.ok ||
+          !payload ||
+          typeof payload !== "object"
+        ) return;
+        const status = payload as Record<string, unknown>;
+        const profile = status.profile && typeof status.profile === "object"
+          ? status.profile as Record<string, unknown>
+          : null;
+        const avatarUrl = safeZhihuAvatarUrl(profile?.avatarUrl);
+        const accountVersion =
+          typeof status.accountVersion === "string" &&
+          /^[a-f0-9]{16}$/.test(status.accountVersion)
+            ? status.accountVersion
+            : null;
+        if (status.authorized !== true || !accountVersion) {
+          clearSelfProfileContexts();
+          setActiveZhihuAccountVersion(null);
+          publishUserContext({
+            profile: { name: null, avatarUrl: null },
+            portrait: null,
+            accountVersion: null,
+          });
+          return;
+        }
+        if (userContextRef.current?.accountVersion !== accountVersion) {
+          clearSelfProfileContexts();
+        }
+        setActiveZhihuAccountVersion(accountVersion);
+        const previousContext =
+          userContextRef.current?.accountVersion === accountVersion
+            ? userContextRef.current
+            : null;
+
+        const userContext: NebulaUserContext = {
+          profile: {
+            name: typeof profile?.name === "string"
+              ? profile.name
+              : previousContext?.profile.name ?? null,
+            avatarUrl: avatarUrl ?? previousContext?.profile.avatarUrl ?? null,
+          },
+          portrait: previousContext?.portrait ?? null,
+          accountVersion,
+        };
+        publishUserContext(userContext);
+
+        const recoveryTasks: Promise<void>[] = [];
+        if (!avatarUrl) {
+          recoveryTasks.push(
+            fetchZhihuPublicProfile(accountVersion, signal)
+              .then((recoveredProfile) => {
+                if (!recoveredProfile || sequence !== refreshSequence) return;
+                const current = userContextRef.current;
+                if (current?.accountVersion !== accountVersion) return;
+                publishUserContext({
+                  ...current,
+                  profile: {
+                    name: recoveredProfile.name ?? current.profile.name,
+                    avatarUrl:
+                      safeZhihuAvatarUrl(recoveredProfile.avatarUrl) ??
+                      current.profile.avatarUrl,
+                  },
+                });
+              })
+              .catch(() => undefined),
+          );
+        }
+        recoveryTasks.push(
+          fetchZhihuPortrait(signal)
+            .then((portrait) => {
+              if (
+                sequence !== refreshSequence ||
+                portrait.accountVersion !== accountVersion
+              ) return;
+              const current = userContextRef.current;
+              if (current?.accountVersion !== accountVersion) return;
+              publishUserContext({
+                ...current,
+                portrait: toNebulaPortraitSignal(portrait),
+              });
+            })
+            .catch(() => undefined),
+        );
+        await Promise.allSettled(recoveryTasks);
+      })().catch(() => undefined);
+    }
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadUserContext();
+    };
+    loadUserContext();
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
+      refreshSequence += 1;
       window.clearTimeout(timeout);
-      controller.abort();
+      controller?.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
 
@@ -225,7 +314,8 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
           source?.postMessage(
             {
               type: "nebula-user-profile",
-              ...userContextRef.current,
+              profile: userContextRef.current.profile,
+              portrait: userContextRef.current.portrait,
             },
             event.origin,
           );

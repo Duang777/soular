@@ -241,7 +241,7 @@ assert.match(
 );
 assert.match(
   shelfSource,
-  /fetchZhihuPortrait\(controller\.signal\)[\s\S]*setLatePortrait\(toNebulaPortraitSignal\(portrait\)\)/,
+  /getActiveZhihuAccountVersion\(\)[\s\S]*portrait\.accountVersion === expectedAccountVersion[\s\S]*setLatePortrait\(toNebulaPortraitSignal\(portrait\)\)/,
   "人格卡页必须在不阻塞导航的前提下补齐未完成的画像",
 );
 assert.doesNotMatch(
@@ -270,9 +270,24 @@ assert.match(
   "正式前端必须通过同源画像接口读取个性化信号",
 );
 assert.match(
+  portraitSource,
+  /fetch\("\/api\/oauth\/profile"/,
+  "公开资料恢复必须独立于 OAuth 状态查询",
+);
+assert.match(
   nebulaHostSource,
   /toNebulaPortraitSignal\(portrait\)/,
   "React 外壳必须只向星云发送裁剪后的画像信号",
+);
+assert.match(
+  nebulaHostSource,
+  /portrait\.accountVersion !== accountVersion/,
+  "星云必须拒绝其他账号版本的画像",
+);
+assert.match(
+  nebulaHostSource,
+  /addEventListener\("visibilitychange",\s*refreshWhenVisible\)/,
+  "标签重新可见时必须复查账号版本",
 );
 assert.match(
   source,
