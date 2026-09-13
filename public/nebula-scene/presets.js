@@ -2,6 +2,18 @@ const presetModuleVersion = new URL(import.meta.url).searchParams.get("v") || "d
 const { AI_MATH } = await import(
   `./preset-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
 );
+const { TAO_AI_TRADITION } = await import(
+  `./preset-tao-ai-tradition.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
+const { PANGDONGLAI_LABOR } = await import(
+  `./preset-pangdonglai-labor.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
+const { SCHOLARS_AI_MATH } = await import(
+  `./preset-scholars-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
+const { TAO_AI_MATH_PROOF } = await import(
+  `./preset-tao-ai-math-proof.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
 
 const CAREER_35 = {
   id: "career-35",
@@ -103,6 +115,10 @@ const CAREER_35 = {
 const PRESETS = new Map([
   [CAREER_35.id, CAREER_35],
   [AI_MATH.id, AI_MATH],
+  [TAO_AI_TRADITION.id, TAO_AI_TRADITION],
+  [PANGDONGLAI_LABOR.id, PANGDONGLAI_LABOR],
+  [SCHOLARS_AI_MATH.id, SCHOLARS_AI_MATH],
+  [TAO_AI_MATH_PROOF.id, TAO_AI_MATH_PROOF],
 ]);
 
 export function getNebulaPreset(id) {

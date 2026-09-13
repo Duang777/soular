@@ -284,6 +284,10 @@ public/nebula-scene/presets.js
 | --- | --- | --- |
 | `career-35` | 35 岁程序员该不该转行？ | 原正式前端演示数据 |
 | `ai-math` | AI 是否正在毁掉数学？ | 2026-09-12 热榜真实问题，31 位真实作者、头像与来源链接 |
+| `tao-ai-tradition` | 陶哲轩发文称「AI 正杀死数学百年开放传统」，你如何看待这一观点？ | 2026-09-14 真实问题，5 位真实作者、头像与来源链接 |
+| `pangdonglai-labor` | 如何看待于东来发文称胖东来再招员工都是学员性质，合同四年，不续签？意味着什么？ | 2026-09-14 真实问题，3 位真实作者、头像与来源链接 |
+| `scholars-ai-math` | 如何看待现在有学者用 AI 做数学科研？ | 2026-09-14 真实问题，47 位真实作者、头像与来源链接 |
+| `tao-ai-math-proof` | 如何看待陶哲轩等数学家大力推动的 AI 数学证明？ | 2026-09-14 真实问题，3 位真实作者、头像与来源链接（全量 54 条待 API 额度恢复后补抓） |
 
 每个快照包含：
 
@@ -316,6 +320,9 @@ public/nebula-scene/presets.js
 
 ```bash
 npm --prefix server run prepare:hot-spectrums -- --count=3 --answers=30
+npm --prefix server run prepare:question-preset -- \
+  --question-url=https://www.zhihu.com/question/<id> \
+  --preset-id=<preset-id> --serial=<NN> --answers=30
 ```
 
 脚本最多扫描热榜前 30 项、处理其中 5 个合法问题，每个问题最多读取 50 条回答，并严格
@@ -327,6 +334,7 @@ npm --prefix server run prepare:hot-spectrums -- --count=3 --answers=30
 
 结果默认写入 `server/.staging/hot-spectrums.json`，不会自动进入前端。候选项必须人工检查
 立场、摘要和链接并补充作者信息后，才可复制为 `public/nebula-scene/preset-*.js` 并注册。
+指定问题脚本同样只写入 `server/.staging/`，不会创建或覆盖正式快照。
 禁止把回答采集或观点光谱生成重新开放为匿名 Worker 路由，以免外部请求消耗共享配额。
 
 ### 人格卡生成
