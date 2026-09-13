@@ -286,6 +286,7 @@ public/nebula-scene/presets.js
 
 - `id`、不可变内容版本 `version`、盲盒序号 `serial`、问题 `question`、知乎搜索链接 `searchUrl`
 - 数据性质 `kind`：`mock | real`
+- 可选主题人格标识 `personaTheme`；缺失、未知或未完成时使用原有九派
 - 左中右光谱文案 `axis`
 - 可变数量讨论者 `people`：`[昵称, 立场(-1..1), 人格派别, 观点, 来源 URL, 来源标题, 赞同数]`
 - 可选真实头像目录 `avatarBase`
@@ -329,6 +330,12 @@ npm --prefix server run prepare:hot-spectrums -- --count=3 --answers=30
 
 - 离线阶段：直答模型为每条回答生成 `stance`、`claim` 和九派 `cast` 标签；九派标签只允许
   `fox/bear/cat/owl/rabbit/penguin/redpanda/goat/frog`。
+- 主题人格库位于 `public/persona-library.js`。快照通过 `personaTheme` 选择一个已经验收的
+  九人主题；React 人格卡、Three.js 人格卡群和 3D 人格书会共同读取人物名称、角色描述
+  与抽象插画，但稳定 `cast` key 不变。
+  `personaTheme` 缺失、未知、未满九人或主题仍为 `planned` 时，运行时必须完整回退原有九派。
+- `career-35` 当前绑定 `life-choices`；`ai-math` 尚未绑定已验收主题，因此继续展示原有九派。
+  完整人物选择、素材来源与使用边界见 `docs/persona-library.md`。
 - 运行阶段：不调用 AI。先计算用户点赞回答的平均立场，再按每个九派标签的点赞数量选人格；
   同票时使用该派回答与用户平均立场的接近度破同票，最后按固定九派顺序保证结果稳定。
 - 没有点赞时使用快照的 `me.castKey` 默认人格；生成依据通过 Session Storage 带到卡片页，

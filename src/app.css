@@ -2229,7 +2229,12 @@ textarea.field:focus-visible,
   font-size: 12px;
 }
 
-.shelf-tag--share:hover {
+.shelf-tag--share:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.shelf-tag--share:hover:not(:disabled) {
   color: var(--cream);
   background: rgba(20, 18, 12, 0.72);
   border-color: rgba(196, 165, 116, 0.85);
@@ -2604,6 +2609,19 @@ textarea.field:focus-visible,
   font-size: 13px;
   letter-spacing: 0.14em;
   color: rgba(243, 240, 233, 0.78);
+}
+
+.draw-face__description {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  color: rgba(243, 240, 233, 0.78);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-wrap: pretty;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .draw-face__interest {
@@ -3124,6 +3142,12 @@ textarea.field:focus-visible,
     margin-top: 4px;
     padding-top: 5px;
     font-size: 9.5px;
+  }
+
+  .draw-face__description {
+    margin-top: 3px;
+    font-size: 9px;
+    line-height: 1.4;
   }
 
   .draw-face__claim {

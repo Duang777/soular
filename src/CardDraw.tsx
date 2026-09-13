@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BrandMark } from "./BrandMark";
-import { asset, CASTS, type Cast } from "./cast";
+import { asset, type Cast } from "./cast";
 import {
   DEFAULT_NEBULA_PRESET,
   nebulaPresetVersion,
@@ -67,6 +67,10 @@ function loadImage(src: string) {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+function castPortraitFile(cast: Cast): string {
+  return cast.portrait ?? `personas/${cast.key}.jpg`;
 }
 
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -163,7 +167,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   ctx.fillText(posterEyebrow, W / 2, 132);
 
   if (!person) {
-    const img = await loadImage(asset(`personas/${cast.key}.jpg`));
+    const img = await loadImage(asset(castPortraitFile(cast)));
     const size = 620;
     const ix = (W - size) / 2;
     const iy = 236;
@@ -195,17 +199,22 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
     ctx.font = `400 40px ${fontStack}`;
     ctx.fillText(cast.role, W / 2, 1150);
 
-    if (selfProfile) {
+    const personaDescription = selfProfile?.claim ?? cast.description;
+    if (personaDescription) {
       ctx.fillStyle = "rgba(243, 240, 233, 0.72)";
       ctx.font = `400 27px ${fontStack}`;
-      const [line1, line2] = wrapClaim(ctx, selfProfile.claim, 820);
+      const [line1, line2] = wrapClaim(ctx, personaDescription, 820);
       ctx.fillText(line1, W / 2, 1210);
       if (line2) ctx.fillText(line2, W / 2, 1248);
     }
 
     ctx.fillStyle = "rgba(196, 165, 116, 0.9)";
     ctx.font = `600 30px ${fontStack}`;
-    ctx.fillText("✦ 每个发光头像，都是一种立场", W / 2, selfProfile ? 1302 : 1252);
+    ctx.fillText(
+      "✦ 每个发光头像，都是一种立场",
+      W / 2,
+      personaDescription ? 1302 : 1252,
+    );
 
     ctx.fillStyle = "rgba(243, 240, 233, 0.55)";
     ctx.font = `400 26px ${fontStack}`;
@@ -216,7 +225,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   } else {
     const subjectIndex = subject.kind === "person" ? subject.index : 0;
     const [art, ava] = await Promise.all([
-      loadImage(asset(`personas/${cast.key}.jpg`)),
+      loadImage(asset(castPortraitFile(cast))),
       loadImage(asset(personAvatarFile(person, subjectIndex))),
     ]);
 
@@ -317,6 +326,7 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
 
 export function CardDraw({
   cast,
+  casts,
   subject,
   mode,
   onEnter,
@@ -325,6 +335,7 @@ export function CardDraw({
   onDiscoverPeers,
 }: {
   cast: Cast;
+  casts: readonly Cast[];
   subject: CardSubject;
   mode: DrawMode;
   onEnter: () => void;
@@ -346,7 +357,7 @@ export function CardDraw({
     .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
   const personIndex = subject.kind === "person" ? subject.index : 0;
   const personPreset = subject.kind === "person" ? subject.preset : undefined;
-  const resultIndex = Math.max(0, CASTS.findIndex((item) => item.key === cast.key));
+  const resultIndex = Math.max(0, casts.findIndex((item) => item.key === cast.key));
   const startsFlipped = !!person || isPeek;
   const initialPhase: Phase = mode === "revisit" || reduceMotion
     ? "reveal"
@@ -363,7 +374,7 @@ export function CardDraw({
 
   const personName = person ? `@${person.name}` : cast.name;
   const shareLinkLabel = person ? "观点链接" : "人格卡链接";
-  const artSrc = asset(`personas/${cast.key}.jpg`);
+  const artSrc = asset(castPortraitFile(cast));
   const personAvatarSrc = person ? asset(personAvatarFile(person, personIndex)) : null;
   const personSourceUrl = safeZhihuUrl(person?.sourceUrl);
 
@@ -414,7 +425,7 @@ export function CardDraw({
         setPhase("reveal");
         return;
       }
-      setActiveDot((prev) => (prev + 1) % CASTS.length);
+      setActiveDot((prev) => (prev + 1) % casts.length);
       const speed = elapsed > SHUFFLE_MS * 0.62 ? 175 : 82;
       timer = window.setTimeout(tick, speed);
     };
@@ -423,7 +434,7 @@ export function CardDraw({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [phase, resultIndex]);
+  }, [casts.length, phase, resultIndex]);
 
   useEffect(() => {
     if (phase !== "flip") return undefined;
@@ -604,6 +615,9 @@ export function CardDraw({
                 <span className="draw-face__volume">{person ? `${cast.volume} · ${cast.name}` : cast.volume}</span>
                 <strong className="draw-face__name">{personName}</strong>
                 <span className="draw-face__role">{cast.role}</span>
+                {cast.description && !person && (
+                  <span className="draw-face__description">{cast.description}</span>
+                )}
                 {interestWords.length > 0 && (
                   <span className="draw-face__interest">
                     <small>知乎兴趣底色</small>
@@ -635,7 +649,7 @@ export function CardDraw({
         </p>
 
         <div className={`draw-dots${revealed || phase === "flip" ? " is-settled" : ""}`}>
-          {CASTS.map((item, i) => (
+          {casts.map((item, i) => (
             <span
               key={item.key}
               className={`draw-dot${i === activeDot ? " is-active" : ""}${i === resultIndex && revealed ? " is-result" : ""}`}

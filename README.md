@@ -36,7 +36,7 @@
 1. **进入讨论**：选择一场已经发布的热点星云，从全局看到立场如何分布。
 2. **阅读观点**：悬停查看核心主张，筛选立场，按需回到知乎原文核验上下文。
 3. **留下坐标**：点赞认可的回答，星位会随着选择实时移动。
-4. **抽取人格**：把这次探索沉淀为观点人格卡和可交互的 3D 人格书。
+4. **抽取人格**：从当前问题对应的主题人格库中获得观点人格；主题未完成时沿用经典九派。
 5. **校准星谱**：连接知乎账号后，由刘看山汇总公开信号并生成兴趣星谱，辅助同频与互补观点匹配。
 6. **朋友对照**：分享本题人格与星位，让朋友独立完成三次表态后再查看双方距离。
 
@@ -90,7 +90,7 @@
 | --- | --- | --- |
 | 产品外壳 | React 19、React Router、TypeScript | 路由、导航状态、书架和人格卡 |
 | 观点星云 | Three.js、原生 HTML/CSS/JavaScript | 3D 光谱、筛选、阅读与互动 |
-| 数据快照 | 静态 ES Modules | 承载人工验收后的问题、回答者和立场 |
+| 数据快照 | 静态 ES Modules | 承载人工验收后的问题、回答者、立场和主题人格绑定 |
 | 发布 | 静态构建 | 正式站与 GitHub Pages 镜像 |
 
 产品行为和验收状态见 [`spec.md`](./spec.md)。
@@ -124,6 +124,7 @@ http://localhost:4325/nebula?preset=ai-math
 | `npm run preview` | 本地预览生产构建 |
 | `npm run check:navigation` | 检查星云与人格卡导航契约 |
 | `npm run check:share-match` | 检查朋友对照链接、参数和关系文案 |
+| `npm run check:personas` | 检查八类主题目录、九人格契约、素材和降级 |
 
 </details>
 
@@ -133,13 +134,15 @@ http://localhost:4325/nebula?preset=ai-math
 .
 ├── src/                          # React 路由、应用外壳与人格卡
 ├── public/
+│   ├── persona-library.js       # 主题人格库、稳定槽位与素材记录
 │   ├── brand/                    # Logo、站点图标与品牌资产
 │   ├── nebula-scene/             # Three.js 星云、交互与静态快照
 │   ├── personas/                 # 九派人格插画
 │   ├── books/                    # 3D 人格书场景
 │   └── kanshan/                  # 刘看山展示素材
 ├── docs/
-│   └── images/                   # README 产品截图
+│   ├── images/                   # README 产品截图
+│   └── persona-library.md        # 人物选择、扩展流程与授权边界
 ├── spec.md                       # 产品行为与验收状态
 └── THIRD_PARTY_NOTICES.md        # 第三方代码与许可说明
 ```
@@ -151,8 +154,9 @@ http://localhost:4325/nebula?preset=ai-math
 1. 从热门讨论或用户提名中选择主题，离线整理候选观点。
 2. 人工检查立场、摘要、来源与图片授权，并补充作者展示信息。
 3. 在 `public/nebula-scene/` 新增 `preset-<id>.js`，回答变化时同步更新内容版本。
-4. 在 `public/nebula-scene/presets.js` 注册快照，并同步 `src/people.ts` 的版本目录。
-5. 运行 `npm run build`，并在桌面端与 390 px 移动端验证交互。
+4. 人格主题完成九位人物与素材验收后，在快照中填写 `personaTheme`；未完成时留空并使用经典九派。
+5. 在 `public/nebula-scene/presets.js` 注册快照，并同步 `src/people.ts` 的版本目录。
+6. 运行 `npm run build`，并在桌面端与 390 px 移动端验证交互。
 
 ## 参与项目
 
@@ -169,6 +173,8 @@ http://localhost:4325/nebula?preset=ai-math
 - 知乎画像只作为兴趣底色，不改变用户在单个问题中的表态；原始创作、关注和收藏明细不会进入星云或分享链接。
 - 朋友对照链接只携带快照、人格和本题星位，不包含账号身份或知乎画像；链接内容未经身份认证。
 - 真实观点快照来自公开可访问的知乎内容，仓库仅保留体验所需的摘要、来源和展示信息。
+- 主题人物只作为当前问题的思想原型，不代表真实人格或人物背书；选择规则与素材清单见
+  [`docs/persona-library.md`](./docs/persona-library.md)。
 - 第三方代码许可见 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。
 - 刘看山等赛事素材遵循主办方授权范围，仅限赛事期间使用，未经授权不得商用。
 
