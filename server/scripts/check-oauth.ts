@@ -59,6 +59,20 @@ try {
     }
 
     if (url.endsWith("/user")) {
+      if (
+        headers.get("Authorization") === "Bearer test-access-secret" &&
+        headers.get("X-OAuth-Token") === "test-oauth-token"
+      ) {
+        return Response.json(
+          { code: 40100, message: "OAuth bearer required" },
+          { status: 401 },
+        );
+      }
+      assert.equal(
+        headers.get("Authorization"),
+        "Bearer test-oauth-token",
+      );
+      assert.equal(headers.get("X-OAuth-Token"), null);
       return Response.json({
         code: 20000,
         fullname: "测试用户",
@@ -92,6 +106,11 @@ try {
     "Bearer test-access-secret",
   );
   assert.equal(requests[1]?.headers.get("X-OAuth-Token"), "test-oauth-token");
+  assert.equal(
+    requests[2]?.headers.get("Authorization"),
+    "Bearer test-oauth-token",
+  );
+  assert.equal(requests[2]?.headers.get("X-OAuth-Token"), null);
 
   requests.length = 0;
   const sessions = new SessionStore(new InMemorySessionBackend(), true);
@@ -213,7 +232,7 @@ try {
   );
   assert.equal(
     requests.filter(({ url }) => url.endsWith("/user")).length,
-    1,
+    2,
   );
   requests.length = 0;
 

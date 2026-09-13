@@ -66,6 +66,38 @@ export interface TokenResult {
   expiresIn: number | null;
 }
 
+function profileFromPayload(payload: unknown): ZhihuProfile | null {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data) ?? asRecord(root?.Data);
+  const record =
+    asRecord(data?.user) ??
+    data ??
+    asRecord(root?.user) ??
+    root;
+  if (!record) return null;
+
+  const profile: ZhihuProfile = {
+    name:
+      asString(record.name) ??
+      asString(record.Fullname) ??
+      asString(record.fullname) ??
+      asString(record.Name),
+    avatarUrl:
+      asString(record.avatar_url) ??
+      asString(record.avatar_path) ??
+      asString(record.AvatarUrl) ??
+      asString(record.AvatarPath) ??
+      asString(record.avatarPath) ??
+      asString(record.avatarUrl),
+    headline:
+      asString(record.headline) ??
+      asString(record.Headline) ??
+      asString(record.headline2),
+    url: asString(record.url) ?? asString(record.Url) ?? asString(record.profileUrl),
+  };
+  return profile.name || profile.avatarUrl || profile.url ? profile : null;
+}
+
 export function buildAuthorizeUrl(
   appId: string,
   redirectUri: string,
@@ -130,45 +162,31 @@ export async function fetchProfile(
   accessSecret: string,
   oauthToken: string,
 ): Promise<ZhihuProfile | null> {
-  const response = await fetch(`${OPENAPI_BASE}/user`, {
+  const safeAccessSecret = assertSafe(accessSecret, "Access Secret");
+  const safeOAuthToken = assertSafe(oauthToken, "OAuth token");
+  const primaryResponse = await fetch(`${OPENAPI_BASE}/user`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${assertSafe(accessSecret, "Access Secret")}`,
-      "X-OAuth-Token": assertSafe(oauthToken, "OAuth token"),
+      Authorization: `Bearer ${safeAccessSecret}`,
+      "X-OAuth-Token": safeOAuthToken,
       "X-Request-Timestamp": String(Math.floor(Date.now() / 1000)),
       "Content-Type": "application/json",
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
+  const primaryPayload: unknown =
+    await primaryResponse.json().catch(() => null);
+  const primaryProfile = profileFromPayload(primaryPayload);
+  if (primaryProfile) return primaryProfile;
 
-  const payload: unknown = await response.json().catch(() => null);
-  const root = asRecord(payload);
-  const data = asRecord(root?.data) ?? asRecord(root?.Data);
-  const record =
-    asRecord(data?.user) ??
-    data ??
-    asRecord(root?.user) ??
-    root;
-  if (!record) return null;
-
-  const profile: ZhihuProfile = {
-    name:
-      asString(record.name) ??
-      asString(record.Fullname) ??
-      asString(record.fullname) ??
-      asString(record.Name),
-    avatarUrl:
-      asString(record.avatar_url) ??
-      asString(record.avatar_path) ??
-      asString(record.AvatarUrl) ??
-      asString(record.AvatarPath) ??
-      asString(record.avatarPath) ??
-      asString(record.avatarUrl),
-    headline:
-      asString(record.headline) ??
-      asString(record.Headline) ??
-      asString(record.headline2),
-    url: asString(record.url) ?? asString(record.Url) ?? asString(record.profileUrl),
-  };
-  return profile.name || profile.avatarUrl || profile.url ? profile : null;
+  const oauthResponse = await fetch(`${OPENAPI_BASE}/user`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${safeOAuthToken}`,
+      "Content-Type": "application/json",
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const oauthPayload: unknown = await oauthResponse.json().catch(() => null);
+  return profileFromPayload(oauthPayload);
 }
