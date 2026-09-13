@@ -174,9 +174,12 @@ https://soular.top/?oauth=success
 中已有的昵称、简介或主页地址。同一实例中的并发补取会复用包含缓存发布在内的完整
 in-flight Promise，因此同一批请求只写一次缓存。
 
-资料请求使用 6 秒统一总预算，先尝试开放平台双凭证头；只有明确的 401、403 或鉴权
-错误码才对同一官方 `/user` 地址使用标准 OAuth Bearer 回退。限流、服务端错误、超时
-和无效响应不会触发第二次请求。
+资料请求使用 6 秒预算，直接向 `openapi.zhihu.com/user` 发送
+`Authorization: Bearer <OAuth access_token>`。该基础资料接口不携带 Access Secret、
+`X-OAuth-Token` 或请求时间戳；双凭证只用于 `developer.zhihu.com/api/v1/user/...`
+创作、关注和收藏接口。资料缓存使用 `oauth-profile:v2` 命名空间，避免旧鉴权方式产生
+的空结果继续阻断补取；旧命名空间中带头像的有效正缓存可在其原始 10 分钟年龄内兼容
+读取，但不写回新命名空间或延长有效期，旧负缓存与过期正缓存都会重新请求官方接口。
 
 ### POST `/api/oauth/logout`
 

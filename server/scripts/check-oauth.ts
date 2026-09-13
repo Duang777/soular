@@ -31,7 +31,23 @@ assert.equal(config.dataApiConfigured, true);
 
 class CountingCache extends InMemoryCache {
   private readonly writes = new Map<string, number>();
+  private readonly ttls = new Map<string, number>();
   writeDelayMs = 0;
+  legacyAgeMs = 0;
+
+  override async get<T>(
+    key: string,
+  ): Promise<{ value: T; ageMs: number } | null> {
+    const cached = await super.get<T>(key);
+    if (
+      cached &&
+      key.startsWith("oauth-profile:") &&
+      !key.startsWith("oauth-profile:v2:")
+    ) {
+      return { ...cached, ageMs: this.legacyAgeMs };
+    }
+    return cached;
+  }
 
   override async set<T>(
     key: string,
@@ -39,6 +55,7 @@ class CountingCache extends InMemoryCache {
     ttlSeconds: number,
   ): Promise<void> {
     this.writes.set(key, (this.writes.get(key) ?? 0) + 1);
+    this.ttls.set(key, ttlSeconds);
     if (this.writeDelayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, this.writeDelayMs));
     }
@@ -47,6 +64,7 @@ class CountingCache extends InMemoryCache {
 
   resetWrites(): void {
     this.writes.clear();
+    this.ttls.clear();
   }
 
   writesWithPrefix(prefix: string): number {
@@ -55,6 +73,13 @@ class CountingCache extends InMemoryCache {
       if (key.startsWith(prefix)) total += count;
     }
     return total;
+  }
+
+  ttlWithPrefix(prefix: string): number | null {
+    for (const [key, ttl] of this.ttls) {
+      if (key.startsWith(prefix)) return ttl;
+    }
+    return null;
   }
 }
 
@@ -75,16 +100,25 @@ const requests: Array<{
   body: string;
   signal: AbortSignal | null;
 }> = [];
-let profileResponseMode: "full" | "avatar-only" | "empty" | "server-error" = "full";
+let profileResponseMode:
+  | "full"
+  | "avatar-only"
+  | "name-only"
+  | "empty"
+  | "server-error" = "full";
 
-async function expectedAccountVersion(token: string): Promise<string> {
+async function accountFingerprint(token: string): Promise<string> {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(token),
   );
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0")
-  ).join("").slice(0, 16);
+  ).join("");
+}
+
+async function expectedAccountVersion(token: string): Promise<string> {
+  return (await accountFingerprint(token)).slice(0, 16);
 }
 
 try {
@@ -109,27 +143,26 @@ try {
     }
 
     if (url.endsWith("/user")) {
-      const oauthToken = headers.get("X-OAuth-Token");
-      if (profileResponseMode === "server-error" && oauthToken) {
-        return Response.json(
-          { code: 50001, message: "upstream unavailable" },
-          { status: 503 },
-        );
-      }
       if (
-        headers.get("Authorization") === "Bearer test-access-secret" &&
-        oauthToken
+        headers.get("Authorization") === "Bearer test-access-secret" ||
+        headers.has("X-OAuth-Token")
       ) {
-        return Response.json(
-          { code: 40100, message: "OAuth bearer required" },
-          { status: 401 },
-        );
+        return Response.json({
+          code: 400,
+          data: "unsupported authentication scheme",
+        });
       }
       assert.match(
         headers.get("Authorization") ?? "",
         /^Bearer test-oauth-token/,
       );
       assert.equal(headers.get("X-OAuth-Token"), null);
+      if (profileResponseMode === "server-error") {
+        return Response.json(
+          { code: 50001, message: "upstream unavailable" },
+          { status: 503 },
+        );
+      }
       if (profileResponseMode === "empty") {
         return Response.json({ code: 20000, data: {} });
       }
@@ -137,6 +170,12 @@ try {
         return Response.json({
           code: 20000,
           avatar_path: "https://picx.zhimg.com/test-avatar.png",
+        });
+      }
+      if (profileResponseMode === "name-only") {
+        return Response.json({
+          code: 20000,
+          fullname: "仅昵称用户",
         });
       }
       return Response.json({
@@ -161,7 +200,7 @@ try {
   assert.match(requests[0]?.body ?? "", /app_id=422/);
   assert.match(requests[0]?.body ?? "", /code=test-authorization-code/);
 
-  const profile = await fetchProfile(config.accessSecret, token.accessToken);
+  const profile = await fetchProfile(token.accessToken);
   assert.equal(profile?.name, "测试用户");
   assert.equal(
     profile?.avatarUrl,
@@ -169,28 +208,23 @@ try {
   );
   assert.equal(
     requests[1]?.headers.get("Authorization"),
-    "Bearer test-access-secret",
-  );
-  assert.equal(requests[1]?.headers.get("X-OAuth-Token"), "test-oauth-token");
-  assert.equal(
-    requests[2]?.headers.get("Authorization"),
     "Bearer test-oauth-token",
   );
-  assert.equal(requests[2]?.headers.get("X-OAuth-Token"), null);
+  assert.equal(requests[1]?.headers.get("X-OAuth-Token"), null);
   assert.equal(
-    requests[1]?.signal,
-    requests[2]?.signal,
-    "profile fallback must share one total timeout budget",
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    1,
+    "profile requests must use OAuth bearer directly",
   );
   profileResponseMode = "server-error";
   requests.length = 0;
   await assert.rejects(
-    fetchProfile(config.accessSecret, token.accessToken),
+    fetchProfile(token.accessToken),
   );
   assert.equal(
     requests.filter(({ url }) => url.endsWith("/user")).length,
     1,
-    "profile server errors must not trigger an OAuth bearer retry",
+    "profile server errors must not trigger a second request",
   );
   profileResponseMode = "full";
 
@@ -320,8 +354,84 @@ try {
     url: "https://www.zhihu.com/people/stored-user",
   };
   await sessions.save(sessionWithoutProfile);
+
+  sessionWithoutProfile.token = "test-oauth-token-legacy-cache";
+  await sessions.save(sessionWithoutProfile);
+  const legacyCacheKey =
+    `oauth-profile:${await accountFingerprint(sessionWithoutProfile.token)}`;
+  await contentCache.set(
+    legacyCacheKey,
+    {
+      name: "旧缓存用户",
+      avatarUrl: "https://picx.zhimg.com/legacy-avatar.png",
+      headline: null,
+      url: null,
+    },
+    600,
+  );
+  contentCache.legacyAgeMs = 590_000;
+  requests.length = 0;
+  contentCache.resetWrites();
+  const legacyProfileResponses = await Promise.all(
+    Array.from({ length: 20 }, () =>
+      handler(
+        new Request("https://soular.top/api/oauth/profile", {
+          headers: { Cookie: callbackCookie },
+        }),
+      )
+    ),
+  );
+  const legacyProfileResponse = legacyProfileResponses[0]!;
+  assert.equal(
+    (
+      (await legacyProfileResponse.json()) as {
+        profile: { avatarUrl: string } | null;
+      }
+    ).profile?.avatarUrl,
+    "https://picx.zhimg.com/legacy-avatar.png",
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    0,
+    "valid legacy profile caches must be reused without an upstream request",
+  );
+  assert.equal(
+    contentCache.writesWithPrefix("oauth-profile:v2:"),
+    0,
+    "legacy profiles must keep their original age instead of being republished",
+  );
+  contentCache.legacyAgeMs = 610_000;
   profileResponseMode = "avatar-only";
   requests.length = 0;
+  const expiredLegacyProfileResponse = await handler(
+    new Request("https://soular.top/api/oauth/profile", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  assert.equal(
+    (
+      (await expiredLegacyProfileResponse.json()) as {
+        profile: { avatarUrl: string } | null;
+      }
+    ).profile?.avatarUrl,
+    "https://picx.zhimg.com/test-avatar.png",
+  );
+  assert.equal(
+    requests.filter(({ url }) => url.endsWith("/user")).length,
+    1,
+    "expired legacy profiles must use the corrected upstream request",
+  );
+  contentCache.legacyAgeMs = 0;
+
+  sessionWithoutProfile.token = "test-oauth-token";
+  await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "avatar-only";
+  requests.length = 0;
+  await contentCache.set(
+    `oauth-profile:${await accountFingerprint("test-oauth-token")}`,
+    { unavailable: true },
+    60,
+  );
 
   const recoveredStatusResponse = await handler(
     new Request("https://soular.top/api/oauth/status", {
@@ -369,7 +479,7 @@ try {
   );
   assert.equal(
     requests.filter(({ url }) => url.endsWith("/user")).length,
-    2,
+    1,
   );
   requests.length = 0;
 
@@ -416,7 +526,7 @@ try {
   );
   assert.equal(
     requests.filter(({ url }) => url.endsWith("/user")).length,
-    2,
+    1,
   );
   requests.length = 0;
   await handler(
@@ -428,6 +538,31 @@ try {
     requests.filter(({ url }) => url.endsWith("/user")).length,
     0,
     "empty profile recovery must use the failure cooldown",
+  );
+
+  sessionWithoutProfile.token = "test-oauth-token-name-only";
+  sessionWithoutProfile.profile = null;
+  await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "name-only";
+  requests.length = 0;
+  contentCache.resetWrites();
+  const nameOnlyProfileResponse = await handler(
+    new Request("https://soular.top/api/oauth/profile", {
+      headers: { Cookie: callbackCookie },
+    }),
+  );
+  assert.equal(
+    (
+      (await nameOnlyProfileResponse.json()) as {
+        profile: { name: string; avatarUrl: string | null } | null;
+      }
+    ).profile?.name,
+    "仅昵称用户",
+  );
+  assert.equal(
+    contentCache.ttlWithPrefix("oauth-profile:v2:"),
+    60,
+    "profiles without an avatar must use the short retry TTL",
   );
 
   sessionWithoutProfile.token = "test-oauth-token-profile-concurrent";
@@ -453,7 +588,7 @@ try {
   );
   assert.ok(concurrentProfileResponses.every((response) => response.status === 200));
   assert.equal(
-    contentCache.writesWithPrefix("oauth-profile:"),
+    contentCache.writesWithPrefix("oauth-profile:v2:"),
     1,
     "并发资料请求必须共享一次缓存发布",
   );
