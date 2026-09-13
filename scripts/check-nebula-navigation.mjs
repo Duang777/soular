@@ -9,6 +9,7 @@ import {
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
+const identityRevisionSource = readFileSync(new URL("../src/identityRevision.ts", import.meta.url), "utf8");
 const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url), "utf8");
 const shelfSource = readFileSync(new URL("../src/Shelf.tsx", import.meta.url), "utf8");
 const portraitSource = readFileSync(new URL("../src/zhihuPortrait.ts", import.meta.url), "utf8");
@@ -74,6 +75,7 @@ for (const statement of homeSourceFile.statements) {
 assert.ok(homeCatalogInitializer, "首页问题目录不存在");
 
 let reactCatalogInitializer = null;
+let reactAnswerCountInitializer = null;
 for (const statement of reactSourceFile.statements) {
   if (!ts.isVariableStatement(statement)) continue;
   for (const declaration of statement.declarationList.declarations) {
@@ -85,9 +87,18 @@ for (const statement of reactSourceFile.statements) {
     ) {
       reactCatalogInitializer = declaration.initializer;
     }
+    if (
+      ts.isIdentifier(declaration.name) &&
+      declaration.name.text === "NEBULA_PRESET_ANSWER_COUNTS" &&
+      declaration.initializer &&
+      ts.isObjectLiteralExpression(declaration.initializer)
+    ) {
+      reactAnswerCountInitializer = declaration.initializer;
+    }
   }
 }
 assert.ok(reactCatalogInitializer, "React 快照版本目录不存在");
+assert.ok(reactAnswerCountInitializer, "React 快照人数目录不存在");
 const reactCatalogEntries = reactCatalogInitializer.properties.map((property) => {
   assert.ok(ts.isPropertyAssignment(property), "React 快照目录只能包含静态属性");
   assert.ok(
@@ -98,6 +109,17 @@ const reactCatalogEntries = reactCatalogInitializer.properties.map((property) =>
   return [property.name.text, property.initializer.text];
 });
 const reactCatalog = new Map(reactCatalogEntries);
+const reactAnswerCounts = new Map(
+  reactAnswerCountInitializer.properties.map((property) => {
+    assert.ok(ts.isPropertyAssignment(property), "React 快照人数目录只能包含静态属性");
+    assert.ok(
+      ts.isStringLiteral(property.name) || ts.isIdentifier(property.name),
+      "React 快照人数 id 必须是静态字符串",
+    );
+    assert.ok(ts.isNumericLiteral(property.initializer), "React 快照人数必须是静态数字");
+    return [property.name.text, Number(property.initializer.text)];
+  }),
+);
 assert.equal(
   reactCatalog.size,
   reactCatalogEntries.length,
@@ -216,8 +238,8 @@ assert.match(
 );
 assert.match(
   source,
-  /updateKeyboardCamera\(delta\);\s*updateCameraTransition\(performance\.now\(\)\);\s*controls\.update\(\)/,
-  "键盘相机运动必须接入 Three.js 渲染帧",
+  /updateKeyboardCamera\(delta\);\s*if \(sceneControlsAvailable\(\)\) \{\s*updateCameraTransition\(performance\.now\(\)\);\s*controls\.update\(\);/,
+  "键盘相机运动必须接入渲染帧，且不可观测时不得推进相机过渡或 OrbitControls 阻尼",
 );
 assert.match(
   source,
@@ -344,18 +366,18 @@ assert.match(
 );
 assert.doesNotMatch(
   source,
-  /getElementById\("(?:clashBtn|circleBtn)"\)\.disabled/,
-  "未解锁的碰撞与圈子入口必须保持可点击并说明门槛",
+  /getElementById\("(?:peerDiscoveryBtn|clashBtn|circleBtn)"\)\.disabled/,
+  "未解锁的同频、碰撞与圈子入口必须保持可点击并说明门槛",
 );
 assert.match(
   source,
-  /if \(wasUnlocked && !personaUnlocked\(\)\) \{\s*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);\s*\}/,
-  "点赞降到三次以下时必须退出已有的小圈子聚焦态",
+  /if \(wasUnlocked && !personaUnlocked\(\)\) \{[\s\S]*?closePeerDiscovery\(\);[\s\S]*?hideChip\(\);\s*if \(focusSet\) exitFocus\(\);\s*\}/,
+  "点赞降到三次以下时必须退出同频发现与小圈子聚焦态",
 );
 assert.match(
   source,
-  /function resetLikes\(\)[\s\S]*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);[\s\S]*applyStance\(true\)/,
-  "清空全部点赞时必须退出已有的小圈子聚焦态",
+  /function resetLikes\(\)[\s\S]*closePeerDiscovery\(\);[\s\S]*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);[\s\S]*applyStance\(true\)/,
+  "清空全部点赞时必须退出同频发现与小圈子聚焦态",
 );
 assert.match(
   source,
@@ -536,6 +558,166 @@ assert.match(
   source,
   /stanceScore \* 0\.82 \+ interest\.score \* 0\.18/,
   "匹配必须以本题立场为主、画像兴趣为辅",
+);
+assert.match(
+  source,
+  /id="peerDiscoveryBtn"[\s\S]*id="peerDiscovery"/,
+  "星云工具箱必须提供同频发现入口和结果面板",
+);
+assert.match(
+  source,
+  /takePeerBatch\(ranked,\s*peerSeenIndexes,\s*5\)/,
+  "同频发现必须按五人一批且记录已展示候选",
+);
+assert.match(
+  source,
+  /PEER_SEEN_KEY_PREFIX\s*=\s*`jiupai:nebula:peer-seen:v1:\$\{PRESET\.id\}:\$\{PRESET\.version \|\| "1"\}`[\s\S]*userIdentityRevision \?\? "anonymous"[\s\S]*sessionStorage\.getItem\(storageKey\)[\s\S]*sessionStorage\.setItem\(/,
+  "同频发现必须按快照版本和账号作用域保留当前标签页的已展示候选",
+);
+assert.match(
+  nebulaHostSource,
+  /function identityRevisionFor\(accountVersion:[\s\S]*resolveIdentityRevision\([\s\S]*IDENTITY_REVISIONS_KEY[\s\S]*identityRevisionRef\.current = identityRevisionFor\([\s\S]*identityRevision:\s*identityRevisionRef\.current/,
+  "父页必须用不透明身份修订号隔离账号并同步给星云",
+);
+assert.match(
+  identityRevisionSource,
+  /const revisions = new Set<number>\(\)[\s\S]*storedRevisionState[\s\S]*nextAvailableRevision[\s\S]*persisted\.entries\.forEach[\s\S]*memory\.set\(scope,\s*nextRevision\)[\s\S]*storage\.setItem[\s\S]*nextRevision:\s*nextRevision < MAX_IDENTITY_REVISION/,
+  "身份修订号必须合并持久化记录、保持唯一并用高水位避免淘汰后复用",
+);
+assert.match(
+  nebulaHostSource,
+  /NAVIGATION_CONTEXT_KINDS[\s\S]*key\.startsWith\(`\$\{NAVIGATION_CONTEXT_PREFIX\}\$\{kind\}:`\)/,
+  "导航上下文清理不得误删身份修订或同频轮次状态",
+);
+assert.match(
+  source,
+  /const contextPrefixes = \[`\$\{prefix\}self:`, `\$\{prefix\}subject:`\][\s\S]*contextPrefixes\.some/,
+  "独立星云的导航上下文清理不得误删身份修订或同频轮次状态",
+);
+assert.doesNotMatch(
+  nebulaHostSource,
+  /identityScope:/,
+  "父页不得把账号版本或账号指纹传给星云 iframe",
+);
+assert.match(
+  source,
+  /const peerScopeChanged = userIdentityRevision !== identityRevision[\s\S]*peerSeenIndexes = loadPeerSeenIndexes\(\)[\s\S]*peerBatch = \[\]/,
+  "账号切换或 iframe 恢复时必须切换到该身份自己的同频浏览轮次",
+);
+assert.match(
+  source,
+  /const peerSeenMemory = new Map\(\)[\s\S]*peerSeenMemory\.set\(storageKey,[\s\S]*peerSeenMemory\.get\(storageKey\)/,
+  "Session Storage 不可用时必须按身份保留当前页面内的浏览轮次",
+);
+assert.match(
+  source,
+  /const peerSeenMemoryPreferred = new Set\(\)[\s\S]*peerSeenMemoryPreferred\.has\(storageKey\)[\s\S]*peerSeenMemoryPreferred\.add\(storageKey\)/,
+  "Session Storage 后续写失败时必须继续以内存中的最新轮次为准",
+);
+assert.match(
+  source,
+  /const peerBatchMemoryPreferred = new Set\(\)[\s\S]*peerBatchMemoryPreferred\.has\(storageKey\)[\s\S]*peerBatchMemoryPreferred\.add\(storageKey\)/,
+  "Session Storage 后续写失败时必须继续以内存中的最新批次为准",
+);
+assert.match(
+  source,
+  /PEER_BATCH_KEY_PREFIX[\s\S]*const peerBatchMemory = new Map\(\)[\s\S]*function restorePeerBatch\(\)[\s\S]*loadPeerBatchIndexes\(\)[\s\S]*renderPeerBatchContent\(\);[\s\S]*renderPeerBatchStatus\(\)/,
+  "浏览器返回或 iframe 重载时必须按身份恢复离开前的同频批次",
+);
+assert.match(
+  source,
+  /\$\("peerDiscoveryBtn"\)\.addEventListener\("click",\s*openPeerDiscovery\)/,
+  "星云工具箱的同频发现入口必须绑定打开弹层的处理器",
+);
+assert.match(
+  source,
+  /function openPeerDiscovery\(\)[\s\S]*if \(peerDiscoveryEl\.classList\.contains\("show"\)\) return;[\s\S]*peerReturnFocus =/,
+  "重复的自动打开请求不得覆盖弹层原有回焦目标",
+);
+assert.match(
+  source,
+  /nameButton\.addEventListener\("click",\s*\(\) => \{\s*openPerson\(index\);[\s\S]*cardButton\.addEventListener\("click",\s*\(\) => \{\s*openPerson\(index\);/,
+  "候选人格卡入口必须保留弹层状态，以便浏览器返回时恢复原批次",
+);
+assert.match(
+  source,
+  /activeElement === \$\("peerDiscoveryBtn"\)[\s\S]*exploreToggleEl[\s\S]*function trapPeerFocus\(event\)[\s\S]*!peerDiscoveryEl\.contains\(document\.activeElement\)/,
+  "同频弹层必须回焦到可见入口并限制键盘焦点留在弹层内",
+);
+assert.match(
+  source,
+  /peerListEl\.replaceChildren[\s\S]*peerListEl\.scrollTop = 0/,
+  "同频发现换批后必须回到名单顶部",
+);
+assert.match(
+  source,
+  /function refreshPeerDiscoveryBatch\(\)[\s\S]*rankPosition[\s\S]*peerBatch = peerBatch[\s\S]*\.sort\(/,
+  "画像晚到时必须重排当前批次且保留已看候选",
+);
+assert.match(
+  source,
+  /function sceneControlsAvailable\(\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)/,
+  "同频弹层打开时必须暂停星云观测控制",
+);
+assert.match(
+  source,
+  /function discardOrbitMomentum\(\)[\s\S]*controls\.enableDamping = false;[\s\S]*controls\.update\(\);[\s\S]*camera\.position\.copy\(position\);[\s\S]*camera\.quaternion\.copy\(quaternion\);[\s\S]*if \(!controlsAvailable\)[\s\S]*discardOrbitMomentum\(\)/,
+  "暂停观测时必须清除 OrbitControls 惯性且保持当前相机姿态",
+);
+assert.match(
+  source,
+  /document\.addEventListener\("keydown",\s*\(e\) => \{[\s\S]*trapPeerFocus\(e\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)[\s\S]*navigationKeyForEvent\(e\)/,
+  "键盘处理必须同时保留同频弹层焦点约束和星云观测快捷键",
+);
+assert.match(
+  source,
+  /else if \(wasUnlocked\) \{[\s\S]*closePeerDiscovery\(\);[\s\S]*clearPeerBatchState\(\);[\s\S]*\}/,
+  "保持解锁的点赞变化必须重新排名但保留已看轮次",
+);
+assert.match(
+  source,
+  /function queueNextChip\(delay\)[\s\S]*peerDiscoveryEl\.classList\.contains\("show"\)/,
+  "同频弹层打开时不得在背后弹出小圈子提示",
+);
+assert.match(
+  source,
+  /function renderPeerItem\(candidate\)[\s\S]*相似点[\s\S]*不同点[\s\S]*暂无原回答/,
+  "同频名单必须展示异同解释并处理无来源链接",
+);
+assert.match(
+  cardSource,
+  /selfProfile\.likedCount >= 3 && onDiscoverPeers[\s\S]*发现 5 位同频的人/,
+  "真实自我人格卡必须在三次表态后提供同频发现入口",
+);
+assert.match(
+  shelfSource,
+  /navigate\(`\/nebula\?preset=\$\{encodeURIComponent\(presetId\)\}&peers=1`\)/,
+  "人格卡入口必须回到同一快照并请求打开同频发现",
+);
+assert.match(
+  shelfSource,
+  /currentNebulaLikeCount\([\s\S]*subject\.profile\?\.likedIndexes[\s\S]*activeLikeCount !== null[\s\S]*activeLikeCount >= 3/,
+  "人格卡同频入口必须由当前版本的可恢复点赞数确认",
+);
+assert.match(
+  nebulaStageSource,
+  /openPeerDiscovery \? "&peers=1" : ""/,
+  "React 外壳必须把同频发现入口状态传给星云场景",
+);
+assert.match(
+  nebulaHostSource,
+  /requestOpenPeerDiscovery[\s\S]*type:\s*"nebula-open-peer-discovery"[\s\S]*addEventListener\("pageshow",\s*requestOpenPeerDiscovery\)[\s\S]*data\?\.type === "nebula-scene-ready"[\s\S]*type:\s*"nebula-open-peer-discovery"[\s\S]*onLoad=\{requestOpenPeerDiscovery\}/,
+  "React 外壳必须在挂载、页面恢复、场景就绪和 iframe 加载时请求打开同频名单",
+);
+assert.match(
+  nebulaStageSource,
+  /onLoad\?: \(\) => void[\s\S]*onLoad=\{onLoad\}/,
+  "星云 iframe 必须向 React 外壳暴露真实加载完成事件",
+);
+assert.match(
+  source,
+  /e\.data\.type === "nebula-open-peer-discovery"[\s\S]*openPeerDiscovery\(\)/,
+  "星云场景必须处理父页的同频打开请求",
 );
 assert.match(source, /id="matchSame"/, "匹配流程必须提供同频模式");
 assert.match(source, /id="matchOpposite"/, "匹配流程必须提供互补模式");
@@ -734,6 +916,13 @@ assert.deepEqual(
     .map(({ id, version }) => [id, version])
     .sort(([left], [right]) => left.localeCompare(right)),
   "React 与静态场景的快照版本目录必须双向一致",
+);
+assert.deepEqual(
+  [...reactAnswerCounts.entries()].sort(([left], [right]) => left.localeCompare(right)),
+  staticPresets
+    .map(({ id, answerCount }) => [id, answerCount])
+    .sort(([left], [right]) => left.localeCompare(right)),
+  "React 与静态场景的快照人数目录必须双向一致",
 );
 
 console.log("nebula navigation checks passed");

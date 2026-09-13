@@ -315,13 +315,22 @@ async function buildPoster(cast: Cast, subject: CardSubject): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
+export function CardDraw({
+  cast,
+  subject,
+  mode,
+  onEnter,
+  onClose,
+  onExit,
+  onDiscoverPeers,
+}: {
   cast: Cast;
   subject: CardSubject;
   mode: DrawMode;
   onEnter: () => void;
   onClose: () => void;
   onExit: () => void;
+  onDiscoverPeers?: () => void;
 }) {
   const reduceMotion = useMemo(prefersReducedMotion, []);
   const person = subject.kind === "person"
@@ -641,6 +650,16 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
               {mode === "enter" && (
                 <button type="button" className="draw-btn draw-btn--primary" onClick={handleEnter} disabled={!revealed}>
                   {isSelf ? "翻开我的书" : person ? "翻开 TA 的书" : "翻开这本书"}
+                </button>
+              )}
+              {isSelf && selfProfile && selfProfile.likedCount >= 3 && onDiscoverPeers && (
+                <button
+                  type="button"
+                  className="draw-btn draw-btn--ghost"
+                  onClick={onDiscoverPeers}
+                  disabled={!revealed}
+                >
+                  发现 5 位同频的人
                 </button>
               )}
               <button
