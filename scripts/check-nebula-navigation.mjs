@@ -873,6 +873,40 @@ assert.match(
   /<dialog[\s\S]*className="portrait-calibration"/,
   "首页必须提供可聚焦的兴趣星谱校准台",
 );
+assert.match(
+  oauthAccountSource,
+  /查看我的兴趣星谱[\s\S]*oauth-account__identity-arrow/,
+  "已连接账号入口必须用动作文案和方向箭头提示可点击",
+);
+assert.match(
+  oauthAccountSource,
+  /jiupai:oauth-profile-hint:v1:[\s\S]*sessionStorage\.getItem[\s\S]*sessionStorage\.setItem/,
+  "兴趣星谱入口的首次提示必须在当前账号会话内只展示一次",
+);
+const profileHintEffect = oauthAccountSource.match(
+  /const storageKey = `jiupai:oauth-profile-hint:v1:[\s\S]*?\n  }, \[\n    calibrationOpen/,
+)?.[0];
+assert.ok(profileHintEffect, "必须能够读取兴趣星谱首次提示 Effect");
+assert.match(
+  profileHintEffect,
+  /profileHintShownRef\.current/,
+  "sessionStorage 不可用时必须用当前挂载状态阻止提示重复播放",
+);
+assert.match(
+  oauthAccountSource,
+  /const profileHintShownAccounts = new Set<string>\(\)/,
+  "sessionStorage 不可用时必须跨组件重新挂载保留首次提示状态",
+);
+assert.match(
+  profileHintEffect,
+  /profileHintShownAccounts\.has[\s\S]*profileHintShownAccounts\.add/,
+  "首次提示 Effect 必须读取并更新模块生命周期兜底状态",
+);
+assert.ok(
+  profileHintEffect.indexOf("sessionStorage.setItem") <
+    profileHintEffect.indexOf("window.setTimeout"),
+  "首次提示必须在动画开始前标记为已展示",
+);
 assert.doesNotMatch(
   oauthAccountSource,
   /removeEventListener\("close", close\);\s*if \(dialog\.open\) dialog\.close\(\)/,

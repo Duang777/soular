@@ -1076,17 +1076,17 @@ textarea.field:focus-visible,
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0;
-  max-width: min(280px, calc(100vw - 28px));
+  max-width: min(316px, calc(100vw - 28px));
 }
 
 .oauth-account__identity {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr) 14px;
   min-width: 0;
   min-height: 44px;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px 6px 8px;
+  padding: 6px 8px;
   border: 0;
   border-radius: 6px 0 0 6px;
   color: inherit;
@@ -1095,6 +1095,10 @@ textarea.field:focus-visible,
   text-align: left;
   cursor: pointer;
   transition: background 0.16s ease, transform 0.12s ease;
+}
+
+.oauth-account__identity[data-guided] {
+  animation: oauth-profile-hint 1.4s ease-in-out 2;
 }
 
 .oauth-account__avatar {
@@ -1148,6 +1152,15 @@ textarea.field:focus-visible,
   color: rgba(243, 240, 233, 0.52);
 }
 
+.oauth-account__identity-arrow {
+  justify-self: end;
+  color: rgba(231, 201, 140, 0.72);
+  font-size: 18px;
+  line-height: 1;
+  transform: translateX(0);
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
 .oauth-account__logout {
   align-self: stretch;
   min-width: 52px;
@@ -1183,12 +1196,29 @@ textarea.field:focus-visible,
     background: rgba(23, 114, 246, 0.2);
     border-color: rgba(23, 114, 246, 0.72);
   }
+
+  .oauth-account__identity:hover .oauth-account__identity-arrow {
+    color: #f1d39b;
+    transform: translateX(2px);
+  }
 }
 
 .oauth-account--action:active,
 .oauth-account__identity:active,
 .oauth-account__logout:active:not(:disabled) {
   transform: scale(0.96);
+}
+
+@keyframes oauth-profile-hint {
+  0%, 100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+
+  45% {
+    background: rgba(231, 201, 140, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(231, 201, 140, 0.46);
+  }
 }
 
 .portrait-calibration {
@@ -2014,7 +2044,7 @@ textarea.field:focus-visible,
   }
 
   .oauth-account--connected {
-    max-width: min(220px, calc(100vw - 20px));
+    max-width: min(244px, calc(100vw - 20px));
   }
 
   .oauth-account__portrait-words {
@@ -2197,7 +2227,9 @@ textarea.field:focus-visible,
   .portrait-calibration,
   .portrait-calibration__orbit,
   .portrait-calibration__waiting > span,
-  .portrait-calibration__spectrum li > i > span {
+  .portrait-calibration__spectrum li > i > span,
+  .oauth-account__identity[data-guided],
+  .oauth-account__identity-arrow {
     animation: none;
     transition: none;
   }

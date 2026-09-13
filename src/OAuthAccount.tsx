@@ -13,6 +13,8 @@ import { clearSelfProfileContexts } from "./people";
 const OFFICIAL_ORIGIN = "https://soular.top";
 const REQUEST_TIMEOUT_MS = 8_000;
 const DEFAULT_NEBULA_PRESET = "ai-math";
+const PROFILE_HINT_DURATION_MS = 2_800;
+const profileHintShownAccounts = new Set<string>();
 
 interface OAuthProfile {
   name: string | null;
@@ -265,6 +267,7 @@ export function OAuthAccount() {
   const [portraitState, setPortraitState] = useState<"idle" | "loading" | "unavailable">("idle");
   const [portraitRetry, setPortraitRetry] = useState(0);
   const [calibrationOpen, setCalibrationOpen] = useState(oauthResult === "success");
+  const [identityHintVisible, setIdentityHintVisible] = useState(false);
   const [callbackFailed, setCallbackFailed] = useState(
     () => oauthResult === "error",
   );
@@ -272,6 +275,7 @@ export function OAuthAccount() {
   const statusRequestControllerRef = useRef<AbortController | null>(null);
   const activeAccountVersionRef = useRef(getActiveZhihuAccountVersion());
   const logoutInProgressRef = useRef(false);
+  const profileHintShownRef = useRef<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     if (!isOfficialOrigin || logoutInProgressRef.current) return;
@@ -314,6 +318,7 @@ export function OAuthAccount() {
         clearSelfProfileContexts();
         setPortrait(null);
         setPortraitState("idle");
+        setIdentityHintVisible(false);
       }
       activeAccountVersionRef.current = nextAccountVersion;
       setActiveZhihuAccountVersion(nextAccountVersion);
@@ -465,6 +470,7 @@ export function OAuthAccount() {
         ) return;
         setPortrait(null);
         setPortraitState("unavailable");
+        setIdentityHintVisible(false);
       });
     return () => controller.abort();
   }, [isOfficialOrigin, portraitRetry, status?.accountVersion, status?.authorized]);
@@ -480,6 +486,54 @@ export function OAuthAccount() {
       `${url.pathname}${url.search}${url.hash}`,
     );
   }, [oauthResult, status?.authorized]);
+
+  useEffect(() => {
+    if (
+      status?.authorized !== true ||
+      !status.accountVersion ||
+      !portrait ||
+      calibrationOpen
+    ) {
+      return undefined;
+    }
+
+    const storageKey = `jiupai:oauth-profile-hint:v1:${status.accountVersion}`;
+    if (
+      profileHintShownRef.current === status.accountVersion ||
+      profileHintShownAccounts.has(status.accountVersion)
+    ) {
+      return undefined;
+    }
+    try {
+      if (window.sessionStorage.getItem(storageKey) === "seen") {
+        profileHintShownRef.current = status.accountVersion;
+        profileHintShownAccounts.add(status.accountVersion);
+        return undefined;
+      }
+    } catch {
+      // Storage is optional; the hint still runs once for this mounted view.
+    }
+
+    profileHintShownRef.current = status.accountVersion;
+    profileHintShownAccounts.add(status.accountVersion);
+    try {
+      window.sessionStorage.setItem(storageKey, "seen");
+    } catch {
+      // The visual cue must not depend on storage availability.
+    }
+    setIdentityHintVisible(true);
+    const timeout = window.setTimeout(() => {
+      setIdentityHintVisible(false);
+    }, PROFILE_HINT_DURATION_MS);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [
+    calibrationOpen,
+    portrait,
+    status?.accountVersion,
+    status?.authorized,
+  ]);
 
   async function logout() {
     logoutInProgressRef.current = true;
@@ -505,6 +559,7 @@ export function OAuthAccount() {
       setPortrait(null);
       setPortraitState("idle");
       setCalibrationOpen(false);
+      setIdentityHintVisible(false);
       activeAccountVersionRef.current = null;
       setActiveZhihuAccountVersion(null);
       clearSelfProfileContexts();
@@ -521,6 +576,22 @@ export function OAuthAccount() {
   const closeCalibration = useCallback(() => {
     setCalibrationOpen(false);
   }, []);
+  const openCalibration = useCallback(() => {
+    setIdentityHintVisible(false);
+    if (status?.accountVersion) {
+      profileHintShownRef.current = status.accountVersion;
+      profileHintShownAccounts.add(status.accountVersion);
+      try {
+        window.sessionStorage.setItem(
+          `jiupai:oauth-profile-hint:v1:${status.accountVersion}`,
+          "seen",
+        );
+      } catch {
+        // Opening the dialog must work when storage is unavailable.
+      }
+    }
+    setCalibrationOpen(true);
+  }, [status?.accountVersion]);
   const retryCalibration = useCallback(() => {
     setPortraitRetry((value) => value + 1);
   }, []);
@@ -598,22 +669,21 @@ export function OAuthAccount() {
       : "知乎账号已连接";
   const portraitWords = portrait?.keywords
     .slice(0, 2)
-    .map(({ word }) => Array.from(word).slice(0, 8).join("")) ?? [];
-  const portraitDetail = portraitState === "loading"
-    ? "正在校准兴趣星谱"
-    : portraitWords.length
-      ? "兴趣星谱已校准"
-      : portraitState === "unavailable"
-        ? "兴趣星谱暂不可用"
-        : null;
+    .map(({ word }) => Array.from(word).slice(0, 4).join("")) ?? [];
+  const portraitAction = portraitState === "loading"
+    ? "兴趣星谱校准中"
+    : portraitState === "unavailable"
+      ? "查看兴趣星谱状态"
+      : "查看我的兴趣星谱";
   return (
     <>
       <div className="oauth-account oauth-account--connected">
         <button
           className="oauth-account__identity"
           type="button"
+          data-guided={identityHintVisible ? "" : undefined}
           aria-label={`${connectionLabel}，查看兴趣星谱${portraitWords.length ? `，兴趣底色 ${portraitWords.join("、")}` : ""}`}
-          onClick={() => setCalibrationOpen(true)}
+          onClick={openCalibration}
         >
           {avatarUrl ? (
             <img className="oauth-account__avatar" src={avatarUrl} alt="" />
@@ -622,17 +692,16 @@ export function OAuthAccount() {
           )}
           <span className="oauth-account__name">
             <span>{status.profile?.name || "已连接知乎"}</span>
-            {connectionWarning || portraitDetail ? (
-              <small className={connectionWarning ? "oauth-account__warning" : "oauth-account__portrait"}>
-                {connectionWarning ?? portraitDetail}
-                {!connectionWarning && portraitWords.length > 0 ? (
-                  <span className="oauth-account__portrait-words">
-                    {` · ${portraitWords.join(" / ")}`}
-                  </span>
-                ) : null}
-              </small>
-            ) : null}
+            <small className={connectionWarning ? "oauth-account__warning" : "oauth-account__portrait"}>
+              {connectionWarning ?? portraitAction}
+              {!connectionWarning && portraitWords.length > 0 ? (
+                <span className="oauth-account__portrait-words">
+                  {` · ${portraitWords.join(" / ")}`}
+                </span>
+              ) : null}
+            </small>
           </span>
+          <span className="oauth-account__identity-arrow" aria-hidden="true">›</span>
         </button>
         <button
           className="oauth-account__logout"
