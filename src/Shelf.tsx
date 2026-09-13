@@ -10,6 +10,7 @@ import {
 import { BrandMark } from "./BrandMark";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
+import { usePersonaCasts } from "./personaTheme";
 import {
   clearSelfProfileContexts,
   countMatchingNebulaLikes,
@@ -68,10 +69,13 @@ export function ShelfPage() {
   >(undefined);
   const requestedSelf = searchParams.get("self") === "1";
   const requestedProfileKey = searchParams.get("profile") ?? "";
-  const validCast = CASTS.some((item) => item.key === castKey);
-  const cast = castByKey(castKey);
+  const uRaw = searchParams.get("u");
   const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const presetId = resolveNebulaPreset(requestedPresetId);
+  const usesSnapshotPersona = requestedSelf || (uRaw !== null && /^\d+$/.test(uRaw));
+  const casts = usePersonaCasts(usesSnapshotPersona ? presetId : null);
+  const validCast = CASTS.some((item) => item.key === castKey);
+  const cast = castByKey(castKey, casts);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;
   const requestedVersion = searchParams.get("version") ?? "";
   const validRequestedVersion = /^[a-z0-9-]{1,15}$/.test(requestedVersion)
@@ -186,7 +190,9 @@ export function ShelfPage() {
   if (!validCast) {
     return <Navigate to="/" replace />;
   }
-  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
+  const shelfParams = new URLSearchParams({ cast: cast.key });
+  if (usesSnapshotPersona) shelfParams.set("preset", presetId);
+  const src = withVersion(`${asset("books/shelf.html")}?${shelfParams}`);
 
   const verifiedSelfProfile = storedSelfProfile
     ? {
@@ -216,7 +222,6 @@ export function ShelfPage() {
     };
   }
   let missingPerson = false;
-  const uRaw = searchParams.get("u");
   if (uRaw !== null && /^\d+$/.test(uRaw)) {
     const index = Number(uRaw);
     const requestedPersonKey = searchParams.get("person") ?? "";
@@ -314,6 +319,7 @@ export function ShelfPage() {
       {phase !== "book" && (
         <CardDraw
           cast={cast}
+          casts={casts}
           subject={subject}
           mode={phase === "draw" ? "enter" : "revisit"}
           onEnter={() => setPhase("book")}

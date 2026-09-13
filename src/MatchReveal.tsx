@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { BrandMark } from "./BrandMark";
 import { castByKey } from "./cast";
 import { nebulaPresetVersion } from "./people";
+import { usePersonaCasts } from "./personaTheme";
 import { getPresetMeta } from "./presetMeta";
 import {
   averageStance,
@@ -33,6 +34,7 @@ function markerStyle(stance: number): { left: string } {
 export function MatchRevealPage() {
   const [searchParams] = useSearchParams();
   const payload = useMemo(() => parseShareMatchQuery(searchParams), [searchParams]);
+  const casts = usePersonaCasts(payload?.preset);
   const [phase, setPhase] = useState<Phase>("intro");
   const [quizStep, setQuizStep] = useState(0);
   const [quizStances, setQuizStances] = useState<number[]>([]);
@@ -85,7 +87,7 @@ export function MatchRevealPage() {
 
   const axis = preset.axis;
   const questions = buildMatchQuizQuestions(axis);
-  const hostCast = castByKey(payload.cast);
+  const hostCast = castByKey(payload.cast, casts);
   const guestStance = averageStance(quizStances);
   const relationship = describeMatchRelationship(axis, hostCast, payload.stance, guestStance);
   const nebulaTarget = `/nebula?preset=${encodeURIComponent(payload.preset)}`;

@@ -8,6 +8,7 @@ const CAREER_35 = {
   version: "1",
   serial: "01",
   kind: "mock",
+  personaTheme: "life-choices",
   question: "35 岁程序员该不该转行？",
   peopleLabel: "回答者观点",
   searchUrl: "https://www.zhihu.com/search?type=content&q=35%20%E5%B2%81%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AF%A5%E4%B8%8D%E8%AF%A5%E8%BD%AC%E8%A1%8C",
@@ -119,11 +120,12 @@ export function buildNebulaShelfUrl(locationLike, baseUrl, path) {
 }
 
 export function listNebulaPresets() {
-  return [...PRESETS.values()].map(({ id, version, serial, kind, question, axis, people }) => ({
+  return [...PRESETS.values()].map(({ id, version, serial, kind, personaTheme, question, axis, people }) => ({
     id,
     version,
     serial,
     kind,
+    personaTheme,
     question,
     axis,
     answerCount: Array.isArray(people) ? people.length : 0,

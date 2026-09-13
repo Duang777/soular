@@ -30,6 +30,8 @@ export function buildPersonaCatalog(casts, people) {
       name: definition[0],
       role: definition[1],
       color: definition[2],
+      portrait: definition[3],
+      description: definition[4],
       count: members.length,
       share: validPeople.length ? members.length / validPeople.length : 0,
       representative: {
