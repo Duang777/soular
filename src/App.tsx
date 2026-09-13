@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Home } from "./Home";
+import { MatchRevealPage } from "./MatchReveal";
 import { Nebula } from "./Nebula";
 import { ShelfPage } from "./Shelf";
 
@@ -11,6 +12,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/nebula" element={<Nebula />} />
+        <Route path="/match" element={<MatchRevealPage />} />
         <Route path="/shelf/:cast" element={<ShelfPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
