@@ -11,6 +11,7 @@ import { BrandMark } from "./BrandMark";
 import { asset, withVersion, CASTS, castByKey } from "./cast";
 import { CardDraw, type CardSubject } from "./CardDraw";
 import {
+  clearSelfProfileContexts,
   DEFAULT_NEBULA_PRESET,
   nebulaPresetVersion,
   personByIndex,
@@ -22,8 +23,10 @@ import {
   transientSelfProfile,
 } from "./people";
 import {
+  fetchZhihuAccountStatus,
   fetchZhihuPortrait,
   getActiveZhihuAccountVersion,
+  setActiveZhihuAccountVersion,
   toNebulaPortraitSignal,
   type NebulaPortraitSignal,
 } from "./zhihuPortrait";
@@ -42,31 +45,13 @@ export function ShelfPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ShelfPhase>("draw");
   const [latePortrait, setLatePortrait] = useState<NebulaPortraitSignal | null>(null);
+  const [verifiedAccountVersion, setVerifiedAccountVersion] = useState<
+    string | null | undefined
+  >(undefined);
   const requestedSelf = searchParams.get("self") === "1";
   const requestedProfileKey = searchParams.get("profile") ?? "";
-
-  useEffect(() => {
-    setLatePortrait(null);
-    if (!requestedSelf || window.location.origin !== OFFICIAL_ORIGIN) return undefined;
-    const expectedAccountVersion = getActiveZhihuAccountVersion();
-    if (!expectedAccountVersion) return undefined;
-    const controller = new AbortController();
-    void fetchZhihuPortrait(controller.signal)
-      .then((portrait) => {
-        if (portrait.accountVersion === expectedAccountVersion) {
-          setLatePortrait(toNebulaPortraitSignal(portrait));
-        }
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [requestedProfileKey, requestedSelf]);
-
-  if (!CASTS.some((item) => item.key === castKey)) {
-    return <Navigate to="/" replace />;
-  }
+  const validCast = CASTS.some((item) => item.key === castKey);
   const cast = castByKey(castKey);
-  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
-
   const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const presetId = resolveNebulaPreset(requestedPresetId);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;
@@ -86,21 +71,124 @@ export function ShelfPage() {
     !Array.isArray(location.state)
     ? location.state as ShelfNavigationState
     : {};
+  const storedSelfProfile = transientSelfProfile(
+    presetId,
+    presetVersion,
+    cast.key,
+    profileKey,
+  ) ?? selfProfileFromValue(
+    navigationState.selfProfile,
+    presetId,
+    presetVersion,
+    cast.key,
+  ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey);
+
+  useEffect(() => {
+    setLatePortrait(null);
+    setVerifiedAccountVersion(undefined);
+    if (
+      !validCast ||
+      !requestedSelf ||
+      window.location.origin !== OFFICIAL_ORIGIN
+    ) return undefined;
+
+    let controller: AbortController | null = null;
+    let refreshSequence = 0;
+    let lastRefreshAt = 0;
+    const refresh = () => {
+      const now = Date.now();
+      if (now - lastRefreshAt < 500) return;
+      lastRefreshAt = now;
+      const sequence = ++refreshSequence;
+      controller?.abort();
+      controller = new AbortController();
+      setLatePortrait(null);
+      setVerifiedAccountVersion(undefined);
+      const signal = controller.signal;
+
+      void (async () => {
+        let status;
+        try {
+          status = await fetchZhihuAccountStatus(signal);
+        } catch {
+          if (signal.aborted || sequence !== refreshSequence) return;
+          setLatePortrait(null);
+          setVerifiedAccountVersion(null);
+          return;
+        }
+        if (signal.aborted || sequence !== refreshSequence) return;
+        const accountVersion = status.authorized
+          ? status.accountVersion
+          : null;
+        const previousAccountVersion = getActiveZhihuAccountVersion();
+        if (
+          (
+            previousAccountVersion !== null &&
+            previousAccountVersion !== accountVersion
+          ) ||
+          (
+            storedSelfProfile?.accountVersion &&
+            storedSelfProfile.accountVersion !== accountVersion
+          )
+        ) {
+          clearSelfProfileContexts();
+        }
+        setActiveZhihuAccountVersion(accountVersion);
+        setVerifiedAccountVersion(accountVersion);
+        if (!accountVersion) return;
+
+        try {
+          const portrait = await fetchZhihuPortrait(signal);
+          if (
+            signal.aborted ||
+            sequence !== refreshSequence ||
+            portrait.accountVersion !== accountVersion
+          ) return;
+          setLatePortrait(toNebulaPortraitSignal(portrait));
+        } catch {
+          if (signal.aborted || sequence !== refreshSequence) return;
+          setLatePortrait(null);
+        }
+      })();
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      refreshSequence += 1;
+      controller?.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [
+    requestedProfileKey,
+    requestedSelf,
+    validCast,
+  ]);
+
+  if (!validCast) {
+    return <Navigate to="/" replace />;
+  }
+  const src = withVersion(`${asset("books/shelf.html")}?cast=${encodeURIComponent(cast.key)}`);
+
+  const verifiedSelfProfile = storedSelfProfile
+    ? {
+        ...storedSelfProfile,
+        interest:
+          storedSelfProfile.accountVersion &&
+          storedSelfProfile.accountVersion === verifiedAccountVersion
+            ? storedSelfProfile.interest
+            : undefined,
+      }
+    : null;
   let subject: CardSubject = {
     kind: "self",
     preset: presetId,
     version: presetVersion || undefined,
-    profile: transientSelfProfile(
-      presetId,
-      presetVersion,
-      cast.key,
-      profileKey,
-    ) ?? selfProfileFromValue(
-      navigationState.selfProfile,
-      presetId,
-      presetVersion,
-      cast.key,
-    ) ?? stagedSelfProfile(presetId, presetVersion, cast.key, profileKey) ?? undefined,
+    profile: verifiedSelfProfile ?? undefined,
   };
   if (
     subject.kind === "self" &&

@@ -29,6 +29,35 @@ const config = buildRuntimeConfig({
 assert.equal(config.oauthConfigured, true);
 assert.equal(config.dataApiConfigured, true);
 
+class CountingCache extends InMemoryCache {
+  private readonly writes = new Map<string, number>();
+  writeDelayMs = 0;
+
+  override async set<T>(
+    key: string,
+    value: T,
+    ttlSeconds: number,
+  ): Promise<void> {
+    this.writes.set(key, (this.writes.get(key) ?? 0) + 1);
+    if (this.writeDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, this.writeDelayMs));
+    }
+    await super.set(key, value, ttlSeconds);
+  }
+
+  resetWrites(): void {
+    this.writes.clear();
+  }
+
+  writesWithPrefix(prefix: string): number {
+    let total = 0;
+    for (const [key, count] of this.writes) {
+      if (key.startsWith(prefix)) total += count;
+    }
+    return total;
+  }
+}
+
 const authorizeUrl = new URL(
   buildAuthorizeUrl(config.appId, config.redirectUri!, "test-state"),
 );
@@ -167,7 +196,7 @@ try {
 
   requests.length = 0;
   const sessions = new SessionStore(new InMemorySessionBackend(), true);
-  const contentCache = new InMemoryCache();
+  const contentCache = new CountingCache();
   const handler = createHandler({
     config,
     sessions,
@@ -400,6 +429,35 @@ try {
     0,
     "empty profile recovery must use the failure cooldown",
   );
+
+  sessionWithoutProfile.token = "test-oauth-token-profile-concurrent";
+  sessionWithoutProfile.profile = {
+    name: "并发测试用户",
+    avatarUrl: null,
+    headline: null,
+    url: null,
+  };
+  await sessions.save(sessionWithoutProfile);
+  profileResponseMode = "full";
+  requests.length = 0;
+  contentCache.resetWrites();
+  contentCache.writeDelayMs = 5;
+  const concurrentProfileResponses = await Promise.all(
+    Array.from({ length: 20 }, () =>
+      handler(
+        new Request("https://soular.top/api/oauth/profile", {
+          headers: { Cookie: callbackCookie },
+        }),
+      )
+    ),
+  );
+  assert.ok(concurrentProfileResponses.every((response) => response.status === 200));
+  assert.equal(
+    contentCache.writesWithPrefix("oauth-profile:"),
+    1,
+    "并发资料请求必须共享一次缓存发布",
+  );
+  contentCache.writeDelayMs = 0;
 
   profileResponseMode = "full";
   sessionWithoutProfile.token = "test-oauth-token";
@@ -655,6 +713,8 @@ try {
   await sessions.save(accountBSession);
   userApiPaths.clear();
   userApiRequestCount = 0;
+  contentCache.resetWrites();
+  contentCache.writeDelayMs = 5;
   const concurrentPortraitResponses = await Promise.all([
     handler(
       new Request("https://soular.top/api/me/portrait", {
@@ -670,6 +730,17 @@ try {
   assert.ok(concurrentPortraitResponses.every((response) => response.status === 200));
   assert.equal(userApiPaths.size, 5);
   assert.equal(userApiRequestCount, 5);
+  assert.equal(
+    contentCache.writesWithPrefix("portrait:"),
+    1,
+    "并发画像请求必须共享一次正缓存发布",
+  );
+  assert.equal(
+    contentCache.writesWithPrefix("portrait-failure:"),
+    1,
+    "并发画像请求必须共享一次失败标记清理",
+  );
+  contentCache.writeDelayMs = 0;
 
   accountBSession.token = "test-oauth-token-d";
   await sessions.save(accountBSession);

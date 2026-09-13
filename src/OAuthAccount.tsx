@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchZhihuPortrait,
   fetchZhihuPublicProfile,
+  getActiveZhihuAccountVersion,
   setActiveZhihuAccountVersion,
   type ZhihuPortrait,
 } from "./zhihuPortrait";
@@ -71,16 +72,28 @@ export function OAuthAccount() {
   const [callbackFailed, setCallbackFailed] = useState(
     () => new URLSearchParams(window.location.search).get("oauth") === "error",
   );
+  const statusRequestSequenceRef = useRef(0);
+  const statusRequestControllerRef = useRef<AbortController | null>(null);
+  const activeAccountVersionRef = useRef(getActiveZhihuAccountVersion());
+  const logoutInProgressRef = useRef(false);
 
-  const loadStatus = useCallback(async (signal?: AbortSignal) => {
-    if (!isOfficialOrigin) return;
+  const loadStatus = useCallback(async () => {
+    if (!isOfficialOrigin || logoutInProgressRef.current) return;
+    const sequence = ++statusRequestSequenceRef.current;
+    statusRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    statusRequestControllerRef.current = controller;
     try {
       const response = await fetchWithTimeout("/api/oauth/status", {
         credentials: "include",
         headers: { Accept: "application/json" },
-        signal,
+        signal: controller.signal,
       });
       const payload: unknown = await response.json();
+      if (
+        controller.signal.aborted ||
+        sequence !== statusRequestSequenceRef.current
+      ) return;
       if (
         !response.ok ||
         !payload ||
@@ -96,12 +109,18 @@ export function OAuthAccount() {
         /^[a-f0-9]{16}$/.test(value.accountVersion)
           ? value.accountVersion
           : null;
-      if (value.authorized !== true) {
+      const nextAccountVersion = value.authorized === true
+        ? accountVersion
+        : null;
+      const accountChanged =
+        activeAccountVersionRef.current !== nextAccountVersion;
+      if (accountChanged) {
         clearSelfProfileContexts();
-        setActiveZhihuAccountVersion(null);
-      } else {
-        setActiveZhihuAccountVersion(accountVersion);
+        setPortrait(null);
+        setPortraitState("idle");
       }
+      activeAccountVersionRef.current = nextAccountVersion;
+      setActiveZhihuAccountVersion(nextAccountVersion);
       const profileValue =
         value.profile && typeof value.profile === "object"
           ? (value.profile as Record<string, unknown>)
@@ -112,8 +131,8 @@ export function OAuthAccount() {
           : null;
       const nextStatus: OAuthStatus = {
         configured: value.configured === true,
-        authorized: value.authorized === true,
-        accountVersion,
+        authorized: nextAccountVersion !== null,
+        accountVersion: nextAccountVersion,
         stateVerified:
           typeof value.stateVerified === "boolean" ? value.stateVerified : null,
         profile: profileValue
@@ -157,22 +176,26 @@ export function OAuthAccount() {
       setUnavailable(false);
       setLogoutFailed(false);
     } catch (error) {
-      if (signal?.aborted) return;
+      if (
+        controller.signal.aborted ||
+        sequence !== statusRequestSequenceRef.current
+      ) return;
       setUnavailable(true);
+    } finally {
+      if (statusRequestControllerRef.current === controller) {
+        statusRequestControllerRef.current = null;
+      }
     }
   }, [isOfficialOrigin]);
 
   useEffect(() => {
     if (!isOfficialOrigin) return undefined;
-    let controller: AbortController | null = null;
     let lastRefreshAt = 0;
     const refresh = () => {
       const now = Date.now();
       if (now - lastRefreshAt < 500) return;
       lastRefreshAt = now;
-      controller?.abort();
-      controller = new AbortController();
-      void loadStatus(controller.signal);
+      void loadStatus();
     };
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") refresh();
@@ -181,7 +204,8 @@ export function OAuthAccount() {
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
-      controller?.abort();
+      statusRequestSequenceRef.current += 1;
+      statusRequestControllerRef.current?.abort();
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
@@ -230,7 +254,8 @@ export function OAuthAccount() {
       .then((value) => {
         if (
           !status.accountVersion ||
-          value.accountVersion !== status.accountVersion
+          value.accountVersion !== status.accountVersion ||
+          activeAccountVersionRef.current !== status.accountVersion
         ) {
           throw new Error("portrait account changed");
         }
@@ -238,7 +263,10 @@ export function OAuthAccount() {
         setPortraitState("idle");
       })
       .catch(() => {
-        if (controller.signal.aborted) return;
+        if (
+          controller.signal.aborted ||
+          activeAccountVersionRef.current !== status.accountVersion
+        ) return;
         setPortrait(null);
         setPortraitState("unavailable");
       });
@@ -246,6 +274,9 @@ export function OAuthAccount() {
   }, [isOfficialOrigin, status?.accountVersion, status?.authorized]);
 
   async function logout() {
+    logoutInProgressRef.current = true;
+    statusRequestSequenceRef.current += 1;
+    statusRequestControllerRef.current?.abort();
     setBusy(true);
     setLogoutFailed(false);
     try {
@@ -265,6 +296,7 @@ export function OAuthAccount() {
       });
       setPortrait(null);
       setPortraitState("idle");
+      activeAccountVersionRef.current = null;
       setActiveZhihuAccountVersion(null);
       clearSelfProfileContexts();
       setUnavailable(false);
@@ -272,6 +304,7 @@ export function OAuthAccount() {
     } catch {
       setLogoutFailed(true);
     } finally {
+      logoutInProgressRef.current = false;
       setBusy(false);
     }
   }

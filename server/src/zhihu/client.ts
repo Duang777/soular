@@ -12,7 +12,7 @@ import type {
   ZhiDaResponse,
   ZhihuEnvelope,
 } from "../types.js";
-import type { AsyncCache } from "../core/storage.js";
+import type { AsyncCache, CacheEntry } from "../core/storage.js";
 
 const DATA_BASE = "https://developer.zhihu.com";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -205,16 +205,26 @@ export class ZhihuClient {
     if (existing) return existing;
 
     const pending = (async () => {
-      const stale = this.cache ? (await this.cache.get<T>(key)) ?? null : null;
-      if (stale && stale.ageMs <= ttlSeconds * 1000) return stale.value;
+      let stale: CacheEntry<T> | null = null;
       try {
-        const value = await load();
-        await this.cache?.set(key, value, ttlSeconds);
-        return value;
+        stale = this.cache ? (await this.cache.get<T>(key)) ?? null : null;
+      } catch {
+        // Cache availability must not determine whether a fresh request can run.
+      }
+      if (stale && stale.ageMs <= ttlSeconds * 1000) return stale.value;
+      let value: T;
+      try {
+        value = await load();
       } catch (error) {
         if (stale) return stale.value;
         throw error;
       }
+      try {
+        await this.cache?.set(key, value, ttlSeconds);
+      } catch {
+        // A successful upstream response remains usable when cache storage fails.
+      }
+      return value;
     })().finally(() => {
       this.inflight.delete(key);
     });

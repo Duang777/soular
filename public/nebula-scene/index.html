@@ -3518,7 +3518,10 @@
       const entryQueryEl = document.getElementById("entryQuery");
       const entrySearchStatusEl = document.getElementById("entrySearchStatus");
       const entryMode = sceneParams.get("entry");
-      const entryEnabled = entryMode === "discover" || entryMode === "confirm";
+      const entryEnabled =
+        entryMode === "discover" ||
+        entryMode === "confirm" ||
+        entryMode === "explore";
       document.getElementById("presetPickerSerial").textContent = PRESET.serial;
       document.getElementById("presetPickerCurrent").textContent = PRESET.question;
       const availablePresets = listNebulaPresets();
@@ -3629,7 +3632,11 @@
       }
       document.getElementById("entryBack").addEventListener("click", returnToPersonaHome);
       document.getElementById("entryHomeBack").addEventListener("click", returnToPersonaHome);
-      if (entryEnabled) {
+      if (entryMode === "explore") {
+        entryFlowEl.hidden = true;
+        entryFlowEl.setAttribute("aria-hidden", "true");
+        document.body.classList.add("entry-exploring");
+      } else if (entryEnabled) {
         entryFlowEl.hidden = false;
         document.body.classList.add("entry-active");
         if (entryMode === "confirm") showEntryConfirm();
@@ -3676,8 +3683,9 @@
       controls.minPolarAngle = Math.PI * 0.32;
       controls.maxPolarAngle = Math.PI * 0.82;
       controls.rotateSpeed = 0.55;
-      controls.enabled = !entryEnabled;
-      controls.autoRotate = !entryEnabled && !reduceMotion;
+      controls.enabled = entryMode === "explore" || !entryEnabled;
+      controls.autoRotate =
+        (entryMode === "explore" || !entryEnabled) && !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
       controls.addEventListener("start", () => {
@@ -4173,7 +4181,8 @@
       }
 
       const loader = new THREE.TextureLoader();
-      let meAvatarSource = "avatars/me.jpg";
+      const DEFAULT_ME_AVATAR = "avatars/me.jpg";
+      let meAvatarSource = DEFAULT_ME_AVATAR;
       let userPortrait = null;
       const avatarTargets = [];
       const users = PEOPLE.map(([name, stance, castKey, claim], i) => {
@@ -4642,10 +4651,12 @@
       }
 
       if (entryEnabled) {
-        userGroup.visible = false;
-        dustGroup.visible = false;
-        fogGroup.visible = false;
-        meUser.group.visible = false;
+        if (entryMode !== "explore") {
+          userGroup.visible = false;
+          dustGroup.visible = false;
+          fogGroup.visible = false;
+          meUser.group.visible = false;
+        }
         document.getElementById("entryGenerate").addEventListener("click", startEntryGeneration);
         document.getElementById("entrySkip").addEventListener("click", finishEntryGeneration);
         document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
@@ -4697,11 +4708,21 @@
           return "";
         }
       }
+      function replaceUserAvatarWithPlaceholder(u) {
+        const ringColor = u.followed ? "#e7c98c" : u.ringColor;
+        const holder = placeholderTexture(u.name, ringColor);
+        u.avatar.material.map.dispose();
+        u.avatar.material.map = new THREE.CanvasTexture(holder.canvas);
+        u.avatar.material.map.colorSpace = THREE.SRGBColorSpace;
+        u.avatar.material.needsUpdate = true;
+      }
       function setMeAvatar(value) {
-        const avatarUrl = safeUserAvatarUrl(value);
-        if (!avatarUrl || avatarUrl === meAvatarSource) return;
+        const avatarUrl = safeUserAvatarUrl(value) || DEFAULT_ME_AVATAR;
+        if (avatarUrl === meAvatarSource) return;
+        meAvatarSource = avatarUrl;
+        replaceUserAvatarWithPlaceholder(meUser);
+        renderCardsIfOpen();
         loadUserAvatar(meUser, avatarUrl, null, () => {
-          meAvatarSource = avatarUrl;
           renderCardsIfOpen();
         });
       }
@@ -4960,13 +4981,31 @@
       }
 
       let hostReady = false;
+      let userIdentityRevision = null;
       const openAcks = new Set();
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
         if (e.data && e.data.type === "nebula-user-profile") {
+          const identityRevision =
+            Number.isSafeInteger(e.data.identityRevision) &&
+            e.data.identityRevision >= 0
+              ? e.data.identityRevision
+              : 0;
+          const identityChanged =
+            userIdentityRevision !== null &&
+            userIdentityRevision !== identityRevision;
+          userIdentityRevision = identityRevision;
           setMeAvatar(e.data.profile && e.data.profile.avatarUrl);
           userPortrait = normalizeUserPortrait(e.data.portrait);
+          if (identityChanged) {
+            hideChip();
+            chipCluster = null;
+            chipQueue = rankedCircles();
+            manualCircleIdx = 0;
+            if (clashEl.classList.contains("show")) closeClash();
+            if (focusSet) exitFocus();
+          }
           applyStance(false);
           renderCardsIfOpen();
         }
@@ -5079,7 +5118,26 @@
           existing.sort((left, right) => {
             return timestamp(left) - timestamp(right) || left.localeCompare(right);
           });
-          const key = `${Date.now().toString(36)}-${crypto.randomUUID()}`;
+          let uuid;
+          if (typeof crypto.randomUUID === "function") {
+            uuid = crypto.randomUUID();
+          } else {
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+            const hex = Array.from(
+              bytes,
+              (byte) => byte.toString(16).padStart(2, "0"),
+            );
+            uuid = [
+              hex.slice(0, 4).join(""),
+              hex.slice(4, 6).join(""),
+              hex.slice(6, 8).join(""),
+              hex.slice(8, 10).join(""),
+              hex.slice(10).join(""),
+            ].join("-");
+          }
+          const key = `${Date.now().toString(36)}-${uuid}`;
           sessionStorage.setItem(`${prefix}${kind}:${key}`, JSON.stringify(value));
           while (existing.length >= 24) {
             const storageKey = existing.shift();
@@ -6511,6 +6569,7 @@
       window.__neb = {
         presetId: () => PRESET.id,
         answerCount: () => N,
+        controlsEnabled: () => controls.enabled,
         meX: () => meUser.group.position.x,
         meBaseX: () => meUser.baseX,
         meAvatarSource: () => meAvatarSource,

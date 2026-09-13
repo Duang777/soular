@@ -30,6 +30,11 @@ export interface ZhihuPublicProfile {
   avatarUrl: string | null;
 }
 
+export interface ZhihuAccountStatus {
+  authorized: boolean;
+  accountVersion: string | null;
+}
+
 export function setActiveZhihuAccountVersion(value: unknown): void {
   activeAccountVersion =
     typeof value === "string" && /^[a-f0-9]{16}$/.test(value)
@@ -39,6 +44,41 @@ export function setActiveZhihuAccountVersion(value: unknown): void {
 
 export function getActiveZhihuAccountVersion(): string | null {
   return activeAccountVersion;
+}
+
+export async function fetchZhihuAccountStatus(
+  signal?: AbortSignal,
+): Promise<ZhihuAccountStatus> {
+  const controller = new AbortController();
+  const abortFromParent = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener("abort", abortFromParent, { once: true });
+  const timeout = window.setTimeout(() => controller.abort(), PROFILE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch("/api/oauth/status", {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    const payload: unknown = await response.json();
+    if (!response.ok || !isRecord(payload) || payload.ok !== true) {
+      throw new Error("account status unavailable");
+    }
+    const accountVersion =
+      typeof payload.accountVersion === "string" &&
+      /^[a-f0-9]{16}$/.test(payload.accountVersion)
+        ? payload.accountVersion
+        : null;
+    const authorized = payload.authorized === true && accountVersion !== null;
+    return {
+      authorized,
+      accountVersion: authorized ? accountVersion : null,
+    };
+  } finally {
+    window.clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromParent);
+  }
 }
 
 export async function fetchZhihuPublicProfile(

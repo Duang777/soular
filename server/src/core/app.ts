@@ -109,6 +109,10 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
     }
 
     const cacheKey = `oauth-profile:${accountFingerprint}`;
+    const existingRequest = profileInflight.get(cacheKey);
+    if (existingRequest) {
+      return mergeOAuthProfiles(storedProfile, await existingRequest);
+    }
     if ((profileFailureUntil.get(cacheKey) ?? 0) > Date.now()) {
       return storedProfile;
     }
@@ -137,30 +141,37 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
 
     let request = profileInflight.get(cacheKey);
     if (!request) {
-      request = fetchProfile(config.accessSecret, oauthToken)
-        .catch(() => null)
+      request = (async () => {
+        const profile = await fetchProfile(config.accessSecret, oauthToken)
+          .catch(() => null);
+        if (profile) {
+          profileFailureUntil.delete(cacheKey);
+        } else {
+          profileFailureUntil.set(
+            cacheKey,
+            Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
+          );
+        }
+        if (contentCache) {
+          try {
+            await contentCache.set(
+              cacheKey,
+              profile ?? { unavailable: true },
+              profile
+                ? OAUTH_PROFILE_TTL_SECONDS
+                : OAUTH_PROFILE_FAILURE_TTL_SECONDS,
+            );
+          } catch {
+            // Profile recovery still succeeds when cache publication fails.
+          }
+        }
+        return profile;
+      })()
         .finally(() => profileInflight.delete(cacheKey));
       profileInflight.set(cacheKey, request);
     }
     const profile = await request;
-    const mergedProfile = mergeOAuthProfiles(storedProfile, profile);
-    if (profile) profileFailureUntil.delete(cacheKey);
-    else {
-      profileFailureUntil.set(
-        cacheKey,
-        Date.now() + OAUTH_PROFILE_FAILURE_TTL_SECONDS * 1000,
-      );
-    }
-    if (contentCache) {
-      await contentCache.set(
-        cacheKey,
-        profile && mergedProfile ? mergedProfile : { unavailable: true },
-        profile
-          ? OAUTH_PROFILE_TTL_SECONDS
-          : OAUTH_PROFILE_FAILURE_TTL_SECONDS,
-      ).catch(() => undefined);
-    }
-    return mergedProfile;
+    return mergeOAuthProfiles(storedProfile, profile);
   }
 
   return async function handler(request: Request): Promise<Response> {
@@ -364,6 +375,20 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
         const accountFingerprint = await sha256Hex(oauthToken);
         const cacheKey = `portrait:${accountFingerprint}`;
         const failureCacheKey = `portrait-failure:${accountFingerprint}`;
+        const respondWithPortrait = (portrait: Portrait, cached: boolean) =>
+          withCookie(
+            jsonResponse(200, {
+              ok: true,
+              cached,
+              accountVersion: publicAccountVersion(accountFingerprint),
+              data: portrait,
+            }),
+            setCookie,
+          );
+        const existingPortraitPromise = portraitInflight.get(cacheKey);
+        if (existingPortraitPromise) {
+          return respondWithPortrait(await existingPortraitPromise, false);
+        }
         if (contentCache) {
           try {
             const cached = await contentCache.get<Portrait>(cacheKey);
@@ -374,15 +399,7 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
                 ? PARTIAL_PORTRAIT_TTL_SECONDS
                 : PORTRAIT_TTL_SECONDS;
             if (cached && cached.ageMs <= cacheTtl * 1000) {
-              return withCookie(
-                jsonResponse(200, {
-                  ok: true,
-                  cached: true,
-                  accountVersion: publicAccountVersion(accountFingerprint),
-                  data: cached.value,
-                }),
-                setCookie,
-              );
+              return respondWithPortrait(cached.value, true);
             }
           } catch {
             // Cache outages must not block fresh user-data reads.
@@ -405,53 +422,46 @@ export function createHandler(deps: HandlerDeps): (request: Request) => Promise<
 
         let portraitPromise = portraitInflight.get(cacheKey);
         if (!portraitPromise) {
-          portraitPromise = buildPortrait(client, oauthToken).finally(() => {
+          portraitPromise = (async () => {
+            try {
+              const portrait = await buildPortrait(client, oauthToken);
+              if (contentCache) {
+                await Promise.allSettled([
+                  contentCache.set(
+                    cacheKey,
+                    portrait,
+                    portrait.warnings.length
+                      ? PARTIAL_PORTRAIT_TTL_SECONDS
+                      : PORTRAIT_TTL_SECONDS,
+                  ),
+                  contentCache.set(
+                    failureCacheKey,
+                    false,
+                    PARTIAL_PORTRAIT_TTL_SECONDS,
+                  ),
+                ]);
+              }
+              return portrait;
+            } catch (error) {
+              if (error instanceof PortraitUnavailableError) {
+                try {
+                  await contentCache?.set(
+                    failureCacheKey,
+                    true,
+                    PARTIAL_PORTRAIT_TTL_SECONDS,
+                  );
+                } catch {
+                  // Preserve the original upstream error when cache storage fails.
+                }
+              }
+              throw error;
+            }
+          })().finally(() => {
             portraitInflight.delete(cacheKey);
           });
           portraitInflight.set(cacheKey, portraitPromise);
         }
-        let portrait: Portrait;
-        try {
-          portrait = await portraitPromise;
-        } catch (error) {
-          if (error instanceof PortraitUnavailableError) {
-            try {
-              await contentCache?.set(
-                failureCacheKey,
-                true,
-                PARTIAL_PORTRAIT_TTL_SECONDS,
-              );
-            } catch {
-              // Preserve the original upstream error when cache storage fails.
-            }
-          }
-          throw error;
-        }
-        if (contentCache) {
-          await Promise.allSettled([
-            contentCache.set(
-              cacheKey,
-              portrait,
-              portrait.warnings.length
-                ? PARTIAL_PORTRAIT_TTL_SECONDS
-                : PORTRAIT_TTL_SECONDS,
-            ),
-            contentCache.set(
-              failureCacheKey,
-              false,
-              PARTIAL_PORTRAIT_TTL_SECONDS,
-            ),
-          ]);
-        }
-        return withCookie(
-          jsonResponse(200, {
-            ok: true,
-            cached: false,
-            accountVersion: publicAccountVersion(accountFingerprint),
-            data: portrait,
-          }),
-          setCookie,
-        );
+        return respondWithPortrait(await portraitPromise, false);
       }
 
       if (request.method === "GET" && url.pathname === "/api/zhihu/hot") {

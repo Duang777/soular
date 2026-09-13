@@ -18,6 +18,7 @@ export type SelfProfile = {
   stance: number;
   likedCount: number;
   claim: string;
+  accountVersion?: string;
   interest?: NebulaPortraitSignal;
 };
 
@@ -242,6 +243,11 @@ export function selfProfileFromValue(
     stance: Math.max(-1, Math.min(1, record.stance)),
     likedCount: record.likedCount,
     claim: clipProfileClaim(record.claim),
+    accountVersion:
+      typeof record.accountVersion === "string" &&
+      /^[a-f0-9]{16}$/.test(record.accountVersion)
+        ? record.accountVersion
+        : undefined,
     interest,
   };
 }

@@ -12,6 +12,8 @@ const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.u
 const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url), "utf8");
 const shelfSource = readFileSync(new URL("../src/Shelf.tsx", import.meta.url), "utf8");
 const portraitSource = readFileSync(new URL("../src/zhihuPortrait.ts", import.meta.url), "utf8");
+const oauthAccountSource = readFileSync(new URL("../src/OAuthAccount.tsx", import.meta.url), "utf8");
+const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
 const reactCatalogSource = readFileSync(new URL("../src/people.ts", import.meta.url), "utf8");
@@ -113,7 +115,21 @@ assert.match(
 );
 assert.match(appSource, /path="\/" element=\{<Home \/>\}/, "首页必须保留人格卡与问题入口");
 assert.match(source, /PERSONA_MIN_LIKES\s*=\s*3/, "人格必须在三次有效表态后解锁");
-assert.match(source, /entryMode === "discover" \|\| entryMode === "confirm"/, "星云必须支持发现与确认入口态");
+assert.match(
+  source,
+  /entryMode === "discover"\s*\|\|\s*entryMode === "confirm"\s*\|\|\s*entryMode === "explore"/,
+  "星云必须支持发现、确认与探索入口态",
+);
+assert.match(
+  source,
+  /if \(entryEnabled\) \{\s*if \(entryMode !== "explore"\) \{[\s\S]*userGroup\.visible = false/,
+  "探索态冷启动不得隐藏已生成的星云节点",
+);
+assert.match(
+  source,
+  /controls\.enabled = entryMode === "explore" \|\| !entryEnabled;[\s\S]*controls\.autoRotate =\s*\(entryMode === "explore" \|\| !entryEnabled\) && !reduceMotion/,
+  "探索态冷启动必须恢复旋转和缩放控制",
+);
 assert.match(
   source,
   /id="cardsQuickEntry"[\s\S]*id="cardsQuickCount"/,
@@ -224,6 +240,21 @@ assert.match(
   /data\?\.type === "nebula-entry-explore"[\s\S]*searchParams\.set\("explore",\s*"1"\)[\s\S]*history\.replaceState/,
   "React 外壳必须将生成后的父 URL 替换为探索态",
 );
+assert.match(
+  nebulaHostSource,
+  /searchParams\.get\("explore"\) === "1"\s*\?\s*"explore"/,
+  "刷新探索态 URL 时 React 外壳必须恢复 iframe 的探索状态",
+);
+assert.match(
+  nebulaStageSource,
+  /entryState\?:\s*"discover"\s*\|\s*"confirm"\s*\|\s*"explore"\s*\|\s*null/,
+  "星云 iframe 契约必须支持显式探索状态",
+);
+assert.match(
+  nebulaHostSource,
+  /data\.entry === "confirm"[\s\S]*entryState === "explore"[\s\S]*explore=1/,
+  "探索态切换快照时必须保留 explore=1",
+);
 assert.doesNotMatch(
   nebulaHostSource,
   /state:\s*persistedProfile\s*\?\s*\{\s*selfProfile:/,
@@ -235,14 +266,24 @@ assert.match(
   "导航上下文 key 必须兼容不支持 randomUUID 的浏览器",
 );
 assert.match(
+  source,
+  /function stageStandaloneContext\(kind, value\)[\s\S]*typeof crypto\.randomUUID === "function"[\s\S]*crypto\.getRandomValues/,
+  "独立星云场景必须兼容不支持 randomUUID 的浏览器",
+);
+assert.match(
   nebulaHostSource,
   /const profileKey = createNavigationContextKey\(\);\s*if \(profileKey\) \{[\s\S]*stageTransientSelfProfile\(profileKey, profile\);[\s\S]*storeNavigationContext\("self", persistedProfile, profileKey\)/,
   "临时画像上下文不得依赖 Session Storage 写入成功",
 );
 assert.match(
   shelfSource,
-  /getActiveZhihuAccountVersion\(\)[\s\S]*portrait\.accountVersion === expectedAccountVersion[\s\S]*setLatePortrait\(toNebulaPortraitSignal\(portrait\)\)/,
-  "人格卡页必须在不阻塞导航的前提下补齐未完成的画像",
+  /fetchZhihuAccountStatus\([\s\S]*addEventListener\("focus",\s*refreshWhenVisible\)[\s\S]*addEventListener\("visibilitychange",\s*refreshWhenVisible\)/,
+  "人格卡页必须在挂载和重新可见时复查账号版本",
+);
+assert.match(
+  shelfSource,
+  /fetchZhihuPortrait[\s\S]*portrait\.accountVersion !== accountVersion[\s\S]*storedSelfProfile\.accountVersion === verifiedAccountVersion/,
+  "人格卡页只能展示已绑定当前账号版本的临时画像",
 );
 assert.doesNotMatch(
   source,
@@ -258,6 +299,16 @@ assert.match(
   source,
   /e\.data\.type === "nebula-user-profile"/,
   "星云必须接收登录头像消息",
+);
+assert.match(
+  source,
+  /identityRevision[\s\S]*hideChip\(\)[\s\S]*closeClash\(\)[\s\S]*exitFocus\(\)/,
+  "账号身份变化时必须关闭画像相关的圈子、碰撞和聚焦结果",
+);
+assert.match(
+  source,
+  /function setMeAvatar\(value\)[\s\S]*DEFAULT_ME_AVATAR[\s\S]*replaceUserAvatarWithPlaceholder/,
+  "登录头像清空时必须立即恢复本地默认头像",
 );
 assert.match(
   source,
@@ -286,6 +337,11 @@ assert.match(
 );
 assert.match(
   nebulaHostSource,
+  /identityRevision:/,
+  "React 外壳必须用不透明修订号通知 iframe 账号身份变化",
+);
+assert.match(
+  nebulaHostSource,
   /addEventListener\("visibilitychange",\s*refreshWhenVisible\)/,
   "标签重新可见时必须复查账号版本",
 );
@@ -305,6 +361,16 @@ assert.match(
   cardSource,
   /知乎兴趣底色/,
   "人格卡必须解释画像提供的兴趣底色",
+);
+assert.match(
+  oauthAccountSource,
+  /statusRequestSequenceRef[\s\S]*statusRequestSequenceRef\.current \+= 1[\s\S]*statusRequestControllerRef\.current\?\.abort\(\)/,
+  "退出登录前必须使全部在途状态请求失效",
+);
+assert.match(
+  oauthAccountSource,
+  /accountChanged[\s\S]*setPortrait\(null\)/,
+  "切换账号时必须立即清空旧画像",
 );
 assert.doesNotMatch(
   source,

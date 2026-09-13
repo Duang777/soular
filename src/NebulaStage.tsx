@@ -10,7 +10,7 @@ export function NebulaStage({
 }: {
   className?: string;
   style?: CSSProperties;
-  entryState?: "discover" | "confirm" | null;
+  entryState?: "discover" | "confirm" | "explore" | null;
   presetId?: string;
   iframeRef?: RefObject<HTMLIFrameElement | null>;
 }) {

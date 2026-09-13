@@ -121,6 +121,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
   const navigate = useNavigate();
   const nebulaFrameRef = useRef<HTMLIFrameElement>(null);
   const userContextRef = useRef<NebulaUserContext | null>(null);
+  const identityRevisionRef = useRef(0);
   const selfOpenPendingRef = useRef(false);
   const [searchParams] = useSearchParams();
   const [isCardsView, setIsCardsView] = useState(false);
@@ -135,7 +136,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     ? searchParams.get("confirm") === "1"
       ? "confirm"
       : searchParams.get("explore") === "1"
-        ? null
+        ? "explore"
         : "discover"
     : null;
 
@@ -147,12 +148,18 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     let lastRefreshAt = 0;
 
     function publishUserContext(userContext: NebulaUserContext) {
+      const previousAccountVersion =
+        userContextRef.current?.accountVersion ?? null;
+      if (previousAccountVersion !== userContext.accountVersion) {
+        identityRevisionRef.current += 1;
+      }
       userContextRef.current = userContext;
       nebulaFrameRef.current?.contentWindow?.postMessage(
         {
           type: "nebula-user-profile",
           profile: userContext.profile,
           portrait: userContext.portrait,
+          identityRevision: identityRevisionRef.current,
         },
         window.location.origin,
       );
@@ -316,6 +323,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
               type: "nebula-user-profile",
               profile: userContextRef.current.profile,
               portrait: userContextRef.current.portrait,
+              identityRevision: identityRevisionRef.current,
             },
             event.origin,
           );
@@ -349,8 +357,12 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         typeof data.preset === "string" &&
         /^[a-z0-9-]+$/.test(data.preset)
       ) {
-        const confirm = entryMode && data.entry === "confirm" ? "&confirm=1" : "";
-        navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${confirm}`, {
+        const entryQuery = entryMode && data.entry === "confirm"
+          ? "&confirm=1"
+          : entryMode && entryState === "explore"
+            ? "&explore=1"
+            : "";
+        navigate(`${lobbyPath}?preset=${encodeURIComponent(data.preset)}${entryQuery}`, {
           replace: true,
           state: fromPersonaHome ? { fromPersonaHome: true } : undefined,
         });
@@ -388,10 +400,15 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
               activeVersion,
               cast,
             );
-        const portrait = userContextRef.current?.portrait ?? null;
-        const profile = parsedProfile && portrait && !parsedProfile.interest
-          ? { ...parsedProfile, interest: portrait }
-          : parsedProfile;
+        const userContext = userContextRef.current;
+        const portrait = userContext?.portrait ?? null;
+        const profile = parsedProfile
+          ? {
+              ...parsedProfile,
+              accountVersion: userContext?.accountVersion ?? undefined,
+              interest: portrait ?? parsedProfile.interest,
+            }
+          : null;
         let profileQuery = "";
         let persistedProfile = profile;
         if (profile) {
@@ -435,7 +452,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [entryMode, fromPersonaHome, navigate, presetId]);
+  }, [entryMode, entryState, fromPersonaHome, navigate, presetId]);
 
   return (
     <div className={`shelf-root nebula-root${isCardsView ? " nebula-root--cards" : ""}`}>
