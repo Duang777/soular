@@ -132,6 +132,183 @@ assert.match(
 );
 assert.match(
   source,
+  /id="observatoryControls"[\s\S]*id="randomDiscover"[\s\S]*id="followedOnly"[\s\S]*id="locateMe"[\s\S]*id="resetView"/,
+  "星云必须提供随机发现、只看关注、我的位置和重置视角控制",
+);
+assert.match(
+  source,
+  /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
+  "星云画布必须提供可聚焦的键盘操作入口",
+);
+assert.match(
+  source,
+  /<div id="tip" role="region" aria-live="polite" aria-label="当前观点" tabindex="-1"><\/div>/,
+  "键盘定位后的观点必须提供可聚焦的辅助技术反馈",
+);
+assert.match(
+  source,
+  /<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><\/div>/,
+  "观测控制反馈必须向辅助技术播报",
+);
+assert.match(
+  source,
+  /tip\.classList\.remove\("show"\);\s*if \(tip\.contains\(document\.activeElement\)\) \{\s*canvas\.focus\(\{ preventScroll: true \}\)/,
+  "关闭键盘定位观点后必须把焦点恢复到星云画布",
+);
+assert.match(
+  source,
+  /function scheduleHideTip\(ms\)[\s\S]*setTimeout\(\(\) => \{\s*setHovered\(null\);[\s\S]*projected\.z < -1 \|\| projected\.z > 1\) \{\s*setHovered\(null\);/,
+  "观点浮层的所有自动关闭路径必须恢复键盘焦点",
+);
+assert.match(
+  source,
+  /const restoreLikeFocus = tip\.contains\(document\.activeElement\)[\s\S]*renderTip\(hovered\)[\s\S]*tip\.querySelector\("\[data-like\]"\)\?\.focus\(\{ preventScroll: true \}\)/,
+  "键盘点赞重绘观点浮层后必须恢复按钮焦点",
+);
+assert.match(
+  source,
+  /function randomDiscover\(animate, focusTip = false\)[\s\S]*user\.index !== lastRandomIndex[\s\S]*focusUser\(user, animate, focusTip\)/,
+  "随机发现必须避开连续命中同一回答者并定位到目标",
+);
+assert.match(
+  source,
+  /const dimmedByFollow = followedOnly && !u\.isMe && !u\.followed/,
+  "只看关注必须淡出未关注回答者并保留我的星位",
+);
+assert.match(
+  source,
+  /followedOnly[\s\S]*matchedUser[\s\S]*!matchedUser\.followed[\s\S]*cancelCameraTransition\(\)[\s\S]*matchIndex = -1[\s\S]*cameraFocusUser[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true/,
+  "只看关注必须取消已被过滤回答者的定位、高亮并恢复全景",
+);
+const autoRotateScheduler = source.match(
+  /function scheduleAutoRotate\(delay = 5000\) \{[\s\S]*?\n\s*\}\n\s*function moveCamera/,
+)?.[0];
+assert.ok(autoRotateScheduler, "自动旋转恢复逻辑不存在");
+assert.doesNotMatch(
+  autoRotateScheduler,
+  /cameraFocusUser\s*=/,
+  "自动旋转仍围绕目标用户时不得遗失相机焦点状态",
+);
+assert.match(
+  source,
+  /function resetObservation\(animate\)[\s\S]*setFollowedOnly\(false, false\)[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition[\s\S]*controls\.autoRotate = !reduceMotion/,
+  "重置视角必须恢复默认相机、筛选和自动旋转",
+);
+assert.match(
+  source,
+  /function openClash\(\)[\s\S]*setFollowedOnly\(false, false\)[\s\S]*clashEl\.classList\.add\("show"\)/,
+  "观点碰撞必须退出只看关注，避免选中已淡出的回答者",
+);
+assert.match(
+  source,
+  /function focusCluster\(c\)[\s\S]*setHovered\(null\)[\s\S]*matchIndex = -1[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true/,
+  "小圈子聚焦必须清理旧人物定位并恢复全景",
+);
+assert.match(
+  source,
+  /event\.key === "ArrowLeft"[\s\S]*event\.key === "ArrowRight"[\s\S]*event\.key === "ArrowUp"[\s\S]*event\.key === "ArrowDown"[\s\S]*event\.key === "\+"[\s\S]*event\.key === "-"/,
+  "星云必须支持方向键旋转和加减号缩放",
+);
+assert.match(
+  source,
+  /const pressedNavigationKeys = new Set\(\)[\s\S]*function updateKeyboardCamera\(delta\)[\s\S]*THREE\.MathUtils\.damp/,
+  "键盘相机运动必须在渲染帧内按时间阻尼更新",
+);
+assert.match(
+  source,
+  /updateKeyboardCamera\(delta\);\s*updateCameraTransition\(performance\.now\(\)\);\s*controls\.update\(\)/,
+  "键盘相机运动必须接入 Three.js 渲染帧",
+);
+assert.match(
+  source,
+  /function navigationKeyForEvent\(event\)[\s\S]*return "ZoomIn"[\s\S]*return "ZoomOut"[\s\S]*pressedNavigationKeys\.add\(navigationKey\)[\s\S]*addEventListener\("keyup"[\s\S]*pressedNavigationKeys\.delete\(navigationKey\)/,
+  "方向和缩放键必须维护按住状态并在松开时停止加速",
+);
+assert.match(
+  source,
+  /let frameScheduled = false[\s\S]*if \(frameScheduled\) return[\s\S]*frameScheduled = false;\s*loop\(\)[\s\S]*visibilitychange[\s\S]*scheduleFrame\(\)/,
+  "页面恢复可见时不得创建重复的渲染循环",
+);
+assert.match(
+  source,
+  /if \(!controlsAvailable\)[\s\S]*cancelCameraTransition\(\)[\s\S]*controls\.autoRotate = false[\s\S]*if \(!sceneControlsWereAvailable\)[\s\S]*scheduleAutoRotate\(\)/,
+  "弹层打开时必须暂停相机运动，关闭后恢复自动旋转",
+);
+assert.match(
+  source,
+  /function sceneControlsAvailable\(\)[\s\S]*!guideEl\.classList\.contains\("show"\)/,
+  "星图向导打开时必须暂停星云观测控制",
+);
+assert.match(
+  source,
+  /Math\.min\(\s*anchor\.getBoundingClientRect\(\)\.top,\s*observatoryControlsEl\.getBoundingClientRect\(\)\.top[\s\S]*--mobile-panel-clearance/,
+  "移动端浮层必须避开观测控制条",
+);
+assert.match(
+  source,
+  /if \(user\.isMe && user\.group\.parent\)[\s\S]*target\.x = user\.baseX[\s\S]*localToWorld\(target\)/,
+  "定位我的位置必须使用星位漂移的最终横坐标",
+);
+assert.match(
+  source,
+  /const matchOpacity = reduceMotion \? 0\.9[\s\S]*reduceMotion \? 1\.08/,
+  "减少动态效果下匹配高亮不得持续脉动",
+);
+assert.match(
+  source,
+  /randomDiscover\(true, event\.detail === 0\)[\s\S]*focusUser\(meUser, true, event\.detail === 0\)[\s\S]*randomDiscover\(true, true\)/,
+  "按钮和空格键定位必须把观点反馈交给键盘用户",
+);
+assert.match(
+  source,
+  /duration: 640[\s\S]*const eased = progress \* progress \* \(3 - 2 \* progress\)/,
+  "相机定位必须使用平滑起止的过渡曲线",
+);
+const keyboardResponse = source.match(
+  /const response = hasInput \? ([\d.]+) : ([\d.]+);/,
+);
+const keyboardHorizontalSpeed = source.match(
+  /horizontal \* ([\d.]+),\s*response,\s*delta/,
+);
+assert.ok(keyboardResponse && keyboardHorizontalSpeed, "必须能够读取键盘相机阻尼参数");
+const activeResponse = Number(keyboardResponse[1]);
+const idleResponse = Number(keyboardResponse[2]);
+const horizontalSpeed = Number(keyboardHorizontalSpeed[1]);
+let keyboardVelocity = 0;
+const keyboardFrameSteps = [];
+for (let frame = 0; frame < 120; frame += 1) {
+  const pressed = frame < 60;
+  const response = pressed ? activeResponse : idleResponse;
+  const target = pressed ? horizontalSpeed : 0;
+  keyboardVelocity =
+    target + (keyboardVelocity - target) * Math.exp(-response / 60);
+  keyboardFrameSteps.push(Math.abs(keyboardVelocity / 60));
+}
+const maxKeyboardFrameStep = Math.max(...keyboardFrameSteps);
+assert.ok(
+  keyboardFrameSteps[0] < maxKeyboardFrameStep * 0.25,
+  "键盘相机首帧必须平缓加速",
+);
+assert.ok(
+  maxKeyboardFrameStep < 0.014,
+  "键盘相机在 60 fps 下单帧旋转不得产生明显跳步",
+);
+assert.ok(
+  keyboardFrameSteps.at(-1) < 0.00001,
+  "松开方向键后相机速度必须平滑衰减至静止",
+);
+assert.match(
+  source,
+  /e\.key === "r" \|\| e\.key === "R"[\s\S]*resetObservation\(true\)/,
+  "星云必须支持 R 重置视角",
+);
+assert.match(
+  source,
+  /e\.key === " " \|\| e\.key === "Space" \|\| e\.code === "Space"[\s\S]*randomDiscover\(true, true\)/,
+  "星云必须支持空格随机发现",
+);
+assert.match(
+  source,
   /id="cardsQuickEntry"[\s\S]*id="cardsQuickCount"/,
   "观点卡片必须作为星云常驻入口展示",
 );
@@ -363,6 +540,11 @@ assert.match(
 assert.match(source, /id="matchSame"/, "匹配流程必须提供同频模式");
 assert.match(source, /id="matchOpposite"/, "匹配流程必须提供互补模式");
 assert.match(
+  source,
+  /\$\("clashTitle"\)\.textContent[\s\S]*\$\("clashSubtitle"\)\.textContent/,
+  "匹配模式文案只能更新观点碰撞弹层",
+);
+assert.match(
   cardSource,
   /知乎兴趣底色/,
   "人格卡必须解释画像提供的兴趣底色",
@@ -394,6 +576,21 @@ assert.match(
 );
 assert.match(
   source,
+  /renderGuideQuizStep\(true\)[\s\S]*choices\.querySelector\("button"\)\?\.focus\(\)/,
+  "星图向导换题后必须把焦点移到新题选项",
+);
+assert.match(
+  source,
+  /uiNode\("button", "guide-quiz-btn"[\s\S]*event\.repeat[\s\S]*event\.preventDefault\(\)/,
+  "星图向导必须忽略长按按键产生的重复答题",
+);
+assert.match(
+  source,
+  /GUIDE_QUIZ_INPUT_GUARD_MS\s*=\s*800[\s\S]*now < guideQuizInputReadyAt[\s\S]*showToast\("请先读完本题再选择"\)[\s\S]*now \+ GUIDE_QUIZ_INPUT_GUARD_MS/,
+  "星图向导必须防止快速双击跨题提交",
+);
+assert.match(
+  source,
   /intent === "representatives"[\s\S]*renderGuidePicks\(\)/,
   "“代表性观点”必须展示完整代表集合而不是固定跳到左端",
 );
@@ -414,8 +611,62 @@ assert.match(
 );
 assert.match(
   source,
-  /function resumeCirclePrompt[\s\S]*queueNextChip/,
+  /function resumeCirclePrompt[\s\S]*!circlePromptBlocked\(\)[\s\S]*queueNextChip/,
   "关闭星图向导后必须恢复被延后的圈子提示",
+);
+assert.match(
+  source,
+  /function deferCirclePrompt[\s\S]*chipQueue\.unshift\(chipCluster\)[\s\S]*hideChip\(\)/,
+  "打开阻挡层时必须保留并隐藏当前圈子提示",
+);
+const circlePromptQueue = source.match(
+  /function queueNextChip\(delay\) \{[\s\S]*?\n\s*\}\n\s*chipQueue = rankedCircles/,
+)?.[0];
+assert.ok(circlePromptQueue, "圈子提示队列逻辑不存在");
+assert.match(
+  circlePromptQueue,
+  /if \(circlePromptBlocked\(\)\) return/,
+  "圈子提示被弹层阻挡时必须暂停",
+);
+assert.match(
+  source,
+  /function circlePromptBlocked\(\)[\s\S]*document\.body\.classList\.contains\("entry-active"\)/,
+  "星云入口流程必须暂停圈子提示",
+);
+assert.match(
+  source,
+  /function circlePromptBlocked\(\)[\s\S]*Boolean\(hovered\)[\s\S]*Boolean\(cameraTransition\)/,
+  "人物定位和观点浮层必须暂停圈子提示",
+);
+assert.match(
+  source,
+  /function setHovered\(u\)[\s\S]*if \(u\) \{\s*deferCirclePrompt\(\)[\s\S]*else \{[\s\S]*resumeCirclePrompt\(\)/,
+  "人物观点浮层打开时必须挂起圈子提示，关闭后恢复",
+);
+assert.match(
+  source,
+  /followedOnly[\s\S]*cameraFocusUser[\s\S]*moveCamera\(defaultCameraTarget, defaultCameraPosition, true, \(\) => \{[\s\S]*resumeCirclePrompt\(\)/,
+  "关注筛选触发相机回位后必须恢复圈子提示",
+);
+assert.match(
+  source,
+  /function finishEntryGeneration\(\)[\s\S]*document\.body\.classList\.remove\("entry-active"\)[\s\S]*resumeCirclePrompt\(\)/,
+  "星云入口完成后必须恢复圈子提示",
+);
+assert.match(
+  source,
+  /function showEntryConfirmFromScene\(\)[\s\S]*deferCirclePrompt\(\)[\s\S]*classList\.add\("entry-active"\)/,
+  "从星云返回入口时必须挂起当前圈子提示",
+);
+assert.doesNotMatch(
+  circlePromptQueue,
+  /resumeCirclePrompt/,
+  "圈子提示被弹层阻挡时不得周期性轮询",
+);
+assert.match(
+  source,
+  /if \(e\.key === "Escape"\) \{\s*if \(e\.isComposing \|\| e\.repeat\) return/,
+  "输入法组词或长按 Escape 时不得连续关闭界面层级",
 );
 assert.match(
   source,

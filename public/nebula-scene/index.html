@@ -44,6 +44,10 @@
       #scene { position: fixed; inset: 0; display: block; touch-action: none; cursor: grab; }
       #scene:active { cursor: grabbing; }
       #scene.hovering { cursor: pointer; }
+      #scene:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: -3px;
+      }
 
       .hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
       .hud-top {
@@ -609,6 +613,7 @@
         to { transform: rotate(-336deg); }
       }
       body.entry-active .hud,
+      body.entry-active .observatory-controls,
       body.entry-active .explore-shell,
       body.entry-active .cards-quick-entry,
       body.entry-active .circle-chip,
@@ -764,6 +769,64 @@
         color: var(--mute);
       }
       .tip-tag.funny { border-color: rgba(231, 201, 140, 0.5); color: var(--gold); }
+
+      .observatory-controls {
+        position: fixed;
+        z-index: 14;
+        left: 50%;
+        bottom: max(52px, calc(env(safe-area-inset-bottom) + 44px));
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid rgba(143, 216, 220, 0.2);
+        border-radius: 8px;
+        background: #0b1218;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.48);
+        transform: translateX(-50%);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+      }
+      .observatory-control {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: rgba(196, 207, 211, 0.64);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+      }
+      .observatory-control .ui-icon { width: 18px; height: 18px; }
+      @media (hover: hover) {
+        .observatory-control:hover {
+          background: rgba(143, 216, 220, 0.08);
+          color: #d9ebeb;
+        }
+      }
+      .observatory-control:active { transform: scale(0.96); }
+      .observatory-control:focus-visible {
+        outline: 2px solid rgba(159, 216, 219, 0.78);
+        outline-offset: 2px;
+      }
+      .observatory-control[aria-pressed="true"] {
+        background: #17272e;
+        color: #e7c17f;
+      }
+      .observatory-control[aria-pressed="true"]::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 4px;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: currentColor;
+        transform: translateX(-50%);
+      }
 
       .explore-shell {
         position: fixed;
@@ -1847,10 +1910,17 @@
         to { opacity: 0.55; transform: translateY(5px) scale(0.998); }
       }
       body.is-cards-open .explore-shell,
+      body.is-cards-open .observatory-controls,
       body.is-cards-open .cards-quick-entry,
       body.is-cards-open .circle-chip,
       body.is-cards-open .focus-banner,
       body.is-cards-open .verdict { display: none !important; }
+      body.is-explore-menu-open .observatory-controls {
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(-50%, 8px);
+        pointer-events: none;
+      }
       .cards-bar {
         flex: none;
         display: grid;
@@ -2913,6 +2983,12 @@
         .cards-quick-copy b { font-size: 10px; }
         .cards-quick-copy small { font-size: 7.5px; }
         .cards-quick-arrow { display: none; }
+        .observatory-controls {
+          bottom: max(86px, calc(env(safe-area-inset-bottom) + 80px));
+        }
+        .toast {
+          bottom: max(148px, calc(env(safe-area-inset-bottom) + 140px));
+        }
         .blindbox-lid { left: 8px; width: 38px; }
         .zh-orbit-ring { left: 7px; width: 38px; }
         .explore-nudge { left: 64px; bottom: 13px; font-size: 9px; }
@@ -2947,7 +3023,7 @@
         .circle-chip {
           right: 12px;
           width: calc(100vw - 24px);
-          bottom: var(--mobile-panel-clearance, 90px);
+          bottom: var(--mobile-panel-clearance, 152px);
         }
         .verdict, .focus-banner { top: max(76px, calc(env(safe-area-inset-top) + 68px)); }
         body.is-focusing .verdict { top: max(148px, calc(env(safe-area-inset-top) + 140px)); }
@@ -3017,7 +3093,7 @@
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
+        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .observatory-controls, .observatory-control, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .dock-action-icon, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -3084,7 +3160,7 @@
     </script>
   </head>
   <body>
-    <canvas id="scene"></canvas>
+    <canvas id="scene" tabindex="0" aria-label="观点星云交互画布"></canvas>
 
     <section class="entry-flow" id="entryFlow" data-state="discover" aria-label="选择要探索的问题" hidden>
       <div class="entry-atmosphere" aria-hidden="true">
@@ -3165,6 +3241,39 @@
       </div>
       <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点赞校准你的立场</div>
     </div>
+
+    <nav class="observatory-controls" id="observatoryControls" aria-label="星云观测控制">
+      <button type="button" class="observatory-control" id="randomDiscover" aria-label="随机发现" title="随机发现（空格）">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 3h5v5"></path>
+          <path d="M4 20 21 3"></path>
+          <path d="M21 16v5h-5"></path>
+          <path d="m15 15 6 6"></path>
+          <path d="M4 4l5 5"></path>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="followedOnly" aria-label="只看关注" aria-pressed="false" title="只看关注">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3.7 14.55 9l5.85.85-4.23 4.12 1 5.82L12 17.05l-5.17 2.74 1-5.82L3.6 9.85 9.45 9 12 3.7z"></path>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="locateMe" aria-label="我的位置" title="我的位置">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 2v3"></path>
+          <path d="M12 19v3"></path>
+          <path d="M2 12h3"></path>
+          <path d="M19 12h3"></path>
+          <circle cx="12" cy="12" r="7"></circle>
+        </svg>
+      </button>
+      <button type="button" class="observatory-control" id="resetView" aria-label="重置视角" title="重置视角（R）">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 0-2.34 5.66"></path>
+          <path d="M20 4v7h-7"></path>
+        </svg>
+      </button>
+    </nav>
 
     <div class="explore-shell" id="exploreShell">
       <div class="explore-menu" id="exploreMenu" aria-hidden="true" aria-label="银河故事与星云工具">
@@ -3454,8 +3563,8 @@
           </span>
           <div>
             <div class="modal-kicker">观点碰撞 · VIEWPOINT MATCH</div>
-            <div class="modal-title">听听对立面怎么想</div>
-            <p class="modal-sub">已找到与你立场距离最远的一种声音。</p>
+            <div class="modal-title" id="clashTitle">听听对立面怎么想</div>
+            <p class="modal-sub" id="clashSubtitle">已找到与你立场距离最远的一种声音。</p>
             <p class="modal-personalization" id="clashReason">当前根据本题表态进行匹配。</p>
           </div>
         </div>
@@ -3528,9 +3637,9 @@
       <button type="button" class="gbtn gbtn--ghost focus-exit" id="focusExit" aria-label="退出聚焦" title="退出聚焦">×</button>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <div id="tip"></div>
+    <div id="tip" role="region" aria-live="polite" aria-label="当前观点" tabindex="-1"></div>
 
     <div id="loading">
       <div class="loading-inner">
@@ -3703,6 +3812,7 @@
       const canvas = document.getElementById("scene");
       const tip = document.getElementById("tip");
       const loadingEl = document.getElementById("loading");
+      const observatoryControlsEl = document.getElementById("observatoryControls");
       const exploreShellEl = document.getElementById("exploreShell");
       const exploreMenuEl = document.getElementById("exploreMenu");
       const exploreToggleEl = document.getElementById("exploreToggle");
@@ -3868,9 +3978,12 @@
       scene.fog = new THREE.FogExp2(0x05090d, 0.028);
 
       const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
-      camera.position.set(0, 1.8, 11.8);
+      const defaultCameraPosition = new THREE.Vector3(0, 1.8, 11.8);
+      const defaultCameraTarget = new THREE.Vector3(0, 0, 0);
+      camera.position.copy(defaultCameraPosition);
 
       const controls = new OrbitControls(camera, canvas);
+      controls.target.copy(defaultCameraTarget);
       controls.enableDamping = true;
       controls.dampingFactor = 0.06;
       controls.enablePan = false;
@@ -3884,14 +3997,72 @@
         (entryMode === "explore" || !entryEnabled) && !reduceMotion;
       controls.autoRotateSpeed = 0.12;
       let rotateIdleTimer = 0;
+      let cameraTransition = null;
+      const pressedNavigationKeys = new Set();
+      const keyboardCameraVelocity = new THREE.Vector3();
+      let keyboardMotionActive = false;
+      let sceneControlsWereAvailable = controls.enabled;
+      function cancelCameraTransition() {
+        cameraTransition = null;
+      }
+      function scheduleAutoRotate(delay = 5000) {
+        clearTimeout(rotateIdleTimer);
+        if (reduceMotion) return;
+        rotateIdleTimer = setTimeout(() => {
+          if (!cameraTransition) {
+            controls.autoRotate = true;
+          }
+        }, delay);
+      }
+      function moveCamera(target, position, animate, onComplete) {
+        resetKeyboardMotion(false);
+        cancelCameraTransition();
+        controls.autoRotate = false;
+        clearTimeout(rotateIdleTimer);
+        const dampingEnabled = controls.enableDamping;
+        controls.enableDamping = false;
+        controls.update();
+        controls.enableDamping = dampingEnabled;
+        if (!animate || reduceMotion) {
+          controls.target.copy(target);
+          camera.position.copy(position);
+          camera.lookAt(target);
+          controls.update();
+          if (onComplete) onComplete();
+          return;
+        }
+        cameraTransition = {
+          startedAt: performance.now(),
+          duration: 640,
+          fromTarget: controls.target.clone(),
+          toTarget: target.clone(),
+          fromPosition: camera.position.clone(),
+          toPosition: position.clone(),
+          onComplete,
+        };
+      }
+      function updateCameraTransition(now) {
+        if (!cameraTransition) return;
+        const transition = cameraTransition;
+        const progress = Math.max(0, Math.min(1, (now - transition.startedAt) / transition.duration));
+        const eased = progress * progress * (3 - 2 * progress);
+        controls.target.lerpVectors(transition.fromTarget, transition.toTarget, eased);
+        camera.position.lerpVectors(transition.fromPosition, transition.toPosition, eased);
+        camera.lookAt(controls.target);
+        if (progress < 1) return;
+        cameraTransition = null;
+        controls.update();
+        if (transition.onComplete) transition.onComplete();
+      }
       controls.addEventListener("start", () => {
+        cameraFocusUser = null;
+        resetKeyboardMotion(false);
+        cancelCameraTransition();
         controls.autoRotate = false;
         clearTimeout(rotateIdleTimer);
       });
       controls.addEventListener("end", () => {
-        if (reduceMotion) return;
-        clearTimeout(rotateIdleTimer);
-        rotateIdleTimer = setTimeout(() => { controls.autoRotate = true; }, 5000);
+        scheduleAutoRotate();
       });
 
       const composer = new EffectComposer(renderer);
@@ -4688,6 +4859,7 @@
         entryFlowEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("entry-active");
         document.body.classList.toggle("entry-exploring", entryEnabled);
+        resumeCirclePrompt();
         if (entryEnabled && window.parent !== window.self) {
           window.parent.postMessage(
             { type: "nebula-entry-explore", preset: PRESET.id },
@@ -4832,6 +5004,7 @@
         window.clearTimeout(entryFinishTimer);
         entryFinishTimer = 0;
         entryGenerationStartedAt = 0;
+        deferCirclePrompt();
         entryFlowEl.hidden = false;
         entryFlowEl.classList.remove("is-done");
         entryFlowEl.setAttribute("aria-hidden", "false");
@@ -5413,7 +5586,15 @@
         pointer.x = (clientX / window.innerWidth) * 2 - 1;
         pointer.y = -(clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const targets = commentGroup.visible ? avatarTargets.concat(commentTargets) : avatarTargets;
+        const visibleAvatars = followedOnly
+          ? avatarTargets.filter((target) => {
+              const user = target.userData.user;
+              return user && (user.isMe || user.followed);
+            })
+          : avatarTargets;
+        const targets = commentGroup.visible && !followedOnly
+          ? visibleAvatars.concat(commentTargets)
+          : visibleAvatars;
         const hits = raycaster.intersectObjects(targets, false);
         return hits.length ? hits[0].object.userData.user : null;
       }
@@ -5424,10 +5605,7 @@
       function scheduleHideTip(ms) {
         cancelHideTip();
         hideTipTimer = setTimeout(() => {
-          hovered = null;
-          canvas.classList.remove("hovering");
-          tip.classList.remove("show");
-          tip.style.pointerEvents = "none";
+          setHovered(null);
         }, ms);
       }
       function syncTipPointer() {
@@ -5518,11 +5696,16 @@
         hovered = u;
         canvas.classList.toggle("hovering", !!u);
         if (u) {
+          deferCirclePrompt();
           cancelHideTip();
           renderTip(u);
           tip.classList.add("show");
         } else {
           tip.classList.remove("show");
+          if (tip.contains(document.activeElement)) {
+            canvas.focus({ preventScroll: true });
+          }
+          resumeCirclePrompt();
         }
         syncTipPointer();
       }
@@ -5532,8 +5715,14 @@
         if (likeBtn) {
           e.stopPropagation();
           const i = Number(likeBtn.getAttribute("data-like"));
+          const restoreLikeFocus = tip.contains(document.activeElement);
           toggleLike(i);
-          if (hovered && !hovered.isMe && hovered.kind !== "comment") renderTip(hovered);
+          if (hovered && !hovered.isMe && hovered.kind !== "comment") {
+            renderTip(hovered);
+            if (restoreLikeFocus) {
+              tip.querySelector("[data-like]")?.focus({ preventScroll: true });
+            }
+          }
           return;
         }
         if (hovered && hovered.kind !== "comment" && !e.target.closest(".tip-tag")) {
@@ -5581,8 +5770,7 @@
         hovered.group.getWorldPosition(projected);
         projected.project(camera);
         if (projected.z < -1 || projected.z > 1) {
-          tip.classList.remove("show");
-          tip.style.pointerEvents = "none";
+          setHovered(null);
           return;
         }
         if (!tip.classList.contains("show")) tip.classList.add("show");
@@ -5600,7 +5788,10 @@
       function syncResponsiveOffsets() {
         if (window.innerWidth <= 720 && exploreShellEl) {
           const anchor = exploreShellEl.classList.contains("is-open") ? exploreMenuEl : exploreToggleEl;
-          const anchorTop = anchor.getBoundingClientRect().top;
+          const anchorTop = Math.min(
+            anchor.getBoundingClientRect().top,
+            observatoryControlsEl.getBoundingClientRect().top,
+          );
           const clearance = Math.ceil(window.innerHeight - anchorTop + 12);
           document.documentElement.style.setProperty("--mobile-panel-clearance", `${clearance}px`);
         } else {
@@ -5639,10 +5830,22 @@
 
       const clock = new THREE.Clock();
       let running = true;
-      const scheduleFrame = () => (window.__rafShim || requestAnimationFrame)(loop);
+      let frameScheduled = false;
+      const scheduleFrame = () => {
+        if (frameScheduled) return;
+        frameScheduled = true;
+        (window.__rafShim || requestAnimationFrame)(() => {
+          frameScheduled = false;
+          loop();
+        });
+      };
       document.addEventListener("visibilitychange", () => {
         running = !document.hidden;
-        if (running) { clock.getDelta(); loop(); }
+        if (document.hidden) resetKeyboardMotion(false);
+        if (running) {
+          clock.getDelta();
+          scheduleFrame();
+        }
       });
 
       function animateNode(u, t, baseAva, baseGlow) {
@@ -5653,7 +5856,9 @@
         u.avatar.scale.setScalar(baseAva * u.scale);
         u.glow.scale.setScalar(baseGlow * u.scale);
         const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
-        const dimmed = focusSet && !u.isMe && !focusSet.has(u.index);
+        const dimmedByFocus = focusSet && !u.isMe && !focusSet.has(u.index);
+        const dimmedByFollow = followedOnly && !u.isMe && !u.followed;
+        const dimmed = dimmedByFocus || dimmedByFollow;
         const avaTarget = dimmed ? 0.07 : 1;
         u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * 0.12;
         const glowTarget = dimmed
@@ -5669,16 +5874,20 @@
         if (u.ring) {
           const onFocus = focusSet && !u.isMe && focusSet.has(u.index);
           const onMatch = matchIndex === u.index && performance.now() < matchUntil;
-          const target = onMatch ? 0.7 + Math.sin(t * 6) * 0.3 : onFocus ? 0.9 : 0;
+          const matchOpacity = reduceMotion ? 0.9 : 0.7 + Math.sin(t * 6) * 0.3;
+          const target = onMatch ? matchOpacity : onFocus ? 0.9 : 0;
           u.ring.material.opacity += (target - u.ring.material.opacity) * 0.14;
-          if (onMatch) u.ring.scale.setScalar(1.08 + Math.sin(t * 6) * 0.07);
+          if (onMatch) {
+            u.ring.scale.setScalar(reduceMotion ? 1.08 : 1.08 + Math.sin(t * 6) * 0.07);
+          }
           else if (!onFocus) u.ring.scale.setScalar(1.02);
         }
       }
 
       function loop() {
         if (!running) return;
-        const t = clock.getElapsedTime();
+        const delta = Math.min(clock.getDelta(), 0.05);
+        const t = clock.elapsedTime;
 
         pointerEnergy += (pointerTarget - pointerEnergy) * 0.075;
         galaxyMaterials.forEach((material) => {
@@ -5700,6 +5909,8 @@
           dustGroup.rotation.z = Math.sin(t * 0.05) * 0.03;
         }
 
+        updateKeyboardCamera(delta);
+        updateCameraTransition(performance.now());
         controls.update();
         updateAxisLabels();
         updateTipPosition();
@@ -5712,6 +5923,9 @@
       let matchIndex = -1;
       let matchUntil = 0;
       let includeComments = false;
+      let followedOnly = false;
+      let lastRandomIndex = -1;
+      let cameraFocusUser = null;
 
       const $ = (id) => document.getElementById(id);
       const toastEl = $("toast");
@@ -6113,6 +6327,7 @@
 
       function setExploreOpen(open) {
         exploreShellEl.classList.toggle("is-open", open);
+        document.body.classList.toggle("is-explore-menu-open", open);
         exploreToggleEl.setAttribute("aria-expanded", String(open));
         exploreToggleEl.setAttribute("aria-label", open ? "收起银河故事" : "打开银河故事");
         exploreMenuEl.setAttribute("aria-hidden", String(!open));
@@ -6120,7 +6335,8 @@
           setPresetPickerOpen(false);
           setDiscoveryMode(null);
         }
-        if (open) $("circleChip").classList.remove("show");
+        if (open) deferCirclePrompt();
+        else resumeCirclePrompt();
         syncResponsiveOffsets();
       }
       exploreToggleEl.addEventListener("click", () => {
@@ -6397,6 +6613,7 @@
         exitFocus();
         renderCards();
         cardsTransitioning = true;
+        deferCirclePrompt();
         document.body.classList.add("is-view-transitioning");
         cardsQuickEntryBtn.classList.add("is-launching");
         setTimeout(() => {
@@ -6423,6 +6640,7 @@
           notifyHostView("nebula");
           document.body.classList.remove("is-view-transitioning");
           cardsTransitioning = false;
+          resumeCirclePrompt();
         }, reduceMotion ? 0 : 180);
       }
       cardsQuickEntryBtn.addEventListener("click", openCards);
@@ -6480,8 +6698,10 @@
         "我现在的立场是什么？",
         "帮我定位起点",
       ];
+      const GUIDE_QUIZ_INPUT_GUARD_MS = 800;
       let guideQuizStep = 0;
       let guideQuizStances = [];
+      let guideQuizInputReadyAt = 0;
 
       function findPersonNearStance(target) {
         let best = 0;
@@ -6607,9 +6827,10 @@
         );
         guideQuizStep = 0;
         guideQuizStances = [];
+        guideQuizInputReadyAt = 0;
         renderGuideQuizStep();
       }
-      function renderGuideQuizStep() {
+      function renderGuideQuizStep(restoreFocus = false) {
         const questions = guideQuizQuestions();
         if (guideQuizStep >= questions.length) {
           const avg = guideQuizStances.reduce((sum, value) => sum + value, 0) /
@@ -6621,6 +6842,7 @@
               `：坐标约 ${avg > 0 ? "+" : ""}${avg.toFixed(2)}，更接近「${stanceLabel(avg)}」。去光谱阅读里找相近观点，再点赞形成你的真实星位。`,
             ),
           );
+          if (restoreFocus) guideAskEl.focus();
           return;
         }
         const current = questions[guideQuizStep];
@@ -6628,10 +6850,24 @@
         current.choices.forEach((choice) => {
           const button = uiNode("button", "guide-quiz-btn", choice.label);
           button.type = "button";
+          button.addEventListener("keydown", (event) => {
+            if (
+              event.repeat &&
+              (event.key === "Enter" || event.key === " " || event.code === "Space")
+            ) {
+              event.preventDefault();
+            }
+          });
           button.addEventListener("click", () => {
+            const now = performance.now();
+            if (now < guideQuizInputReadyAt) {
+              showToast("请先读完本题再选择");
+              return;
+            }
+            guideQuizInputReadyAt = now + GUIDE_QUIZ_INPUT_GUARD_MS;
             guideQuizStances.push(choice.stance);
             guideQuizStep += 1;
-            renderGuideQuizStep();
+            renderGuideQuizStep(true);
           });
           choices.appendChild(button);
         });
@@ -6640,6 +6876,7 @@
           uiNode("div", "guide-quiz-q", `第 ${guideQuizStep + 1} / ${questions.length} 题 · ${current.question}`),
           choices,
         );
+        if (restoreFocus) choices.querySelector("button")?.focus();
       }
       function matchGuideIntent(query) {
         const text = query.trim().toLocaleLowerCase("zh-CN");
@@ -6681,7 +6918,8 @@
           );
           guideQuizStep = 0;
           guideQuizStances = [];
-          renderGuideQuizStep();
+          guideQuizInputReadyAt = 0;
+          renderGuideQuizStep(true);
           return;
         }
         guideSuggestionsEl.replaceChildren(
@@ -6729,6 +6967,7 @@
         );
       }
       function openGuide() {
+        deferCirclePrompt();
         guideHeadlineEl.textContent = guideHeadline();
         renderGuidePicks();
         renderGuideSelfSection();
@@ -6739,7 +6978,9 @@
         guideCloseButton.focus();
       }
       function resumeCirclePrompt() {
-        if (chipQueue.length) queueNextChip(3000);
+        if (chipQueue.length && personaUnlocked() && !circlePromptBlocked()) {
+          queueNextChip(3000);
+        }
       }
       function closeGuide(restoreFocus = true) {
         guideEl.classList.remove("show");
@@ -6841,10 +7082,10 @@
         $("matchOpposite").classList.toggle("is-active", !same);
         $("matchOpposite").setAttribute("aria-selected", String(!same));
         $("clashMetricLabel").textContent = same ? "你们的立场相似度" : "你们的立场距离";
-        document.querySelector(".modal-title").textContent = same
+        $("clashTitle").textContent = same
           ? "遇见与你同频的声音"
           : "听听对立面怎么想";
-        document.querySelector(".modal-sub").textContent = same
+        $("clashSubtitle").textContent = same
           ? "从未点赞的回答中，寻找立场相近且兴趣相关的一种声音。"
           : "从未点赞的回答中，寻找立场相远且兴趣相关的一种声音。";
       }
@@ -6853,10 +7094,12 @@
           showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁观点碰撞`);
           return;
         }
+        setFollowedOnly(false, false);
         clashGoBtn.disabled = false;
         setClashButtonLabel("翻开人格卡");
         clashCurrent = pickMatch(-1);
         renderClash();
+        deferCirclePrompt();
         clashEl.classList.add("show");
       }
       function renderClash() {
@@ -6896,6 +7139,7 @@
       function closeClash() {
         clashEl.classList.remove("show");
         matchIndex = -1;
+        resumeCirclePrompt();
       }
       $("clashBtn").addEventListener("click", () => {
         setExploreOpen(false);
@@ -6983,14 +7227,36 @@
         chipEl.classList.remove("show");
         chipEl.setAttribute("aria-hidden", "true");
       }
+      function circlePromptBlocked() {
+        return document.body.classList.contains("entry-active") ||
+          cardsTransitioning ||
+          cardsEl.classList.contains("show") ||
+          guideEl.classList.contains("show") ||
+          clashEl.classList.contains("show") ||
+          Boolean(focusSet) ||
+          Boolean(hovered) ||
+          Boolean(cameraTransition) ||
+          exploreShellEl.classList.contains("is-open") ||
+          chipEl.classList.contains("show");
+      }
+      function deferCirclePrompt() {
+        clearTimeout(chipTimer);
+        chipTimer = 0;
+        if (
+          chipEl.classList.contains("show") &&
+          chipCluster &&
+          !chipQueue.includes(chipCluster)
+        ) {
+          chipQueue.unshift(chipCluster);
+        }
+        hideChip();
+      }
       function queueNextChip(delay) {
         clearTimeout(chipTimer);
         chipTimer = setTimeout(() => {
+          chipTimer = 0;
           if (!personaUnlocked()) return;
-          if (cardsEl.classList.contains("show") || guideEl.classList.contains("show") || clashEl.classList.contains("show") || focusSet || exploreShellEl.classList.contains("is-open")) {
-            resumeCirclePrompt();
-            return;
-          }
+          if (circlePromptBlocked()) return;
           if (chipQueue.length) showChip(chipQueue.shift());
         }, delay);
       }
@@ -7009,9 +7275,18 @@
         focusBannerEl.setAttribute("aria-hidden", "true");
         document.body.classList.remove("is-focusing");
         commentGroup.visible = includeComments;
+        resumeCirclePrompt();
       }
       function focusCluster(c) {
+        setFollowedOnly(false, false);
         exitFocus();
+        setHovered(null);
+        cameraFocusUser = null;
+        matchIndex = -1;
+        matchUntil = 0;
+        moveCamera(defaultCameraTarget, defaultCameraPosition, true, () => {
+          controls.autoRotate = !reduceMotion;
+        });
         focusSet = new Set(c.members);
         c.members.forEach((i) => ensureRing(users[i]));
         const pts = [];
@@ -7034,6 +7309,276 @@
         focusBannerEl.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-focusing");
       }
+
+      function setFollowedOnly(active, announce = true) {
+        const next = Boolean(active);
+        if (next && FOLLOWED.size === 0) {
+          followedOnly = false;
+          $("followedOnly").setAttribute("aria-pressed", "false");
+          if (announce) showToast("当前快照没有已关注的回答者");
+          return false;
+        }
+        followedOnly = next;
+        $("followedOnly").setAttribute("aria-pressed", String(followedOnly));
+        if (followedOnly && focusSet) exitFocus();
+        const matchedUser = users[matchIndex];
+        if (
+          followedOnly &&
+          matchedUser &&
+          !matchedUser.isMe &&
+          !matchedUser.followed
+        ) {
+          const interruptedTransition = Boolean(cameraTransition);
+          cancelCameraTransition();
+          matchIndex = -1;
+          matchUntil = 0;
+          if (interruptedTransition) scheduleAutoRotate();
+        }
+        if (
+          followedOnly &&
+          cameraFocusUser &&
+          !cameraFocusUser.isMe &&
+          !cameraFocusUser.followed
+        ) {
+          cameraFocusUser = null;
+          moveCamera(defaultCameraTarget, defaultCameraPosition, true, () => {
+            controls.autoRotate = !reduceMotion;
+            resumeCirclePrompt();
+          });
+        }
+        if (
+          hovered &&
+          !hovered.isMe &&
+          (!hovered.followed || hovered.kind === "comment")
+        ) {
+          setHovered(null);
+        }
+        if (announce) {
+          showToast(
+            followedOnly
+              ? `正在查看 ${FOLLOWED.size} 位已关注回答者`
+              : "已恢复全部回答者",
+          );
+        }
+        return followedOnly;
+      }
+
+      function cameraPositionFor(target) {
+        const direction = camera.position.clone().sub(controls.target);
+        if (direction.lengthSq() < 0.001) {
+          direction.copy(defaultCameraPosition).sub(defaultCameraTarget);
+        }
+        const distance = THREE.MathUtils.clamp(
+          camera.position.distanceTo(controls.target),
+          7.2,
+          8.4,
+        );
+        return target.clone().add(direction.normalize().multiplyScalar(distance));
+      }
+
+      function focusUser(user, animate, focusTip = false) {
+        if (!user) return;
+        if (focusSet) exitFocus();
+        setHovered(null);
+        deferCirclePrompt();
+        nebula.updateMatrixWorld(true);
+        const target = new THREE.Vector3();
+        if (user.isMe && user.group.parent) {
+          target.copy(user.group.position);
+          target.x = user.baseX;
+          user.group.parent.localToWorld(target);
+        } else {
+          user.group.getWorldPosition(target);
+        }
+        ensureRing(user);
+        cameraFocusUser = user;
+        matchIndex = user.index;
+        matchUntil = performance.now() + 3600;
+        moveCamera(target, cameraPositionFor(target), animate, () => {
+          setHovered(user);
+          if (focusTip) tip.focus({ preventScroll: true });
+          scheduleAutoRotate(7000);
+        });
+      }
+
+      function randomDiscover(animate, focusTip = false) {
+        const candidates = entryAnswerUsers.filter((user) => !followedOnly || user.followed);
+        if (!candidates.length) {
+          showToast("当前筛选下没有可发现的回答者");
+          return -1;
+        }
+        const fresh = candidates.filter((user) => user.index !== lastRandomIndex);
+        const pool = fresh.length ? fresh : candidates;
+        const user = pool[Math.floor(Math.random() * pool.length)];
+        lastRandomIndex = user.index;
+        focusUser(user, animate, focusTip);
+        return user.index;
+      }
+
+      function resetObservation(animate) {
+        setFollowedOnly(false, false);
+        if (focusSet) exitFocus();
+        setHovered(null);
+        deferCirclePrompt();
+        includeComments = false;
+        $("commentToggle").checked = false;
+        commentGroup.visible = false;
+        matchIndex = -1;
+        matchUntil = 0;
+        cameraFocusUser = null;
+        moveCamera(defaultCameraTarget, defaultCameraPosition, animate, () => {
+          controls.autoRotate = !reduceMotion;
+          showToast("已重置星云视角");
+          resumeCirclePrompt();
+        });
+      }
+
+      function resetKeyboardMotion(resumeAutoRotate = false) {
+        const wasActive =
+          keyboardMotionActive ||
+          pressedNavigationKeys.size > 0 ||
+          keyboardCameraVelocity.lengthSq() > 0.000001;
+        pressedNavigationKeys.clear();
+        keyboardCameraVelocity.set(0, 0, 0);
+        keyboardMotionActive = false;
+        if (wasActive && resumeAutoRotate) scheduleAutoRotate();
+      }
+
+      function updateKeyboardCamera(delta) {
+        const controlsAvailable = sceneControlsAvailable();
+        if (!controlsAvailable) {
+          if (sceneControlsWereAvailable) {
+            sceneControlsWereAvailable = false;
+            resetKeyboardMotion(false);
+            cameraFocusUser = null;
+            cancelCameraTransition();
+            controls.autoRotate = false;
+            clearTimeout(rotateIdleTimer);
+          }
+          return;
+        }
+        if (!sceneControlsWereAvailable) {
+          sceneControlsWereAvailable = true;
+          scheduleAutoRotate();
+        }
+
+        const horizontal =
+          Number(pressedNavigationKeys.has("ArrowRight")) -
+          Number(pressedNavigationKeys.has("ArrowLeft"));
+        const vertical =
+          Number(pressedNavigationKeys.has("ArrowDown")) -
+          Number(pressedNavigationKeys.has("ArrowUp"));
+        const zoom =
+          Number(
+            pressedNavigationKeys.has("ZoomOut"),
+          ) -
+          Number(
+            pressedNavigationKeys.has("ZoomIn"),
+          );
+        const hasInput = Boolean(horizontal || vertical || zoom);
+        const response = hasInput ? 13 : 8;
+        keyboardCameraVelocity.x = THREE.MathUtils.damp(
+          keyboardCameraVelocity.x,
+          horizontal * 0.78,
+          response,
+          delta,
+        );
+        keyboardCameraVelocity.y = THREE.MathUtils.damp(
+          keyboardCameraVelocity.y,
+          vertical * 0.58,
+          response,
+          delta,
+        );
+        keyboardCameraVelocity.z = THREE.MathUtils.damp(
+          keyboardCameraVelocity.z,
+          zoom * 0.72,
+          response,
+          delta,
+        );
+
+        const moving =
+          Math.abs(keyboardCameraVelocity.x) > 0.001 ||
+          Math.abs(keyboardCameraVelocity.y) > 0.001 ||
+          Math.abs(keyboardCameraVelocity.z) > 0.001;
+        if (!moving) {
+          if (keyboardMotionActive) {
+            keyboardCameraVelocity.set(0, 0, 0);
+            keyboardMotionActive = false;
+            scheduleAutoRotate();
+          }
+          return;
+        }
+
+        if (!keyboardMotionActive) {
+          cameraFocusUser = null;
+          cancelCameraTransition();
+          controls.autoRotate = false;
+          clearTimeout(rotateIdleTimer);
+          keyboardMotionActive = true;
+        }
+
+        const offset = camera.position.clone().sub(controls.target);
+        const spherical = new THREE.Spherical().setFromVector3(offset);
+        spherical.theta += keyboardCameraVelocity.x * delta;
+        spherical.phi = THREE.MathUtils.clamp(
+          spherical.phi + keyboardCameraVelocity.y * delta,
+          controls.minPolarAngle,
+          controls.maxPolarAngle,
+        );
+        spherical.radius = THREE.MathUtils.clamp(
+          spherical.radius * Math.exp(keyboardCameraVelocity.z * delta),
+          controls.minDistance,
+          controls.maxDistance,
+        );
+        camera.position.copy(controls.target).add(offset.setFromSpherical(spherical));
+        camera.lookAt(controls.target);
+      }
+
+      function sceneControlsAvailable() {
+        return controls.enabled &&
+          !document.body.classList.contains("entry-active") &&
+          !cardsTransitioning &&
+          !cardsEl.classList.contains("show") &&
+          !guideEl.classList.contains("show") &&
+          !clashEl.classList.contains("show") &&
+          !exploreShellEl.classList.contains("is-open");
+      }
+
+      function isInteractiveKeyboardTarget(target) {
+        return target instanceof Element && Boolean(
+          target.closest("input, textarea, select, button, a, [contenteditable='true']"),
+        );
+      }
+
+      function navigationKeyForEvent(event) {
+        if (
+          event.key === "ArrowLeft" ||
+          event.key === "ArrowRight" ||
+          event.key === "ArrowUp" ||
+          event.key === "ArrowDown"
+        ) {
+          return event.key;
+        }
+        if (event.key === "+" || event.key === "=" || event.key === "Add") {
+          return "ZoomIn";
+        }
+        if (event.key === "-" || event.key === "_" || event.key === "Subtract") {
+          return "ZoomOut";
+        }
+        return "";
+      }
+
+      $("randomDiscover").addEventListener("click", (event) => {
+        randomDiscover(true, event.detail === 0);
+      });
+      $("followedOnly").addEventListener("click", () => {
+        setFollowedOnly(!followedOnly);
+      });
+      $("locateMe").addEventListener("click", (event) => {
+        focusUser(meUser, true, event.detail === 0);
+      });
+      $("resetView").addEventListener("click", () => resetObservation(true));
+
       $("circleFocus").addEventListener("click", () => {
         if (chipCluster) focusCluster(chipCluster);
         hideChip();
@@ -7064,14 +7609,46 @@
       });
 
       document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (guideEl.classList.contains("show")) closeGuide();
-        else if (clashEl.classList.contains("show")) closeClash();
-        else if (cardsEl.classList.contains("show")) closeCards();
-        else if (focusSet) exitFocus();
-        else if (chipEl.classList.contains("show")) hideChip();
-        else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
+        if (e.key === "Escape") {
+          if (e.isComposing || e.repeat) return;
+          if (guideEl.classList.contains("show")) closeGuide();
+          else if (clashEl.classList.contains("show")) closeClash();
+          else if (cardsEl.classList.contains("show")) closeCards();
+          else if (focusSet) exitFocus();
+          else if (chipEl.classList.contains("show")) hideChip();
+          else if (exploreShellEl.classList.contains("is-open")) setExploreOpen(false);
+          else if (hovered) setHovered(null);
+          return;
+        }
+        if (
+          e.defaultPrevented ||
+          e.metaKey ||
+          e.ctrlKey ||
+          e.altKey ||
+          isInteractiveKeyboardTarget(e.target) ||
+          !sceneControlsAvailable()
+        ) {
+          return;
+        }
+        if ((e.key === " " || e.key === "Space" || e.code === "Space") && !e.repeat) {
+          e.preventDefault();
+          randomDiscover(true, true);
+        } else if (e.key === "r" || e.key === "R") {
+          if (e.repeat) return;
+          e.preventDefault();
+          resetObservation(true);
+        } else {
+          const navigationKey = navigationKeyForEvent(e);
+          if (!navigationKey) return;
+          e.preventDefault();
+          pressedNavigationKeys.add(navigationKey);
+        }
       });
+      document.addEventListener("keyup", (e) => {
+        const navigationKey = navigationKeyForEvent(e);
+        if (navigationKey) pressedNavigationKeys.delete(navigationKey);
+      });
+      window.addEventListener("blur", () => resetKeyboardMotion(true));
 
       window.__neb = {
         presetId: () => PRESET.id,
@@ -7090,11 +7667,23 @@
         particleCount: () => quality.farStars + quality.haloStars + quality.armDust + quality.brightDust,
         pointerEnergy: () => pointerEnergy,
         focusSize: () => (focusSet ? focusSet.size : 0),
+        followedOnly: () => followedOnly,
+        randomIndex: () => lastRandomIndex,
+        cameraPosition: () => camera.position.toArray(),
+        cameraTarget: () => controls.target.toArray(),
+        keyboardVelocity: () => keyboardCameraVelocity.toArray(),
+        stepKeyboardCamera: (delta = 1 / 60) => {
+          updateKeyboardCamera(Math.max(0, Math.min(delta, 0.05)));
+        },
         clashIndex: () => clashCurrent,
         matchIndex: () => matchIndex,
         matchMode: () => matchMode,
         portraitKeywords: () => userPortrait?.keywords.map(({ word }) => word) || [],
-        play: () => { running = true; clock.getDelta(); loop(); },
+        play: () => { running = true; clock.getDelta(); scheduleFrame(); },
+        randomDiscover: (animate = false) => randomDiscover(animate),
+        locateMe: (animate = false) => focusUser(meUser, animate),
+        resetObservation: (animate = false) => resetObservation(animate),
+        setFollowedOnly: (active) => setFollowedOnly(active, false),
         heartOn: (i) => !!(users[i] && users[i].heart && users[i].heart.visible),
         ringOpacity: (i) => (users[i] && users[i].ring ? users[i].ring.material.opacity : 0),
         avatarOpacity: (i) => (users[i] ? users[i].avatar.material.opacity : -1),

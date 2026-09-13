@@ -57,7 +57,9 @@ export function clearSelfProfileContexts(): void {
 }
 
 export function nebulaPresetVersion(preset: string): string | null {
-  return NEBULA_PRESET_VERSIONS[preset] ?? null;
+  return Object.hasOwn(NEBULA_PRESET_VERSIONS, preset)
+    ? NEBULA_PRESET_VERSIONS[preset]
+    : null;
 }
 
 export function resolveNebulaPreset(preset: string): string {

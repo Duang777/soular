@@ -2389,7 +2389,9 @@ textarea.field:focus-visible,
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  box-sizing: border-box;
   width: min(88vw, 400px);
+  max-width: 100%;
   padding: 22px 24px 18px;
   border: 1px solid rgba(196, 165, 116, 0.32);
   border-radius: 20px;
@@ -2402,6 +2404,13 @@ textarea.field:focus-visible,
     0 24px 60px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(243, 240, 233, 0.07);
   animation: draw-rise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.draw-overlay--sheet {
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .share-sheet::before {
@@ -2441,6 +2450,9 @@ textarea.field:focus-visible,
 }
 
 .share-sheet__url {
+  display: grid;
+  gap: 3px;
+  width: 100%;
   margin: 4px 0 0;
   max-width: 100%;
   overflow: hidden;
@@ -2448,6 +2460,15 @@ textarea.field:focus-visible,
   font-size: 10px;
   letter-spacing: 0.02em;
   color: rgba(243, 240, 233, 0.4);
+}
+
+.share-sheet__url-label {
+  color: rgba(196, 165, 116, 0.72);
+  font-size: 9px;
+}
+
+.share-sheet__url > span:last-child {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2703,7 +2724,9 @@ textarea.field:focus-visible,
 }
 
 .match-cta {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   min-height: 44px;
   margin-top: 0.35rem;
 }
@@ -2745,6 +2768,11 @@ textarea.field:focus-visible,
 .match-quiz-btn:hover {
   border-color: rgba(89, 199, 210, 0.45);
   background: rgba(89, 199, 210, 0.08);
+}
+
+.match-quiz-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .match-quiz-btn:focus-visible,

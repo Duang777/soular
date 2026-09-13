@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { BrandMark } from "./BrandMark";
 import { castByKey } from "./cast";
@@ -13,6 +13,7 @@ import {
 } from "./shareMatch";
 
 type Phase = "intro" | "quiz" | "reveal";
+const QUIZ_CHOICE_LOCK_MS = 800;
 
 function MatchHeader() {
   return (
@@ -35,6 +36,17 @@ export function MatchRevealPage() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [quizStep, setQuizStep] = useState(0);
   const [quizStances, setQuizStances] = useState<number[]>([]);
+  const [choiceLocked, setChoiceLocked] = useState(false);
+  const choiceLockedRef = useRef(false);
+  const choiceUnlockTimer = useRef(0);
+  const firstChoiceRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => () => window.clearTimeout(choiceUnlockTimer.current), []);
+  useEffect(() => {
+    if (phase === "quiz" && !choiceLocked) {
+      firstChoiceRef.current?.focus({ preventScroll: true });
+    }
+  }, [choiceLocked, phase, quizStep]);
 
   if (!payload) {
     return <Navigate to="/" replace />;
@@ -78,7 +90,26 @@ export function MatchRevealPage() {
   const relationship = describeMatchRelationship(axis, hostCast, payload.stance, guestStance);
   const nebulaTarget = `/nebula?preset=${encodeURIComponent(payload.preset)}`;
 
+  function resetChoiceLock() {
+    window.clearTimeout(choiceUnlockTimer.current);
+    choiceLockedRef.current = false;
+    setChoiceLocked(false);
+  }
+
+  function lockChoices() {
+    choiceLockedRef.current = true;
+    setChoiceLocked(true);
+    window.clearTimeout(choiceUnlockTimer.current);
+    choiceUnlockTimer.current = window.setTimeout(() => {
+      choiceLockedRef.current = false;
+      setChoiceLocked(false);
+    }, QUIZ_CHOICE_LOCK_MS);
+  }
+
   function handleChoice(stance: number) {
+    if (choiceLockedRef.current) return;
+    lockChoices();
+
     const next = [...quizStances, stance];
     if (quizStep + 1 >= questions.length) {
       setQuizStances(next);
@@ -117,7 +148,10 @@ export function MatchRevealPage() {
             <button
               type="button"
               className="draw-btn draw-btn--primary match-cta"
-              onClick={() => setPhase("quiz")}
+              onClick={() => {
+                lockChoices();
+                setPhase("quiz");
+              }}
             >
               开始我的表态
             </button>
@@ -126,16 +160,19 @@ export function MatchRevealPage() {
 
         {phase === "quiz" && (
           <section className="match-panel">
-            <p className="match-quiz-progress">
+            <p className="match-quiz-progress" aria-live="polite">
               第 {quizStep + 1} / {questions.length} 题
             </p>
             <h2 className="match-quiz-question">{questions[quizStep].question}</h2>
             <div className="match-quiz-choices">
-              {questions[quizStep].choices.map((choice) => (
+              {questions[quizStep].choices.map((choice, choiceIndex) => (
                 <button
                   key={choice.label}
+                  ref={choiceIndex === 0 ? firstChoiceRef : undefined}
                   type="button"
                   className="match-quiz-btn"
+                  aria-label={`${questions[quizStep].question}：${choice.label}`}
+                  disabled={choiceLocked}
                   onClick={() => handleChoice(choice.stance)}
                 >
                   {choice.label}
@@ -184,6 +221,7 @@ export function MatchRevealPage() {
                 type="button"
                 className="draw-btn draw-btn--ghost match-cta"
                 onClick={() => {
+                  resetChoiceLock();
                   setPhase("intro");
                   setQuizStep(0);
                   setQuizStances([]);

@@ -350,10 +350,10 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   const [matchCopyState, setMatchCopyState] = useState<CopyState>("idle");
   const [posterState, setPosterState] = useState<"idle" | "working" | "done">("idle");
   const timers = useRef<number[]>([]);
-  const copySequence = useRef({ share: 0, match: 0 });
   const copyResetTimers = useRef({ share: 0, match: 0 });
 
   const personName = person ? `@${person.name}` : cast.name;
+  const shareLinkLabel = person ? "观点链接" : "人格卡链接";
   const artSrc = asset(`personas/${cast.key}.jpg`);
   const personAvatarSrc = person ? asset(personAvatarFile(person, personIndex)) : null;
   const personSourceUrl = safeZhihuUrl(person?.sourceUrl);
@@ -463,6 +463,9 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
   }
 
   function legacyCopy(text: string): boolean {
+    const activeElement = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.setAttribute("readonly", "");
@@ -479,28 +482,17 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
       ok = false;
     }
     ta.remove();
+    activeElement?.focus({ preventScroll: true });
     return ok;
   }
 
-  async function copyText(
+  function copyText(
     text: string,
     kind: "share" | "match",
     setState: (state: CopyState) => void,
   ) {
-    const sequence = ++copySequence.current[kind];
     window.clearTimeout(copyResetTimers.current[kind]);
-    let ok = false;
-    try {
-      if (window.isSecureContext && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        ok = true;
-      } else {
-        ok = legacyCopy(text);
-      }
-    } catch {
-      ok = legacyCopy(text);
-    }
-    if (sequence !== copySequence.current[kind]) return;
+    const ok = legacyCopy(text);
     setState(ok ? "done" : "error");
     copyResetTimers.current[kind] = window.setTimeout(
       () => setState("idle"),
@@ -508,13 +500,13 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
     );
   }
 
-  async function copyLink() {
-    await copyText(shareUrl, "share", setCopyState);
+  function copyLink() {
+    copyText(shareUrl, "share", setCopyState);
   }
 
-  async function copyMatchLink() {
+  function copyMatchLink() {
     if (!matchShareUrl) return;
-    await copyText(matchShareUrl, "match", setMatchCopyState);
+    copyText(matchShareUrl, "match", setMatchCopyState);
   }
 
   async function nativeShare() {
@@ -683,7 +675,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   {copyState === "done"
                     ? "链接已复制 ✓"
                     : copyState === "error"
-                      ? "复制失败，请长按下方链接"
+                      ? `复制失败，请长按“${shareLinkLabel}”`
                       : person ? "复制观点链接" : "复制人格卡链接"}
                 </button>
                 {matchShareUrl && (
@@ -691,7 +683,7 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                     {matchCopyState === "done"
                       ? "对照链接已复制 ✓"
                       : matchCopyState === "error"
-                        ? "复制失败，请长按下方链接"
+                        ? "复制失败，请长按“对照链接”"
                         : "复制对照链接"}
                   </button>
                 )}
@@ -704,9 +696,15 @@ export function CardDraw({ cast, subject, mode, onEnter, onClose, onExit }: {
                   返回
                 </button>
               </div>
-              <p className="share-sheet__url">{shareUrl}</p>
+              <p className="share-sheet__url">
+                <span className="share-sheet__url-label">{shareLinkLabel}</span>
+                <span>{shareUrl}</span>
+              </p>
               {matchShareUrl && (
-                <p className="share-sheet__url">{matchShareUrl}</p>
+                <p className="share-sheet__url">
+                  <span className="share-sheet__url-label">对照链接</span>
+                  <span>{matchShareUrl}</span>
+                </p>
               )}
               <p className="share-sheet__tip">
                 {isSelf

@@ -63,8 +63,8 @@ export function parseShareMatchQuery(params: URLSearchParams): ShareMatchPayload
 }
 
 export function stanceLabel(stance: number, axis: PresetAxis): string {
-  if (stance <= -0.35) return axis.left;
-  if (stance >= 0.35) return axis.right;
+  if (stance < -0.2) return axis.left;
+  if (stance > 0.2) return axis.right;
   return axis.center;
 }
 
@@ -112,7 +112,7 @@ export function describeMatchRelationship(
   const gap = Math.abs(hostStance - guestStance);
   const hostSide = stanceLabel(hostStance, axis);
   const guestSide = stanceLabel(guestStance, axis);
-  const side = (stance: number) => stance <= -0.35 ? -1 : stance >= 0.35 ? 1 : 0;
+  const side = (stance: number) => stance < -0.2 ? -1 : stance > 0.2 ? 1 : 0;
   const hostDirection = side(hostStance);
   const guestDirection = side(guestStance);
   const sameDirection =

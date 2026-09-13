@@ -9,6 +9,14 @@ const matchPageSource = readFileSync(
   new URL("../src/MatchReveal.tsx", import.meta.url),
   "utf8",
 );
+const peopleSource = readFileSync(
+  new URL("../src/people.ts", import.meta.url),
+  "utf8",
+);
+const cardDrawSource = readFileSync(
+  new URL("../src/CardDraw.tsx", import.meta.url),
+  "utf8",
+);
 const appCssSource = readFileSync(
   new URL("../src/app.css", import.meta.url),
   "utf8",
@@ -55,8 +63,8 @@ function parseShareMatchQuery(params) {
 }
 
 function stanceLabel(stance, axis) {
-  if (stance <= -0.35) return axis.left;
-  if (stance >= 0.35) return axis.right;
+  if (stance < -0.2) return axis.left;
+  if (stance > 0.2) return axis.right;
   return axis.center;
 }
 
@@ -64,7 +72,7 @@ function describeMatchRelationship(axis, hostCastName, hostStance, guestStance) 
   const gap = Math.abs(hostStance - guestStance);
   const hostSide = stanceLabel(hostStance, axis);
   const guestSide = stanceLabel(guestStance, axis);
-  const side = (stance) => stance <= -0.35 ? -1 : stance >= 0.35 ? 1 : 0;
+  const side = (stance) => stance < -0.2 ? -1 : stance > 0.2 ? 1 : 0;
   const hostDirection = side(hostStance);
   const guestDirection = side(guestStance);
   const sameDirection =
@@ -103,6 +111,10 @@ const axis = {
 assert.equal(encodeStance(0.42), 42);
 assert.equal(decodeStance(42), 0.42);
 assert.equal(decodeStance(101), null);
+assert.equal(stanceLabel(-0.2, axis), axis.center);
+assert.equal(stanceLabel(-0.21, axis), axis.left);
+assert.equal(stanceLabel(0.2, axis), axis.center);
+assert.equal(stanceLabel(0.21, axis), axis.right);
 
 const url = buildShareMatchUrl("https://soular.top", "/", {
   preset: "ai-math",
@@ -133,6 +145,10 @@ assert.equal(
   null,
 );
 assert.equal(
+  parseShareMatchQuery(new URLSearchParams("preset=constructor&version=1&cast=fox&s=0")),
+  null,
+);
+assert.equal(
   parseShareMatchQuery(new URLSearchParams("preset=ai-math&version=20260912&cast=fox&s=1e2")),
   null,
 );
@@ -155,9 +171,49 @@ assert.match(
   "生产解析必须拒绝缺失或非十进制整数立场",
 );
 assert.match(
+  productionSource,
+  /function stanceLabel[\s\S]*stance < -0\.2[\s\S]*stance > 0\.2/,
+  "朋友对照必须与星云使用相同的立场分界",
+);
+assert.match(
+  peopleSource,
+  /Object\.hasOwn\(NEBULA_PRESET_VERSIONS, preset\)/,
+  "快照版本查询必须拒绝对象原型上的未知键",
+);
+assert.match(
+  cardDrawSource,
+  /const ok = legacyCopy\(text\)[\s\S]*setState\(ok \? "done" : "error"\)/,
+  "复制操作必须在用户点击时同步完成并反馈结果",
+);
+assert.doesNotMatch(
+  cardDrawSource,
+  /navigator\.clipboard/,
+  "复制操作不得排队到用户激活失效后再写入剪贴板",
+);
+assert.match(
+  cardDrawSource,
+  /activeElement\?\.focus\(\{ preventScroll: true \}\)/,
+  "同步复制后必须恢复触发控件的键盘焦点",
+);
+assert.match(
   matchPageSource,
   /payload\.version !== currentVersion[\s\S]*分享链接已过期/,
   "对照页必须明确拒绝旧版快照链接",
+);
+assert.match(
+  matchPageSource,
+  /QUIZ_CHOICE_LOCK_MS[\s\S]*choiceLockedRef\.current[\s\S]*disabled=\{choiceLocked\}/,
+  "朋友对照问卷必须阻止双击跨题提交",
+);
+assert.match(
+  matchPageSource,
+  /onClick=\{\(\) => \{\s*lockChoices\(\);\s*setPhase\("quiz"\)/,
+  "朋友对照问卷入口必须阻止重复激活穿透到第一题",
+);
+assert.match(
+  matchPageSource,
+  /firstChoiceRef\.current\?\.focus\(\{ preventScroll: true \}\)[\s\S]*aria-live="polite"[\s\S]*ref=\{choiceIndex === 0 \? firstChoiceRef : undefined\}/,
+  "朋友对照问卷换题后必须恢复键盘焦点并播报进度",
 );
 assert.doesNotMatch(
   matchPageSource,
@@ -173,6 +229,21 @@ assert.match(
   appCssSource,
   /\.match-marker--guest\s*\{[^}]*top:\s*calc\(50% \+ 9px\)/,
   "朋友标记必须与分享者标记错层显示",
+);
+assert.match(
+  appCssSource,
+  /\.match-cta\s*\{[^}]*box-sizing:\s*border-box[^}]*width:\s*100%[^}]*min-width:\s*0/,
+  "对照页按钮必须在移动端内容宽度内计算尺寸",
+);
+assert.match(
+  appCssSource,
+  /\.draw-overlay--sheet\s*\{[^}]*align-items:\s*flex-start[^}]*overflow-y:\s*auto/,
+  "短屏分享面板必须允许纵向滚动",
+);
+assert.match(
+  cardDrawSource,
+  /share-sheet__url-label">\{shareLinkLabel\}[\s\S]*share-sheet__url-label">对照链接/,
+  "分享面板必须明确区分人格卡链接与对照链接",
 );
 
 console.log("share match checks passed");
