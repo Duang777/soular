@@ -157,12 +157,18 @@ for (const [presetId, themeId] of Object.entries(PERSONA_PRESET_THEME_IDS)) {
 assert.equal(PERSONA_PRESET_THEME_IDS["career-35"], "life-choices");
 assert.equal(PERSONA_PRESET_THEME_IDS["ai-math"], "work-tech-future");
 assert.equal(PERSONA_PRESET_THEME_IDS["scholars-ai-math"], "work-tech-future");
+assert.equal(PERSONA_PRESET_THEME_IDS["social-connections"], "life-choices");
+assert.equal(PERSONA_PRESET_THEME_IDS["ai-programmer-jobs"], "work-tech-future");
+assert.equal(PERSONA_PRESET_THEME_IDS["city-or-hometown"], "life-choices");
 assert.equal(getNebulaPreset("career-35").personaTheme, "life-choices");
 assert.equal(getNebulaPreset("ai-math").personaTheme, "work-tech-future");
 assert.equal(
   getNebulaPreset("scholars-ai-math").personaTheme,
   "work-tech-future",
 );
+assert.equal(getNebulaPreset("social-connections").personaTheme, "life-choices");
+assert.equal(getNebulaPreset("ai-programmer-jobs").personaTheme, "work-tech-future");
+assert.equal(getNebulaPreset("city-or-hometown").personaTheme, "life-choices");
 
 const themedCasts = resolvePersonaCastsForPreset("career-35");
 assert.equal(themedCasts.length, 9);
@@ -170,7 +176,7 @@ assert.ok(themedCasts.every(({ themeId }) => themeId === "life-choices"));
 assert.ok(themedCasts.every(({ signals }) => signals.length >= 3));
 assert.ok(themedCasts.every(({ selectionReason }) => selectionReason.length >= 20));
 assert.ok(themedCasts.some(({ name }) => name === "加缪"));
-for (const presetId of ["ai-math", "scholars-ai-math"]) {
+for (const presetId of ["ai-math", "scholars-ai-math", "ai-programmer-jobs"]) {
   const aiMathCasts = resolvePersonaCastsForPreset(presetId);
   assert.equal(aiMathCasts.length, 9);
   assert.ok(

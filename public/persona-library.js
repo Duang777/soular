@@ -476,6 +476,9 @@ export const PERSONA_PRESET_THEME_IDS = Object.freeze({
   "career-35": "life-choices",
   "ai-math": "work-tech-future",
   "scholars-ai-math": "work-tech-future",
+  "social-connections": "life-choices",
+  "ai-programmer-jobs": "work-tech-future",
+  "city-or-hometown": "life-choices",
 });
 
 function isCompletePersonaSet(personas) {
