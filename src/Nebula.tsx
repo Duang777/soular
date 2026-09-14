@@ -168,6 +168,8 @@ export function Nebula({
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
   const openPeerDiscovery = !entryMode && searchParams.get("peers") === "1";
+  const autoGenerate =
+    entryMode && searchParams.get("generate") === "1";
   const entryState = entryMode
     ? searchParams.get("confirm") === "1"
       ? "confirm"
@@ -441,8 +443,10 @@ export function Nebula({
         typeof data.preset === "string" &&
         /^[a-z0-9-]+$/.test(data.preset)
       ) {
-        const entryQuery = entryMode && data.entry === "confirm"
-          ? "&confirm=1"
+        const entryQuery = entryMode && data.entry === "generate"
+          ? "&confirm=1&generate=1"
+          : entryMode && data.entry === "confirm"
+            ? "&confirm=1"
           : entryMode &&
               new URLSearchParams(window.location.search).get("explore") === "1"
             ? "&explore=1"
@@ -559,6 +563,7 @@ export function Nebula({
       <NebulaStage
         entryState={entryState}
         presetId={presetId}
+        autoGenerate={autoGenerate}
         openPeerDiscovery={openPeerDiscovery}
         onLoad={requestOpenPeerDiscovery}
         iframeRef={nebulaFrameRef}

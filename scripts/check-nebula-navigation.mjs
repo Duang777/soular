@@ -642,6 +642,58 @@ assert.match(
   /getElementById\("entryHomeBack"\)\.addEventListener\("click",\s*returnToPersonaHome\)/,
   "确认页顶部返回入口必须真正返回人格卡首页",
 );
+const selectEntryPresetStart = source.indexOf("function selectEntryPreset(presetId)");
+const selectEntryPresetEnd = source.indexOf(
+  'entryTopicsEl.addEventListener("click"',
+  selectEntryPresetStart,
+);
+const startEntryGenerationStart = source.indexOf("function startEntryGeneration()");
+const startEntryGenerationEnd = source.indexOf(
+  "function showEntryConfirmFromScene()",
+  startEntryGenerationStart,
+);
+assert.ok(
+  selectEntryPresetStart >= 0 && selectEntryPresetEnd > selectEntryPresetStart,
+  "问题云朵选择逻辑不存在",
+);
+assert.ok(
+  startEntryGenerationStart >= 0 &&
+    startEntryGenerationEnd > startEntryGenerationStart,
+  "星云生成启动逻辑不存在",
+);
+const selectEntryPresetSource = source.slice(
+  selectEntryPresetStart,
+  selectEntryPresetEnd,
+);
+const startEntryGenerationSource = source.slice(
+  startEntryGenerationStart,
+  startEntryGenerationEnd,
+);
+assert.match(
+  selectEntryPresetSource,
+  /selectedEntryPreset = preset;[\s\S]*showEntryConfirm\(\)/,
+  "点击问题云朵必须只更新当前确认内容",
+);
+assert.doesNotMatch(
+  selectEntryPresetSource,
+  /postMessage|location\.href/,
+  "点击问题云朵不得触发 iframe 导航或重载",
+);
+assert.match(
+  startEntryGenerationSource,
+  /selectedEntryPreset\.id !== PRESET\.id[\s\S]*type:\s*"nebula-preset-change"[\s\S]*entry:\s*"generate"/,
+  "只有确认生成不同题目时才可请求加载目标星云",
+);
+assert.match(
+  source,
+  /const ENTRY_GENERATION_DURATION_MS = 3_400;[\s\S]*const progress = clamp01\(\s*\(now - entryGenerationStartedAt\) \/ ENTRY_GENERATION_DURATION_MS/,
+  "观点星云生成动画必须在约 4 秒内完成",
+);
+assert.match(
+  source,
+  /entryFinishTimer = window\.setTimeout\(\(\) => \{\s*entryFlowEl\.hidden = true;\s*document\.body\.classList\.remove\("entry-active"\);\s*document\.body\.classList\.toggle\("entry-exploring", entryEnabled\)/,
+  "生成层完全隐藏后才能恢复星云工具栏",
+);
 assert.match(
   source,
   /id="sceneBack"[\s\S]*返回问题/,
@@ -658,9 +710,9 @@ assert.match(
   "生成动画揭开覆盖层前必须同步绘制暗场",
 );
 assert.match(
-  source,
-  /function startEntryGeneration\(\)\s*\{\s*prepareEntryGenerationScene\(\);\s*setEntryState\("generating"\)/,
-  "生成流程必须先准备暗场再切换覆盖层",
+  startEntryGenerationSource,
+  /selectedEntryPreset\.id !== PRESET\.id[\s\S]*prepareEntryGenerationScene\(\);\s*setEntryState\("generating"\)/,
+  "已加载题目的生成流程必须先准备暗场再切换覆盖层",
 );
 assert.match(
   source,
@@ -686,6 +738,16 @@ assert.match(
   nebulaHostSource,
   /data\?\.type === "nebula-entry-explore"[\s\S]*searchParams\.set\("explore",\s*"1"\)[\s\S]*history\.replaceState/,
   "React 外壳必须将生成后的父 URL 替换为探索态",
+);
+assert.match(
+  nebulaHostSource,
+  /data\.entry === "generate"[\s\S]*"&confirm=1&generate=1"/,
+  "React 外壳必须把跨题生成请求传给新场景",
+);
+assert.match(
+  nebulaStageSource,
+  /autoGenerate[\s\S]*autoGenerate \? "&generate=1" : ""/,
+  "星云 iframe 地址必须保留自动生成请求",
 );
 assert.match(
   nebulaHostSource,
