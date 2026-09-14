@@ -6599,6 +6599,21 @@
         };
       }
 
+      function publishSelfProfileUpdate() {
+        if (window.parent === window.self) return;
+        const profile = inferSelfProfile();
+        window.parent.postMessage(
+          {
+            type: "nebula-self-profile-update",
+            preset: PRESET.id,
+            version: PRESET_VERSION,
+            cast: profile.cast,
+            selfProfile: profile,
+          },
+          location.origin,
+        );
+      }
+
       function setHeart(u, on) {
         if (on) {
           if (!u.heart) {
@@ -6683,6 +6698,7 @@
         const u = users[i];
         if (u) setHeart(u, liked.has(i));
         applyStance(true);
+        publishSelfProfileUpdate();
         renderCardsIfOpen();
         if (!wasUnlocked && personaUnlocked()) {
           showToast("已赞同 3 个观点，你的人格与同频发现已解锁");
@@ -6711,6 +6727,7 @@
         hideChip();
         if (focusSet) exitFocus();
         applyStance(true);
+        publishSelfProfileUpdate();
         renderCardsIfOpen();
       }
 

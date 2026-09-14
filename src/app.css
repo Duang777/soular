@@ -1017,6 +1017,17 @@ textarea.field:focus-visible,
   }
 }
 
+@media (max-width: 767px) {
+  .match-panel--map .match-actions {
+    justify-items: start;
+  }
+
+  .match-panel--map .match-cta {
+    width: auto;
+    max-width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn:active:not(:disabled) {
     transform: none;
@@ -3524,6 +3535,198 @@ textarea.field:focus-visible,
 .match-actions .match-cta {
   text-align: center;
   text-decoration: none;
+}
+
+.match-panel--map {
+  padding-top: 0.9rem;
+}
+
+.match-map__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+  border-block: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-map__summary span {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.8rem 0.45rem;
+  color: var(--mute);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.match-map__summary span + span {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-map__summary b {
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.match-map__legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--mute);
+  font-size: 0.72rem;
+}
+
+.match-map__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.match-map__legend span::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  content: "";
+}
+
+.match-map__legend-host::before {
+  background: var(--match-amber);
+}
+
+.match-map__legend-guest::before {
+  background: var(--match-ice);
+}
+
+.match-map__rows {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-map__row {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-map__row-head {
+  display: grid;
+  grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.match-map__row-head > span,
+.match-map__row-head > small {
+  padding-top: 0.15rem;
+  color: var(--mute);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-map__row.is-complete .match-map__row-head > span {
+  color: var(--match-ice);
+}
+
+.match-map__row-head h3 {
+  min-width: 0;
+  margin: 0;
+  color: rgba(243, 238, 224, 0.9);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.match-map__track {
+  position: relative;
+  height: 2rem;
+  margin: 0.7rem 0 0.2rem 2.35rem;
+}
+
+.match-map__track::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    rgba(214, 173, 104, 0.5),
+    rgba(243, 238, 224, 0.16) 50%,
+    rgba(143, 216, 220, 0.5)
+  );
+  content: "";
+}
+
+.match-map__marker {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.36);
+}
+
+.match-map__marker--host {
+  transform: translate(-50%, -10px);
+  background: var(--match-amber);
+}
+
+.match-map__marker--guest {
+  transform: translate(-50%, 2px);
+  background: var(--match-ice);
+}
+
+.match-map__action,
+.match-map__pending {
+  min-height: 44px;
+  margin: 0.2rem 0 0 2.35rem;
+  padding: 0 0.65rem;
+  border-radius: 4px;
+  color: var(--match-ice);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition:
+    transform 120ms ease-out,
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.match-map__action {
+  border: 0;
+  background: transparent;
+}
+
+.match-map__pending {
+  border: 1px solid rgba(143, 216, 220, 0.2);
+  background: rgba(143, 216, 220, 0.04);
+}
+
+.match-map__action:active,
+.match-map__pending:active {
+  transform: scale(0.98);
+}
+
+.match-map__action:focus-visible,
+.match-map__pending:focus-visible {
+  outline: 2px solid var(--match-ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .match-map__action:hover {
+    color: var(--cream);
+  }
+
+  .match-map__pending:hover {
+    border-color: rgba(143, 216, 220, 0.42);
+    background: rgba(143, 216, 220, 0.08);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
