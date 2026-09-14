@@ -4761,35 +4761,34 @@
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
       const sceneParams = new URLSearchParams(location.search);
       const presetModuleVersion = sceneParams.get("v") || "dev";
-      const {
-        buildNebulaShelfUrl,
-        getNebulaLikeStorageKey,
-        getNebulaPreset,
-        listNebulaPresets,
-      } = await import(
-        `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        describePeerMatch,
-        rankPeerCandidates,
-        takePeerBatch,
-      } = await import(
-        `./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        getNebulaLodProfile,
-        NEBULA_PARTICLE_LAYER_SCHEMA,
-        resolveDistanceLod,
-        visibleParticleBudget,
-      } = await import(
-        `./lod.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        buildPersonaCatalog,
-        cyclePersonaIndex,
-      } = await import(
-        `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
+      const [
+        {
+          buildNebulaShelfUrl,
+          getNebulaLikeStorageKey,
+          getNebulaPreset,
+          listNebulaPresets,
+        },
+        {
+          describePeerMatch,
+          rankPeerCandidates,
+          takePeerBatch,
+        },
+        {
+          getNebulaLodProfile,
+          NEBULA_PARTICLE_LAYER_SCHEMA,
+          resolveDistanceLod,
+          visibleParticleBudget,
+        },
+        {
+          buildPersonaCatalog,
+          cyclePersonaIndex,
+        },
+      ] = await Promise.all([
+        import(`./presets.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./lod.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`),
+      ]);
       const personaLibrary = await window.__nebulaPersonaLibraryPromise;
       const resolvePersonaCastMap =
         typeof personaLibrary?.resolvePersonaCastMap === "function"
@@ -6718,6 +6717,18 @@
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
+        if (e.data && e.data.type === "nebula-host-visibility") {
+          const nextRunning = e.data.visible === true && !document.hidden;
+          if (running === nextRunning) return;
+          running = nextRunning;
+          if (!running) {
+            resetKeyboardMotion(false);
+          } else {
+            clock.getDelta();
+            scheduleFrame();
+          }
+          return;
+        }
         if (e.data && e.data.type === "nebula-user-profile") {
           const identityRevision =
             Number.isSafeInteger(e.data.identityRevision) &&

@@ -17,6 +17,10 @@ import {
 } from "../public/nebula-scene/persona-browser.js";
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
+const presetRegistrySource = readFileSync(
+  new URL("../public/nebula-scene/presets.js", import.meta.url),
+  "utf8",
+);
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
 const identityRevisionSource = readFileSync(new URL("../src/identityRevision.ts", import.meta.url), "utf8");
 const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url), "utf8");
@@ -59,6 +63,18 @@ function unwrapExpression(expression) {
     current = current.expression;
   }
   return current;
+}
+
+function assertConcurrentImports(sourceText, expectedPaths, label) {
+  const promiseAllGroups = [
+    ...sourceText.matchAll(/Promise\.all\(\s*\[([\s\S]*?)\]\s*\)/g),
+  ].map((match) => match[1]);
+  assert.ok(
+    promiseAllGroups.some((group) =>
+      expectedPaths.every((path) => group.includes(path))
+    ),
+    `${label} 必须并发加载，避免每次返回星云时形成串行网络瀑布`,
+  );
 }
 
 function staticStringProperty(object, name) {
@@ -169,6 +185,52 @@ assert.doesNotMatch(
   source,
   /\.innerHTML\s*=|insertAdjacentHTML\s*\(/,
   "观点快照内容不得通过 HTML 字符串渲染",
+);
+assertConcurrentImports(
+  source,
+  [
+    "./presets.js",
+    "./peer-discovery.js",
+    "./lod.js",
+    "./persona-browser.js",
+  ],
+  "星云功能模块",
+);
+assertConcurrentImports(
+  presetRegistrySource,
+  [
+    "./preset-ai-math.js",
+    "./preset-scholars-ai-math.js",
+    "./preset-social-connections.js",
+    "./preset-ai-programmer-jobs.js",
+    "./preset-city-or-hometown.js",
+  ],
+  "星云快照模块",
+);
+assert.match(
+  appSource,
+  /<Routes location=\{backgroundLocation \?\? location\}>[\s\S]*backgroundLocation && \([\s\S]*<Route path="\/shelf\/:cast"/,
+  "星云进入人格卡时必须保留背景路由，返回时不得重建 iframe",
+);
+assert.equal(
+  nebulaHostSource.match(/backgroundLocation:\s*location/g)?.length,
+  2,
+  "自我和回答者人格卡导航都必须保留当前星云位置",
+);
+assert.match(
+  nebulaHostSource,
+  /type:\s*"nebula-host-visibility",\s*visible:\s*active/,
+  "星云背景路由必须通知 iframe 暂停或恢复渲染",
+);
+assert.match(
+  nebulaHostSource,
+  /if \(active\) selfOpenPendingRef\.current = false;/,
+  "返回保留的星云后必须允许再次打开自我人格卡",
+);
+assert.match(
+  source,
+  /type === "nebula-host-visibility"[\s\S]*running = nextRunning/,
+  "星云 iframe 必须响应宿主可见性变化",
 );
 assert.match(
   source,

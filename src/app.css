@@ -75,6 +75,18 @@ html, body, #root {
   background: #080808;
 }
 
+.route-layer {
+  height: 100%;
+}
+
+.route-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: #080808;
+}
+
 .landing-page-frame {
   position: absolute;
   inset: 0;
