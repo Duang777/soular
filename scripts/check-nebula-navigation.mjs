@@ -247,6 +247,26 @@ assert.match(
 );
 assert.match(
   source,
+  /const personOpen = uiNode\(\s*"button",\s*"pcard-person-open",\s*"看卡片 →",\s*\)[\s\S]*personOpen\.dataset\.personOpen = String\(i\)/,
+  "回答者观点必须提供明确的人格卡入口",
+);
+assert.doesNotMatch(
+  source,
+  /article\.tabIndex = 0;[\s\S]{0,160}article\.setAttribute\("role", "link"\)/,
+  "回答者观点整行不得伪装成人格卡链接",
+);
+assert.match(
+  source,
+  /const personOpen = e\.target\.closest\("\[data-person-open\]"\);[\s\S]*openPerson\(Number\(personOpen\.getAttribute\("data-person-open"\)\)\)/,
+  "人格卡只能由明确的查看按钮打开",
+);
+assert.doesNotMatch(
+  source,
+  /const card = e\.target\.closest\("\.pcard\[data-u\]"\);[\s\S]{0,120}openPerson/,
+  "点击观点正文不得打开回答者人格卡",
+);
+assert.match(
+  source,
   /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
   "星云画布必须提供可聚焦的键盘操作入口",
 );
