@@ -77,10 +77,10 @@ function PersonaHome() {
               onClick={() => openQuestion(question.id)}
             >
               <span className="question-ticket__meta">
-                {question.serial} · {question.kind}
+                {question.serial}
               </span>
               <b>{question.title}</b>
-              <small>{question.detail} · 点击进入</small>
+              <small>{question.detail}</small>
             </button>
           ))}
         </div>
