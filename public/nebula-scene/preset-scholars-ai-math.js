@@ -1,7 +1,7 @@
 export const SCHOLARS_AI_MATH = {
   id: "scholars-ai-math",
   version: "20260914",
-  serial: "05",
+  serial: "03",
   kind: "real",
   question: "如何看待现在有学者用 AI 做数学科研？",
   peopleLabel: "真实回答观点",
