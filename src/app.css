@@ -1688,24 +1688,23 @@ textarea.field:focus-visible,
 .question-dock__topics {
   position: absolute;
   right: auto;
-  bottom: 80px;
+  bottom: 90px;
   left: 50%;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   width: min(1120px, calc(100vw - 40px));
+  box-sizing: border-box;
   gap: 10px;
   padding: 4px 4px 10px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
   transform: translateX(-50%);
-  scrollbar-color: rgba(196, 165, 116, 0.5) transparent;
-  scrollbar-width: thin;
 }
 
 .question-ticket {
   position: relative;
   display: grid;
-  flex: 0 0 260px;
-  width: 260px;
+  width: 100%;
+  max-width: 360px;
+  min-width: 0;
   min-height: 108px;
   box-sizing: border-box;
   gap: 8px;
@@ -1717,8 +1716,8 @@ textarea.field:focus-visible,
   box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.42);
   text-align: left;
   cursor: pointer;
+  justify-self: center;
   pointer-events: auto;
-  scroll-snap-align: start;
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.14s ease;
 }
 
