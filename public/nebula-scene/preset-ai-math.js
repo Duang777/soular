@@ -10,13 +10,16 @@ export const AI_MATH = {
   searchUrl: "https://www.zhihu.com/question/2082035913132193247",
   avatarBase: "avatars/ai-math",
   axis: {
-    left: "警惕生态伤害",
-    center: "审慎协作",
-    right: "拥抱研究加速",
+    left: "数学是在练人的思维",
+    center: "AI 能用，但得有人复核",
+    right: "AI 已经做出了真数学",
+    leftReason: "AI 算得再快，也替不了人自己想明白",
+    centerReason: "机器给的结论，人不看一遍不敢信",
+    rightReason: "证明能被机器一步步验过，就不是空话",
     leftChoice: "警惕AI冲击",
     rightChoice: "拥抱AI协作",
-    leftTendency: "倾向审慎治理",
-    rightTendency: "倾向人机协同",
+    leftTendency: "更看重想明白",
+    rightTendency: "更看重用起来",
   },
   people: [
     [
@@ -113,9 +116,9 @@ export const AI_MATH = {
   me: {
     name: "我",
     castKey: "fox",
-    claim: "点赞真实回答，看看你更在意数学共同体，还是研究加速。",
+    claim: "点赞真实回答，看看你更在意人自己想明白，还是机器算得更快。",
   },
   guide: {
-    headline: "AI 与数学：数学家担忧研究方法与共同体，支持者看到的是验证、协作与加速。",
+    headline: "这题吵的是：数学家怕人不再自己想，支持者说机器验得过就是真成果。",
   },
 };

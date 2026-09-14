@@ -31,6 +31,7 @@ export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
   "social-connections": "20260914",
   "ai-programmer-jobs": "20260914",
   "city-or-hometown": "20260914",
+  "heritage-state": "20260914",
 };
 export const NEBULA_PRESET_ANSWER_COUNTS: Readonly<Record<string, number>> = {
   "career-35": 48,
@@ -39,6 +40,7 @@ export const NEBULA_PRESET_ANSWER_COUNTS: Readonly<Record<string, number>> = {
   "social-connections": 45,
   "ai-programmer-jobs": 45,
   "city-or-hometown": 45,
+  "heritage-state": 20,
 };
 const MAX_TRANSIENT_SELF_PROFILES = 24;
 const transientSelfProfiles = new Map<string, unknown>();

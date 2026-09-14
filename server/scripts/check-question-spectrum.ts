@@ -155,6 +155,146 @@ assert.deepEqual(spectrum.answers.map((answer) => answer.stance), [-0.8, 0.7]);
 assert.deepEqual(spectrum.answers.map((answer) => answer.cast), ["goat", "redpanda"]);
 assert.equal(spectrum.axis.center, "观望");
 
+const leanSpectrum = await buildQuestionSpectrumFromAnswers({
+  async zhiDaText() {
+    return JSON.stringify({
+      axis: { left: "旁系亲属应分得遗产", center: "扶养事实决定酌给", right: "无继承人房产归国家" },
+      answers: [
+        { i: 0, s: -0.8, r: 0.9, p: "goat" },
+        { i: 1, s: 0.2, r: 0.1, p: "fox" },
+      ],
+    });
+  },
+}, "https://www.zhihu.com/question/123", [
+  {
+    ContentType: "Answer",
+    ContentToken: "on-axis",
+    Url: "https://www.zhihu.com/answer/1",
+    Summary: "旁系亲属照顾多年应当分得遗产",
+  },
+  {
+    ContentType: "Answer",
+    ContentToken: "off-axis",
+    Url: "https://www.zhihu.com/answer/2",
+    Summary: "顺便提醒大家记得立遗嘱",
+  },
+  {
+    ContentType: "Answer",
+    ContentToken: "unscored",
+    Url: "https://www.zhihu.com/answer/3",
+    Summary: "法律上房产就该归国家",
+  },
+]);
+assert.deepEqual(
+  leanSpectrum.answers.map((answer) => answer.contentToken),
+  ["on-axis", "unscored", "off-axis"],
+  "模型不再输出 c 字段时，标注仍须生效并参与排序",
+);
+assert.deepEqual(
+  leanSpectrum.answers.map((answer) => answer.relevance),
+  [0.9, 0, 0.1],
+  "离轴度须按模型输出读取，未被标注的条目记为 0",
+);
+assert.equal(
+  leanSpectrum.answers[0].claim,
+  "旁系亲属照顾多年应当分得遗产",
+  "模型不再输出主张时须回退到摘要",
+);
+assert.deepEqual(
+  [leanSpectrum.axis.leftReason, leanSpectrum.axis.centerReason, leanSpectrum.axis.rightReason],
+  ["", "", ""],
+  "模型未返回理由时须留空，由前端降级为单行极标，不得编造",
+);
+
+const reasonedSpectrum = await buildQuestionSpectrumFromAnswers({
+  async zhiDaText() {
+    return JSON.stringify({
+      axis: {
+        left: "数学是在练人的思维",
+        leftReason: "AI 算得再快，也替不了人自己想明白",
+        center: "AI 能用，但得有人复核",
+        centerReason: "机器给的结论，人不看一遍不敢信",
+        right: "AI 已经做出了真数学",
+        rightReason: "证明能被机器一步步验过，超出 20 字的部分应当被截断",
+      },
+      answers: [{ i: 0, s: -0.6, r: 0.9, p: "goat" }],
+    });
+  },
+}, "https://www.zhihu.com/question/123", [{
+  ContentType: "Answer",
+  ContentToken: "reasoned",
+  Url: "https://www.zhihu.com/answer/1",
+  Summary: "数学训练的是人的推理能力",
+}]);
+assert.equal(
+  reasonedSpectrum.axis.leftReason,
+  "AI 算得再快，也替不了人自己想明白",
+  "模型返回理由时须原样保留",
+);
+assert.equal(
+  reasonedSpectrum.axis.centerReason,
+  "机器给的结论，人不看一遍不敢信",
+  "中间立场的理由同样须保留",
+);
+assert.ok(
+  reasonedSpectrum.axis.rightReason.length <= 20 &&
+    reasonedSpectrum.axis.rightReason.endsWith("…"),
+  "超长理由须截断到 20 字以内并带省略号，避免撑破极标",
+);
+
+// 实测缺陷：模型把 prompt 里的自检说法「加上我觉得读得通」当成输出前缀照写，
+// 三个字吃掉 12 字预算后主张被截成残句，因此解析层必须在 clip 之前剥离。
+const prefixedSpectrum = await buildQuestionSpectrumFromAnswers({
+  async zhiDaText() {
+    return JSON.stringify({
+      axis: {
+        left: "我觉得没继承权就该归国家",
+        leftReason: "我认为法定继承顺序写得很明白",
+        center: "个人觉得照顾过的人该分一点",
+        centerReason: "",
+        right: "我觉得，亲戚来争就是吃绝户",
+        rightReason: "我的看法是平时不照顾人走了才来抢",
+      },
+      answers: [{ i: 0, s: -0.6, r: 0.9, p: "goat" }],
+    });
+  },
+}, "https://www.zhihu.com/question/123", [{
+  ContentType: "Answer",
+  ContentToken: "prefixed",
+  Url: "https://www.zhihu.com/answer/1",
+  Summary: "法定继承顺序里没有叔舅姑姨",
+}]);
+assert.equal(
+  prefixedSpectrum.axis.left,
+  "没继承权就该归国家",
+  "「我觉得」前缀须在截断前剥离，剥离后正文完整保留",
+);
+assert.equal(
+  prefixedSpectrum.axis.center,
+  "照顾过的人该分一点",
+  "「个人觉得」同样须剥离",
+);
+assert.equal(
+  prefixedSpectrum.axis.right,
+  "亲戚来争就是吃绝户",
+  "前缀后跟逗号时须连标点一起剥离",
+);
+assert.equal(
+  prefixedSpectrum.axis.leftReason,
+  "法定继承顺序写得很明白",
+  "理由字段的「我认为」前缀同样须剥离",
+);
+assert.equal(
+  prefixedSpectrum.axis.rightReason,
+  "平时不照顾人走了才来抢",
+  "「我的看法是」前缀须剥离",
+);
+assert.equal(
+  prefixedSpectrum.axis.centerReason,
+  "",
+  "空理由剥离后仍须是空串，不得变成占位内容",
+);
+
 const sortedSpectrum = await buildQuestionSpectrumFromAnswers({
   async zhiDaText() {
     return JSON.stringify({

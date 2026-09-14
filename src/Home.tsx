@@ -48,6 +48,13 @@ const QUESTION_PRESETS = [
     title: "大学毕业是去大城市好还是回小城市好？",
     detail: "45 个观点",
   },
+  {
+    id: "heritage-state",
+    serial: "07",
+    kind: "真实讨论",
+    title: "北京一独居者离世，无配偶、子女、兄弟姐妹，叔舅姑姨九人争遗产，法院判房产归国家，如何从法律角度解读？",
+    detail: "20 个观点",
+  },
 ] as const;
 
 function PersonaHome() {
