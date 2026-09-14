@@ -10,6 +10,7 @@ import {
   type SelfProfile,
 } from "./people";
 import { buildShareMatchUrl } from "./shareMatch";
+import { readThoughtMapPositions } from "./thoughtMapStore";
 import { WarmStars } from "./WarmStars";
 
 export type CardSubject =
@@ -399,17 +400,36 @@ export function CardDraw({
     selfPreset,
     selfVersion,
   ]);
-  const matchShareUrl = useMemo(() => {
+  const matchEntries = useMemo(() => {
     if (!isSelf || !selfProfile || selfProfile.cast !== cast.key) return null;
     const preset = selfPreset ?? DEFAULT_NEBULA_PRESET;
     const version = selfVersion ?? nebulaPresetVersion(preset) ?? "1";
-    return buildShareMatchUrl(window.location.origin, import.meta.env.BASE_URL, {
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      // The thought map store keeps a page-local fallback.
+    }
+    const current = {
       preset,
       version,
       cast: selfProfile.cast,
       stance: selfProfile.stance,
-    });
+    };
+    return [
+      current,
+      ...readThoughtMapPositions(storage, selfProfile.accountVersion)
+        .filter((entry) => entry.preset !== preset),
+    ];
   }, [isSelf, selfProfile, cast.key, selfPreset, selfVersion]);
+  const matchShareUrl = useMemo(() => {
+    if (!matchEntries?.length) return null;
+    const [current] = matchEntries;
+    return buildShareMatchUrl(window.location.origin, import.meta.env.BASE_URL, {
+      ...current,
+      entries: matchEntries,
+    });
+  }, [matchEntries]);
   const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   useEffect(() => {

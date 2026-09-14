@@ -634,6 +634,36 @@ assert.match(
 );
 assert.match(
   source,
+  /const TIP_POINTER_BRIDGE_MS = 1200;[\s\S]*canvas\.addEventListener\("pointermove", \(e\) => \{[\s\S]*const nextHovered = pick\(e\.clientX, e\.clientY\);[\s\S]*if \(nextHovered\) \{[\s\S]*setHovered\(nextHovered\);[\s\S]*\} else if \(hovered\) \{[\s\S]*scheduleHideTip\(TIP_POINTER_BRIDGE_MS\);/,
+  "鼠标从星点移向悬浮卡片时必须经过延迟关闭宽限，不能同步隐藏卡片",
+);
+assert.doesNotMatch(
+  source,
+  /canvas\.addEventListener\("pointermove", \(e\) => \{\s*updateGalaxyPointer\(e\.clientX, e\.clientY\);\s*setHovered\(pick\(e\.clientX, e\.clientY\)\);/,
+  "画布未命中星点时不得直接关闭悬浮卡片",
+);
+assert.match(
+  source,
+  /#tip\.is-person-link\s*\{\s*cursor:\s*pointer;[\s\S]*#tip\.is-person-link:hover[\s\S]*#tip\.show\.is-person-link\.is-pressing/,
+  "可进入的人物浮层必须提供指针、悬停和按压反馈",
+);
+assert.match(
+  source,
+  /\.tip-cta\s*\{[\s\S]*border:\s*1px solid rgba\(143,\s*180,\s*255,\s*0\.3\)[\s\S]*background:\s*rgba\(143,\s*180,\s*255,\s*0\.07\)/,
+  "人物浮层的进入动作必须具有明确的按钮视觉",
+);
+assert.match(
+  source,
+  /\.tip-like:active\s*\{\s*transform:\s*scale\(0\.96\);\s*\}/,
+  "赞同按钮必须提供独立按压反馈",
+);
+assert.match(
+  source,
+  /function renderTip\(u\) \{\s*tip\.classList\.toggle\("is-person-link", u\.kind !== "comment"\);[\s\S]*tip\.addEventListener\("pointerdown", \(e\) => \{[\s\S]*!e\.target\.closest\("button, \.tip-tag"\)[\s\S]*tip\.classList\.add\("is-pressing"\);/,
+  "只有可进入的非评论浮层才能触发整卡按压，按钮与标签必须保持独立",
+);
+assert.match(
+  source,
   /getElementById\("entryBack"\)\.addEventListener\("click",\s*returnToPersonaHome\)/,
   "确认页次按钮必须真正返回人格卡首页",
 );
