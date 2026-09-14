@@ -359,8 +359,8 @@ assert.match(
 );
 assert.match(
   appCssSource,
-  /\.match-cta\s*\{[^}]*box-sizing:\s*border-box[^}]*width:\s*100%[^}]*min-width:\s*0/,
-  "对照页按钮必须在移动端内容宽度内计算尺寸",
+  /Paper orbit theme[\s\S]*\.match-cta\s*\{[^}]*width:\s*auto[^}]*min-width:\s*10rem/,
+  "对照页操作必须使用自然宽度，不能退回满宽胶囊按钮",
 );
 assert.match(
   appCssSource,
@@ -414,7 +414,7 @@ assert.match(
 );
 assert.match(
   matchPageSource,
-  /只有你们双方都回答过的题目，才会进入共同思想地图[\s\S]*等你回答[\s\S]*我也回答这题/,
+  /双方位置才会同时显现[\s\S]*match-invite__orbit[\s\S]*等待你回答[\s\S]*我也回答这题/,
   "共同思想地图必须明确只累计双方都回答过的问题",
 );
 assert.doesNotMatch(
@@ -424,8 +424,13 @@ assert.doesNotMatch(
 );
 assert.match(
   appCssSource,
-  /\.match-map__row[\s\S]*\.match-map__track[\s\S]*\.match-map__marker--host[\s\S]*\.match-map__marker--guest/,
-  "共同思想地图必须复用金色朋友与冷青自己双星位语言",
+  /--match-host:\s*#bf4330[\s\S]*--match-guest:\s*#31594f/,
+  "共同思想地图必须定义朱红朋友与墨绿自己配色",
+);
+assert.match(
+  appCssSource,
+  /\.match-map__marker--host[\s\S]*\.match-map__marker--guest/,
+  "共同思想地图必须保留朋友与自己双星位标记",
 );
 
 console.log("share match checks passed");

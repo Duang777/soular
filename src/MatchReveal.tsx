@@ -238,47 +238,76 @@ export function MatchRevealPage() {
     <div className="match-page">
       <MatchHeader />
 
-      <main className="match-main">
-        <header className="match-hero">
-          <p className="match-eyebrow">{mapEyebrow}</p>
-          <h1 className="match-title">{mapHeading}</h1>
-          {phase === "map"
-            ? <p className="match-lead">{mapSummary.body}</p>
-            : preset.guideHeadline && (
-              <p className="match-lead">{preset.guideHeadline}</p>
-            )}
-        </header>
+      <main className="match-main" lang="zh-CN">
+        {phase !== "intro" && (
+          <header className="match-hero">
+            <p className="match-eyebrow">{mapEyebrow}</p>
+            <h1 className="match-title">{mapHeading}</h1>
+            {phase === "map"
+              ? <p className="match-lead">{mapSummary.body}</p>
+              : preset.guideHeadline && (
+                <p className="match-lead">{preset.guideHeadline}</p>
+              )}
+          </header>
+        )}
 
         {phase === "intro" && (
-          <section className="match-panel">
-            <p className="match-copy">
-              朋友分享了 {entries.length} 道已完成的观点坐标。
-              每道题都由你先独立完成 3 次表态，再揭晓双方星位。
+          <section className="match-invite">
+            <p className="match-invite__eyebrow">
+              SHARED ORBIT · {String(entries.length).padStart(2, "0")} QUESTIONS
             </p>
-            <p className="match-copy match-copy--muted">
-              只有你们双方都回答过的题目，才会进入共同思想地图。
+            <h1 className="match-invite__title">
+              一起点亮
+              <br />
+              你们的思想星轨
+            </h1>
+            <p className="match-invite__lead">
+              朋友已在 {entries.length} 个问题留下坐标。你回答同一道题后，
+              双方位置才会同时显现。
             </p>
-            <p className="match-copy match-copy--muted">
-              当前分享者人格：{hostCast.name}（{hostCast.role}）
+            <ol className="match-invite__orbit" aria-label="共同问题">
+              {entries.map((entry, index) => {
+                const entryPreset = getPresetMeta(entry.preset);
+                return (
+                  <li
+                    key={entry.preset}
+                    className={index === 0 ? "is-active" : undefined}
+                  >
+                    <span className="match-invite__node">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="match-invite__question">
+                      <strong>{entryPreset.question}</strong>
+                      <small>
+                        {index === 0 ? "第一颗共同坐标" : "等待你回答"}
+                      </small>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="match-invite__friend">
+              {hostCast.name}已完成 {entries.length} 道问题
             </p>
             {staleEntryCount > 0 && (
-              <p className="match-copy match-copy--muted">
+              <p className="match-invite__notice">
                 {staleEntryCount} 道题来自旧版快照，已从本次地图中移除。
               </p>
             )}
-            <p className="match-copy match-copy--muted">
-              分享信息来自链接本身，未经过平台身份认证；结果仅用于题目互动。
-            </p>
             <button
               type="button"
-              className="draw-btn draw-btn--primary match-cta"
+              className="match-invite__action"
               onClick={() => {
                 lockChoices();
                 setPhase("quiz");
               }}
             >
-              开始第一道共同问题
+              回答第一题
+              <span aria-hidden="true">→</span>
             </button>
+            <p className="match-invite__notice">
+              链接不验证身份，仅用于本次题目互动。
+            </p>
           </section>
         )}
 
