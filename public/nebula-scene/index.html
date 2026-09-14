@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>观点星云 · 思想银河</title>
+    <script>
+      /**
+       * 跨题点「开始生成」会带着 generate=1 重载 iframe。
+       * 启动层「正在凝聚观点星云」要正常显示，等场景 looping 后再交给生成叙事。
+       * 这里只挂 class，便于 body 进入 entry-active；不得再藏掉 #loading。
+       */
+      (function () {
+        try {
+          if (new URLSearchParams(location.search).get("generate") === "1") {
+            document.documentElement.classList.add("entry-generate-boot");
+          }
+        } catch (_) { /* 无 searchParams 时保持默认启动层 */ }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="../brand/soular-favicon.svg?v=3" />
     <style>
       :root {
@@ -354,6 +368,8 @@
       .entry-topics { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
       .entry-topic {
         position: absolute;
+        top: var(--topic-y, 50%);
+        left: var(--topic-x, 50%);
         width: min(270px, 23vw);
         min-height: 112px;
         padding: 16px;
@@ -365,21 +381,16 @@
         text-align: left;
         cursor: pointer;
         pointer-events: auto;
+        transform: translate(-50%, -50%);
         transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
       }
       .entry-topic:hover, .entry-topic:focus-visible {
         z-index: 2;
         outline: none;
         border-color: rgba(231, 201, 140, 0.66);
-        transform: translateY(-5px);
+        transform: translate(-50%, calc(-50% - 5px));
       }
       .entry-topic[hidden] { display: none; }
-      .entry-topic:nth-child(1) { top: 18%; left: 4%; }
-      .entry-topic:nth-child(2) { top: 18%; right: 4%; }
-      .entry-topic:nth-child(3) { top: 46%; left: 1.5%; }
-      .entry-topic:nth-child(4) { top: 46%; right: 1.5%; }
-      .entry-topic:nth-child(5) { bottom: 9%; left: 8%; }
-      .entry-topic:nth-child(6) { right: 8%; bottom: 9%; }
       .entry-topic-serial {
         color: var(--gold);
         font-family: var(--mono);
@@ -408,9 +419,9 @@
       .entry-flow[data-state="confirm"] .entry-home-back { display: inline-flex; }
       .entry-flow[data-state="confirm"] .entry-topic {
         isolation: isolate;
-        width: min(320px, 26vw);
-        min-height: 126px;
-        padding: 34px 28px 22px;
+        width: min(240px, 20vw);
+        min-height: 108px;
+        padding: 28px 22px 18px;
         border: 0;
         border-radius: 0;
         background: transparent;
@@ -471,7 +482,7 @@
       .entry-flow[data-state="confirm"] .entry-topic:focus-visible,
       .entry-flow[data-state="confirm"] .entry-topic.is-selected {
         opacity: 1;
-        transform: translateY(-4px);
+        transform: translate(-50%, calc(-50% - 4px));
       }
       .entry-flow[data-state="confirm"] .entry-topic:hover::before,
       .entry-flow[data-state="confirm"] .entry-topic:focus-visible::before,
@@ -485,7 +496,14 @@
       }
       .entry-flow[data-state="confirm"] .entry-topic.is-selected b { color: var(--cream); }
       .entry-confirm { width: min(860px, calc(100vw - 360px)); }
-      .entry-confirm h1 { font-size: clamp(28px, 4vw, 52px); line-height: 1.24; }
+      .entry-confirm h1 {
+        font-size: clamp(22px, 3.2vw, 44px);
+        line-height: 1.28;
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
       .entry-confirm-meta {
         margin: 22px 0 0;
         color: var(--mute);
@@ -3813,6 +3831,12 @@
           width: auto;
           min-height: 108px;
           scroll-snap-align: start;
+          transform: none;
+          top: auto;
+          left: auto;
+        }
+        .entry-topic:hover, .entry-topic:focus-visible {
+          transform: translateY(-3px);
         }
         .entry-flow[data-state="confirm"] .entry-topics {
           display: flex;
@@ -3826,6 +3850,12 @@
           min-height: 92px;
           padding: 18px 22px 14px;
           text-align: center;
+          transform: none;
+        }
+        .entry-flow[data-state="confirm"] .entry-topic:hover,
+        .entry-flow[data-state="confirm"] .entry-topic:focus-visible,
+        .entry-flow[data-state="confirm"] .entry-topic.is-selected {
+          transform: translateY(-3px);
         }
         .entry-flow[data-state="confirm"] .entry-topic::before { transform: translate(-50%, -50%) scale(0.86); }
         .entry-flow[data-state="confirm"] .entry-topic::after { transform: translate(-50%, -50%) scale(0.82); }
@@ -4125,6 +4155,7 @@
           if (s === "looping") {
             ready = true;
             hideLoading();
+            document.documentElement.classList.remove("entry-generate-boot");
             var e = $("error");
             if (e) e.style.display = "none";
           }
@@ -4219,6 +4250,14 @@
         <button class="entry-skip" id="entrySkip" type="button">跳过生成动画</button>
       </div>
     </section>
+    <script>
+      // generate=1 重载：HUD 先藏起来。启动层「正在凝聚观点星云」保持可见，
+      // 场景 looping 后再播生成叙事，避免旧页新页各播一遍。
+      (function () {
+        if (!document.documentElement.classList.contains("entry-generate-boot")) return;
+        document.body.classList.add("entry-active");
+      })();
+    </script>
 
     <div class="hud">
       <div class="hud-top">
@@ -5165,6 +5204,29 @@
         entryTopicsEl.appendChild(entryTopic);
       });
       const entryTopicEls = [...entryTopicsEl.querySelectorAll("[data-entry-preset]")];
+      /**
+       * 入口云按话题数绕中心椭圆形排布。原先 CSS 只写了 1–6 的绝对坐标，
+       * 第 7 朵没有 top/left，会塌到左上角，和中间确认文案叠在一起。
+       * 用圆心百分比 + translate(-50%,-50%)，数量从 1 到十几都能围一圈，不挡中央。
+       */
+      function layoutEntryTopics() {
+        const visible = entryTopicEls.filter((topic) => !topic.hidden);
+        const count = visible.length;
+        if (!count) return;
+        const radiusX = count <= 4 ? 34 : count <= 6 ? 38 : 42;
+        const radiusY = count <= 4 ? 28 : count <= 6 ? 32 : 36;
+        // 从正上方偏一点起算，避免第一朵正好压在顶栏标题上。
+        const start = -Math.PI / 2 + (count > 6 ? Math.PI / count : 0);
+        visible.forEach((topic, index) => {
+          const angle = start + (index / count) * Math.PI * 2;
+          const x = 50 + radiusX * Math.cos(angle);
+          const y = 50 + radiusY * Math.sin(angle);
+          topic.style.setProperty("--topic-x", `${x.toFixed(2)}%`);
+          topic.style.setProperty("--topic-y", `${y.toFixed(2)}%`);
+        });
+      }
+      layoutEntryTopics();
+      window.addEventListener("resize", layoutEntryTopics);
       function setEntryState(state) {
         entryFlowEl.dataset.state = state;
         entryTopicEls.forEach((topic) => {
@@ -5201,6 +5263,7 @@
           topic.hidden = !match;
           if (match) visible += 1;
         });
+        layoutEntryTopics();
         entrySearchStatusEl.textContent = query
           ? visible ? `找到 ${visible} 个已发布星云` : "这个话题还没有已发布星云"
           : "或从周围的问题开始探索";
@@ -5230,8 +5293,14 @@
       } else if (entryEnabled) {
         entryFlowEl.hidden = false;
         document.body.classList.add("entry-active");
-        if (entryMode === "confirm") showEntryConfirm();
-        else setEntryState("discover");
+        // generate=1 是跨题重载后的续播：跳过确认页，等场景就绪后只播一次生成叙事。
+        if (entryMode === "confirm" && sceneParams.get("generate") === "1") {
+          setEntryState("generating");
+        } else if (entryMode === "confirm") {
+          showEntryConfirm();
+        } else {
+          setEntryState("discover");
+        }
       }
       const presetOptionEls = [...presetPickerOptionsEl.querySelectorAll("[role='option']")];
       let activePresetIndex = Math.max(0, presetOptionEls.findIndex((option) => option.getAttribute("aria-selected") === "true"));
@@ -6430,10 +6499,9 @@
       }
 
       function startEntryGeneration() {
+        // 跨题必须重载快照。旧页若先播「正在读取观点坐标」，新页 generate=1
+        // 又会从 phase 0 再播一遍，同一句动画出现两次。跨题只导航，生成叙事留给新页。
         if (selectedEntryPreset.id !== PRESET.id) {
-          setEntryState("generating");
-          setEntryGenerationCopy(0);
-          entryGenerationTextEl.textContent = "正在载入所选问题的观点坐标";
           if (window.parent !== window.self) {
             window.parent.postMessage(
               {
