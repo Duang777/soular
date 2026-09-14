@@ -238,7 +238,7 @@ export function MatchRevealPage() {
     <div className="match-page">
       <MatchHeader />
 
-      <main className="match-main">
+      <main className={`match-main${phase === "map" ? " match-main--map" : ""}`}>
         <header className="match-hero">
           <p className="match-eyebrow">{mapEyebrow}</p>
           <h1 className="match-title">{mapHeading}</h1>
@@ -406,6 +406,10 @@ export function MatchRevealPage() {
                     </header>
                     {result ? (
                       <>
+                        <div className="match-map__axis" aria-hidden="true">
+                          <span>{entryPreset.axis.left}</span>
+                          <span>{entryPreset.axis.right}</span>
+                        </div>
                         <div
                           className="match-map__track"
                           aria-label={`${entryPreset.question}的双方位置`}

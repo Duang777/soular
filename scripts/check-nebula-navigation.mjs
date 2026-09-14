@@ -353,7 +353,7 @@ assert.match(
 );
 assert.match(
   source,
-  /findPublishedPersonEntries\(name, PRESET\.id\)[\s\S]*其他公开回答[\s\S]*在知乎搜索 TA 的公开内容/,
+  /findPublishedPersonEntries\(name, PRESET\.id\)[\s\S]*同一回答者 · 其他收录[\s\S]*在知乎搜索 TA 的公开内容/,
   "回答者档案必须展示已收录的其他公开回答并提供真实知乎搜索入口",
 );
 assert.doesNotMatch(
