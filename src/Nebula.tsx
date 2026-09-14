@@ -25,6 +25,7 @@ import {
   toNebulaPortraitSignal,
   type NebulaPortraitSignal,
 } from "./zhihuPortrait";
+import { rememberThoughtMapPosition } from "./thoughtMapStore";
 
 const NAVIGATION_CONTEXT_PREFIX = "jiupai:nebula:";
 const NAVIGATION_CONTEXT_KINDS = ["self", "subject"] as const;
@@ -419,6 +420,40 @@ export function Nebula({
       if (data?.type === "nebula-entry-back" && entryMode) {
         if (fromPersonaHome) navigate(-1);
         else navigate("/", { replace: true });
+        return;
+      }
+      if (
+        data?.type === "nebula-self-profile-update" &&
+        typeof data.preset === "string" &&
+        typeof data.version === "string" &&
+        typeof data.cast === "string" &&
+        CASTS.some(({ key }) => key === data.cast)
+      ) {
+        const profile = selfProfileFromValue(
+          data.selfProfile,
+          data.preset,
+          data.version,
+          data.cast,
+        );
+        if (!profile) return;
+        if (
+          window.location.origin === OFFICIAL_ORIGIN &&
+          userContextRef.current === null
+        ) return;
+        let storage: Storage | null = null;
+        try {
+          storage = window.localStorage;
+        } catch {
+          // The thought map store keeps a page-local fallback.
+        }
+        rememberThoughtMapPosition(
+          storage,
+          userContextRef.current?.accountVersion,
+          {
+            ...profile,
+            accountVersion: userContextRef.current?.accountVersion ?? undefined,
+          },
+        );
         return;
       }
       if (

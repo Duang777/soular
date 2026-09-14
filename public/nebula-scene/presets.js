@@ -148,3 +148,30 @@ export function listNebulaPresets() {
     teaser: Array.isArray(people) && typeof people[0]?.[3] === "string" ? people[0][3] : "",
   }));
 }
+
+export function findPublishedPersonEntries(name, excludePreset = "") {
+  if (typeof name !== "string" || !name.trim()) return [];
+  const normalizedName = name.trim();
+  if (normalizedName === "知乎用户" || /^知乎回答 \d+$/.test(normalizedName)) {
+    return [];
+  }
+  const entries = [];
+  PRESETS.forEach((preset) => {
+    if (preset.id === excludePreset || !Array.isArray(preset.people)) return;
+    preset.people.forEach((person) => {
+      if (!Array.isArray(person) || person[0] !== normalizedName) return;
+      const [, stance, cast, claim, sourceUrl, sourceTitle, votes] = person;
+      entries.push({
+        preset: preset.id,
+        question: preset.question,
+        stance,
+        cast,
+        claim,
+        sourceUrl,
+        sourceTitle,
+        votes,
+      });
+    });
+  });
+  return entries.slice(0, 6);
+}

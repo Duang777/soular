@@ -2784,6 +2784,253 @@
       }
       .pcard-me-btn:hover { transform: translate(-1px, -1px); border-color: rgba(231, 193, 127, 0.8); }
       .pcard-me-btn:active { transform: translate(1px, 1px); }
+      .me-strip-actions {
+        display: grid;
+        gap: 6px;
+      }
+      .pcard-me-btn--analysis {
+        border-color: rgba(143, 216, 220, 0.3);
+        color: rgba(184, 229, 231, 0.88);
+        box-shadow: none;
+      }
+      .interaction-analysis {
+        padding: 18px 16px 20px;
+        border-bottom: 1px solid rgba(231, 193, 127, 0.2);
+        background: rgba(16, 24, 32, 0.72);
+      }
+      .interaction-analysis__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .interaction-analysis__head span {
+        color: rgba(143, 216, 220, 0.62);
+        font: 8px/1.4 var(--mono);
+      }
+      .interaction-analysis__head h3 {
+        margin: 5px 0 0;
+        color: #f3eee0;
+        font-size: 15px;
+        font-weight: 650;
+      }
+      .interaction-analysis__mode {
+        flex: none;
+        padding: 5px 7px;
+        border: 1px solid rgba(231, 193, 127, 0.28);
+        border-radius: 5px;
+        color: #e7c17f;
+        font: 8px/1 var(--mono);
+        font-weight: 500;
+      }
+      .interaction-analysis__metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 15px;
+        border-block: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .interaction-analysis__metrics > span {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+        padding: 12px 8px;
+        color: rgba(190, 196, 214, 0.62);
+        font-size: 9px;
+        text-align: center;
+      }
+      .interaction-analysis__metrics > span + span {
+        border-left: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .interaction-analysis__metrics b {
+        overflow-wrap: anywhere;
+        color: #f3eee0;
+        font: 10px/1.35 var(--mono);
+        font-weight: 500;
+      }
+      .interaction-analysis__calibration {
+        padding: 18px 2px 0;
+      }
+      .interaction-analysis__calibration input {
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
+        accent-color: #e7c17f;
+        cursor: ew-resize;
+      }
+      .interaction-analysis__poles {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: rgba(190, 196, 214, 0.56);
+        font-size: 9px;
+      }
+      .interaction-analysis__poles span:last-child { text-align: right; }
+      .interaction-analysis__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .interaction-analysis__footer p {
+        max-width: 58ch;
+        margin: 0;
+        color: rgba(190, 196, 214, 0.54);
+        font-size: 9px;
+        line-height: 1.6;
+      }
+      .interaction-analysis__reset {
+        flex: none;
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid rgba(143, 216, 220, 0.22);
+        border-radius: 7px;
+        background: transparent;
+        color: rgba(184, 229, 231, 0.82);
+        font: 9px/1 var(--font);
+        cursor: pointer;
+      }
+      .interaction-analysis__reset:disabled {
+        opacity: 0.38;
+        cursor: default;
+      }
+      .interaction-analysis__reset:active:not(:disabled) { transform: scale(0.97); }
+      .pcard.is-profile-open {
+        background: rgba(143, 216, 220, 0.025);
+      }
+      .pcard-profile {
+        grid-column: 1 / -1;
+        margin-top: 3px;
+        padding: 16px 10px 4px 57px;
+        border-top: 1px solid rgba(143, 216, 220, 0.12);
+      }
+      .pcard-profile__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      .pcard-profile__eyebrow {
+        color: rgba(143, 216, 220, 0.58);
+        font: 8px/1.4 var(--mono);
+      }
+      .pcard-profile__head h3 {
+        margin: 5px 0 0;
+        color: #edf1f1;
+        font-size: 15px;
+        font-weight: 650;
+      }
+      .pcard-profile__head p {
+        margin: 5px 0 0;
+        color: rgba(190, 196, 214, 0.62);
+        font-size: 9px;
+      }
+      .pcard-profile__follow,
+      .pcard-profile__action {
+        min-height: 44px;
+        border: 1px solid rgba(143, 216, 220, 0.24);
+        border-radius: 7px;
+        background: #111820;
+        color: rgba(184, 229, 231, 0.84);
+        font: 600 9px/1 var(--font);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .pcard-profile__follow {
+        flex: none;
+        min-width: 88px;
+        padding: 0 10px;
+      }
+      .pcard-profile__follow.is-following {
+        border-color: rgba(231, 193, 127, 0.4);
+        color: #e7c17f;
+      }
+      .pcard-profile__source {
+        margin-top: 14px;
+        padding: 12px 0;
+        border-block: 1px solid rgba(255, 255, 255, 0.065);
+      }
+      .pcard-profile__source b {
+        display: block;
+        color: rgba(237, 241, 241, 0.82);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+      .pcard-profile__source p {
+        margin: 7px 0 0;
+        color: rgba(221, 227, 228, 0.68);
+        font-size: 11px;
+        line-height: 1.65;
+      }
+      .pcard-profile__source span {
+        display: block;
+        margin-top: 7px;
+        color: rgba(231, 193, 127, 0.66);
+        font: 8px/1.4 var(--mono);
+      }
+      .pcard-profile__actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .pcard-profile__action {
+        display: grid;
+        place-items: center;
+        padding: 0 10px;
+      }
+      .pcard-profile__more {
+        display: grid;
+        gap: 7px;
+        margin-top: 16px;
+      }
+      .pcard-profile__more > b {
+        color: rgba(190, 196, 214, 0.62);
+        font-size: 9px;
+        font-weight: 600;
+      }
+      .pcard-profile__answer {
+        display: grid;
+        gap: 4px;
+        min-height: 44px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+        color: rgba(184, 229, 231, 0.82);
+        font-size: 10px;
+        line-height: 1.45;
+        text-decoration: none;
+      }
+      .pcard-profile__answer small {
+        color: rgba(190, 196, 214, 0.52);
+        font-size: 9px;
+      }
+      .pcard-profile__empty {
+        margin: 0;
+        color: rgba(190, 196, 214, 0.5);
+        font-size: 9px;
+        line-height: 1.5;
+      }
+      .pcard-profile__search {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-self: start;
+        color: rgba(143, 216, 220, 0.74);
+        font-size: 9px;
+        text-decoration: none;
+      }
+      .pcard-profile__follow:active,
+      .pcard-profile__action:active,
+      .pcard-profile__search:active { transform: scale(0.97); }
+      .interaction-analysis__reset:focus-visible,
+      .pcard-profile__follow:focus-visible,
+      .pcard-profile__action:focus-visible,
+      .pcard-profile__answer:focus-visible,
+      .pcard-profile__search:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
+      }
       .cards-section {
         display: flex;
         align-items: center;
@@ -3962,7 +4209,25 @@
           padding: 13px 10px;
         }
         .me-strip-position { grid-column: 1 / -1; padding: 0 2px; }
-        .pcard-me-btn { grid-column: 1 / -1; width: 100%; }
+        .me-strip-actions {
+          grid-column: 1 / -1;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .pcard-me-btn { width: 100%; padding: 0 8px; }
+        .interaction-analysis { padding: 16px 10px 18px; }
+        .interaction-analysis__metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .interaction-analysis__metrics > span:last-child {
+          grid-column: 1 / -1;
+          border-top: 1px solid rgba(255, 255, 255, 0.07);
+          border-left: 0;
+        }
+        .interaction-analysis__footer {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .interaction-analysis__reset { width: 100%; }
         .pcard {
           grid-template-columns: 44px minmax(0, 1fr);
           gap: 10px;
@@ -3976,6 +4241,13 @@
         }
         .pcard-position span { margin-bottom: 6px; text-align: left; }
         .pcard-claim { font-size: 11.5px; }
+        .pcard-profile {
+          padding: 14px 2px 4px;
+        }
+        .pcard-profile__head { gap: 9px; }
+        .pcard-profile__actions {
+          grid-template-columns: minmax(0, 1fr);
+        }
         .modal { width: min(420px, calc(100vw - 32px)); }
         .modal-head {
           grid-template-columns: 34px minmax(0, 1fr);
@@ -4764,6 +5036,7 @@
       const [
         {
           buildNebulaShelfUrl,
+          findPublishedPersonEntries,
           getNebulaLikeStorageKey,
           getNebulaPreset,
           listNebulaPresets,
@@ -4898,9 +5171,22 @@
       const PEOPLE = Array.isArray(PRESET.people) && PRESET.people.length >= 2
         ? PRESET.people
         : DEFAULT_PEOPLE;
-      const FOLLOWED = Array.isArray(PRESET.followed)
-        ? new Set(PRESET.followed)
-        : DEFAULT_FOLLOWED;
+      const FOLLOW_STORAGE_KEY =
+        `jiupai:nebula:follows:v1:${PRESET.id}:${PRESET.version || "1"}`;
+      const FOLLOWED = new Set(
+        Array.isArray(PRESET.followed) ? PRESET.followed : DEFAULT_FOLLOWED,
+      );
+      try {
+        const storedFollows = JSON.parse(localStorage.getItem(FOLLOW_STORAGE_KEY) || "null");
+        if (Array.isArray(storedFollows)) {
+          FOLLOWED.clear();
+          storedFollows.forEach((index) => {
+            if (Number.isSafeInteger(index) && index >= 0 && index < PEOPLE.length) {
+              FOLLOWED.add(index);
+            }
+          });
+        }
+      } catch { /* localStorage 不可用时保留快照默认标记 */ }
       const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
       const CLUSTERS = Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS;
       const ME = PRESET.me || DEFAULT_ME;
@@ -5953,6 +6239,23 @@
         return r;
       }
 
+      function ensureFollowStar(u) {
+        if (u.star) return u.star;
+        const star = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: starTexture(),
+          transparent: true,
+          opacity: 0.95,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        }));
+        star.position.set(0.22, 0.27, 0);
+        star.scale.setScalar(0.28);
+        star.renderOrder = 3;
+        u.group.add(star);
+        u.star = star;
+        return star;
+      }
+
       // 星系介质：沿双旋臂铺开的细密发光丝缕（左冷右暖随立场渐变）+ 暖亮核球，
       // 把 48 个头像织进一条横贯左右、两端对立的螺旋星系，而不是悬浮的孤立圆球。
       const dustGroup = new THREE.Group();
@@ -6496,7 +6799,10 @@
       const LEGACY_LIKE_VERSIONS = { "career-35": "1", "ai-math": "20260912" };
       const LIKE_KEY = getNebulaLikeStorageKey(PRESET);
       const LEGACY_LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
+      const CALIBRATION_KEY =
+        `jiupai:nebula:calibration:v1:${PRESET.id}:${PRESET_VERSION}`;
       const liked = new Set();
+      let manualStanceVal = null;
       try {
         const current = localStorage.getItem(LIKE_KEY);
         const legacy = current === null && LEGACY_LIKE_VERSIONS[PRESET.id] === PRESET_VERSION
@@ -6510,12 +6816,36 @@
         } else if (current === null && LEGACY_LIKE_VERSIONS[PRESET.id]) {
           localStorage.removeItem(LEGACY_LIKE_KEY);
         }
+        const storedCalibrationValue = localStorage.getItem(CALIBRATION_KEY);
+        const storedCalibration = Number(storedCalibrationValue);
+        if (
+          storedCalibrationValue !== null &&
+          Number.isFinite(storedCalibration) &&
+          storedCalibration >= -1 &&
+          storedCalibration <= 1
+        ) {
+          manualStanceVal = storedCalibration;
+        }
       } catch { /* localStorage 不可用时退化为会话内状态 */ }
 
       function saveLikesLocally() {
         try { localStorage.setItem(LIKE_KEY, JSON.stringify([...liked])); } catch { /* ignore */ }
       }
 
+      function saveManualStanceLocally() {
+        try {
+          if (manualStanceVal === null) localStorage.removeItem(CALIBRATION_KEY);
+          else localStorage.setItem(CALIBRATION_KEY, String(manualStanceVal));
+        } catch { /* 页面内仍保留本次校准 */ }
+      }
+
+      function saveFollowsLocally() {
+        try {
+          localStorage.setItem(FOLLOW_STORAGE_KEY, JSON.stringify([...FOLLOWED]));
+        } catch { /* 页面内仍保留本次关注状态 */ }
+      }
+
+      let suggestedStanceVal = 0;
       let myStanceVal = 0;
       let verdictText = "";
       const verdictEl = document.getElementById("verdict");
@@ -6560,10 +6890,12 @@
             preset: PRESET.id,
             version: PRESET.version || "1",
             cast: ME.castKey,
-            stance: 0,
+            stance: Number(myStanceVal.toFixed(4)),
             likedCount: 0,
             likedIndexes: [],
-            claim: `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`,
+            claim: manualStanceVal === null
+              ? `尚未点赞观点，暂以「${castName} · ${castRole}」作为默认人格。`
+              : "尚未形成观点人格，当前星位由你手动校准。",
             interest: portraitInterest(),
           };
         }
@@ -6591,12 +6923,29 @@
           preset: PRESET.id,
           version: PRESET.version || "1",
           cast,
-          stance: Number(stance.avg.toFixed(4)),
+          stance: Number(myStanceVal.toFixed(4)),
           likedCount: stance.n,
           likedIndexes: [...liked],
-          claim: `本题赞同的 ${stance.n} 个观点中，${matched} 个呈现「${castName}」特征：${castRole}。`,
+          claim: `本题赞同的 ${stance.n} 个观点中，${matched} 个呈现「${castName}」特征：${castRole}。${
+            manualStanceVal === null ? "" : "星位已按你的判断手动校准。"
+          }`,
           interest: portraitInterest(),
         };
+      }
+
+      function publishSelfProfileUpdate() {
+        if (window.parent === window.self) return;
+        const profile = inferSelfProfile();
+        window.parent.postMessage(
+          {
+            type: "nebula-self-profile-update",
+            preset: PRESET.id,
+            version: PRESET_VERSION,
+            cast: profile.cast,
+            selfProfile: profile,
+          },
+          location.origin,
+        );
       }
 
       function setHeart(u, on) {
@@ -6619,13 +6968,16 @@
 
       function applyStance(animate) {
         const v = computeStance([...liked]);
-        myStanceVal = v ? v.avg : 0;
-        verdictText = v ? v.text : "";
+        suggestedStanceVal = v ? v.avg : 0;
+        myStanceVal = manualStanceVal ?? suggestedStanceVal;
+        verdictText = manualStanceVal === null
+          ? v ? v.text : ""
+          : `你把星位校准到${stanceLabel(myStanceVal)}（${myStanceVal > 0 ? "+" : ""}${myStanceVal.toFixed(2)}）；AI 建议位置为 ${suggestedStanceVal > 0 ? "+" : ""}${suggestedStanceVal.toFixed(2)}。`;
         const tx = myStanceVal * XSPAN;
         meUser.baseX = tx;
         if (!animate) meUser.group.position.x = tx;
-        if (v) {
-          verdictTextEl.textContent = v.text;
+        if (v || manualStanceVal !== null) {
+          verdictTextEl.textContent = verdictText;
           verdictEl.classList.add("show");
         } else {
           verdictEl.classList.remove("show");
@@ -6669,6 +7021,70 @@
           "aria-label",
           unlocked ? "聚焦小圈子" : `小圈子未解锁，打开观点卡并再赞同 ${remaining} 个观点`,
         );
+        const renderedCards = document.getElementById("cardsList");
+        const renderedMe = renderedCards?.querySelector(".me-strip");
+        const renderedCoordinate = renderedCards?.querySelector(".me-strip-title span");
+        const renderedDescription = renderedCards?.querySelector(".me-strip-desc");
+        const renderedCurrent = renderedCards?.querySelector("[data-calibration-current]");
+        const renderedMode = renderedCards?.querySelector("[data-calibration-mode]");
+        const renderedReset = renderedCards?.querySelector("[data-calibration-reset]");
+        const renderedSlider = renderedCards?.querySelector("[data-calibration-slider]");
+        document.getElementById("cardsMeMarker").style.left = `${stancePercent(myStanceVal)}%`;
+        renderedMe?.style.setProperty("--stance", `${stancePercent(myStanceVal)}%`);
+        if (renderedCoordinate) {
+          renderedCoordinate.textContent =
+            `${myStanceVal > 0 ? "+" : ""}${myStanceVal.toFixed(2)}`;
+        }
+        if (renderedDescription) {
+          renderedDescription.textContent = verdictText || ME.claim;
+        }
+        if (renderedCurrent) {
+          renderedCurrent.textContent =
+            `${stanceLabel(myStanceVal)} · ${myStanceVal > 0 ? "+" : ""}${myStanceVal.toFixed(2)}`;
+        }
+        if (renderedMode) {
+          renderedMode.textContent = manualStanceVal === null ? "AI 建议" : "手动校准";
+        }
+        if (renderedReset instanceof HTMLButtonElement) {
+          renderedReset.disabled = manualStanceVal === null;
+        }
+        if (renderedSlider instanceof HTMLInputElement) {
+          renderedSlider.value = String(Math.round(myStanceVal * 100));
+        }
+      }
+
+      function setManualStance(value) {
+        if (!Number.isFinite(value)) return;
+        manualStanceVal = Math.max(-1, Math.min(1, value));
+        saveManualStanceLocally();
+        applyStance(true);
+        publishSelfProfileUpdate();
+      }
+
+      function restoreSuggestedStance() {
+        manualStanceVal = null;
+        saveManualStanceLocally();
+        applyStance(true);
+        publishSelfProfileUpdate();
+      }
+
+      function toggleLocalFollow(i) {
+        if (!Number.isSafeInteger(i) || i < 0 || i >= N) return;
+        const following = !FOLLOWED.has(i);
+        if (following) FOLLOWED.add(i);
+        else FOLLOWED.delete(i);
+        saveFollowsLocally();
+        const user = users[i];
+        if (user) {
+          user.followed = following;
+          if (following) ensureFollowStar(user).visible = true;
+          else if (user.star) user.star.visible = false;
+          user.avatarPaintSignature = "";
+          applyAvatarTextureForLod(user, getNebulaLodProfile(distanceLod));
+        }
+        if (followedOnly && FOLLOWED.size === 0) setFollowedOnly(false, false);
+        renderCardsIfOpen();
+        showToast(following ? `已在星图关注 @${PEOPLE[i][0]}` : `已取消星图关注 @${PEOPLE[i][0]}`);
       }
 
       users.forEach((u) => { if (!u.isMe) setHeart(u, liked.has(u.index)); });
@@ -6683,6 +7099,7 @@
         const u = users[i];
         if (u) setHeart(u, liked.has(i));
         applyStance(true);
+        publishSelfProfileUpdate();
         renderCardsIfOpen();
         if (!wasUnlocked && personaUnlocked()) {
           showToast("已赞同 3 个观点，你的人格与同频发现已解锁");
@@ -6701,9 +7118,11 @@
       }
       function resetLikes() {
         liked.clear();
+        manualStanceVal = null;
         try {
           localStorage.removeItem(LIKE_KEY);
           localStorage.removeItem(LEGACY_LIKE_KEY);
+          localStorage.removeItem(CALIBRATION_KEY);
         } catch { /* ignore */ }
         users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
         closePeerDiscovery();
@@ -6711,6 +7130,7 @@
         hideChip();
         if (focusSet) exitFocus();
         applyStance(true);
+        publishSelfProfileUpdate();
         renderCardsIfOpen();
       }
 
@@ -6738,7 +7158,10 @@
       const openAcks = new Set();
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
-        if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
+        if (e.data && e.data.type === "nebula-host-ready") {
+          hostReady = true;
+          publishSelfProfileUpdate();
+        }
         if (e.data && e.data.type === "nebula-host-visibility") {
           const nextRunning = e.data.visible === true && !document.hidden;
           if (running === nextRunning) return;
@@ -6778,6 +7201,7 @@
             if (focusSet) exitFocus();
           }
           applyStance(false);
+          publishSelfProfileUpdate();
           if (!identityChanged && peerDiscoveryEl.classList.contains("show")) {
             refreshPeerDiscoveryBatch();
           }
@@ -7843,6 +8267,8 @@
       let cardsReturnFocus = null;
       let personaFilter = null;
       let personaDeckOpen = false;
+      let interactionAnalysisOpen = false;
+      let expandedPersonIndex = null;
 
       function stancePercent(stance) {
         return Math.max(0, Math.min(100, Math.round((stance + 1) * 50)));
@@ -8057,10 +8483,12 @@
       }
 
       function personCard(i) {
-        const [name, stance, castKey, claim, sourceUrl, , votes] = PEOPLE[i];
+        const [name, stance, castKey, claim, sourceUrl, sourceTitle, votes] = PEOPLE[i];
         const [castName, castRole, castColor] = CASTS[castKey];
         const on = liked.has(i);
+        const profileOpen = expandedPersonIndex === i;
         const article = uiNode("article", "pcard");
+        if (profileOpen) article.classList.add("is-profile-open");
         article.dataset.u = String(i);
         article.dataset.persona = castKey;
         article.dataset.signal = String(i + 1).padStart(2, "0");
@@ -8078,15 +8506,16 @@
         const row = uiNode("div", "pcard-row");
         row.appendChild(uiNode("b", "", `@${name}`));
         if (FOLLOWED.has(i)) row.appendChild(uiNode("span", "pcard-star", "★"));
-        const personOpen = uiNode(
+        const profileButton = uiNode(
           "button",
           "pcard-person-open",
-          "看卡片 →",
+          profileOpen ? "收起档案" : "回答者 →",
         );
-        personOpen.type = "button";
-        personOpen.dataset.personOpen = String(i);
-        personOpen.setAttribute("aria-label", `查看 ${name} 的人格卡`);
-        row.appendChild(personOpen);
+        profileButton.type = "button";
+        profileButton.dataset.personProfile = String(i);
+        profileButton.setAttribute("aria-expanded", String(profileOpen));
+        profileButton.setAttribute("aria-label", `${profileOpen ? "收起" : "查看"} ${name} 的回答者档案`);
+        row.appendChild(profileButton);
 
         const persona = uiNode("div", "pcard-fac");
         const dot = uiNode("i");
@@ -8137,7 +8566,178 @@
         );
         side.append(position, like);
         article.append(avatar, body, side);
+
+        if (profileOpen) {
+          const profile = uiNode("section", "pcard-profile");
+          profile.setAttribute("aria-label", `${name} 的回答者档案`);
+          const profileHead = uiNode("div", "pcard-profile__head");
+          const profileCopy = uiNode("div");
+          profileCopy.append(
+            uiNode("span", "pcard-profile__eyebrow", "回答者档案 · 当前快照"),
+            uiNode("h3", "", `@${name}`),
+            uiNode(
+              "p",
+              "",
+              `${castName} · ${castRole} · ${stanceLabel(stance)}`,
+            ),
+          );
+          const follow = uiNode(
+            "button",
+            `pcard-profile__follow${FOLLOWED.has(i) ? " is-following" : ""}`,
+            FOLLOWED.has(i) ? "已星图关注" : "星图关注",
+          );
+          follow.type = "button";
+          follow.dataset.follow = String(i);
+          follow.setAttribute("aria-pressed", String(FOLLOWED.has(i)));
+          follow.setAttribute(
+            "aria-label",
+            `${FOLLOWED.has(i) ? "取消" : ""}星图关注 ${name}`,
+          );
+          profileHead.append(profileCopy, follow);
+
+          const sourceMeta = uiNode("div", "pcard-profile__source");
+          sourceMeta.append(
+            uiNode("b", "", sourceTitle || PRESET.question),
+            uiNode("p", "", `“${claim}”`),
+          );
+          if (Number.isFinite(votes)) {
+            sourceMeta.appendChild(uiNode("span", "", `${votes} 赞同`));
+          }
+
+          const actions = uiNode("div", "pcard-profile__actions");
+          const personaButton = uiNode(
+            "button",
+            "pcard-profile__action",
+            "查看人格卡",
+          );
+          personaButton.type = "button";
+          personaButton.dataset.personOpen = String(i);
+          actions.appendChild(personaButton);
+          const verifiedSourceUrl = safeZhihuUrl(sourceUrl);
+          if (verifiedSourceUrl) {
+            const source = uiNode("a", "pcard-profile__action", "查看本题原回答");
+            source.dataset.source = "";
+            source.href = verifiedSourceUrl;
+            source.target = "_blank";
+            source.rel = "noopener noreferrer";
+            actions.appendChild(source);
+          }
+
+          const otherAnswers = findPublishedPersonEntries(name, PRESET.id)
+            .filter((entry) => safeZhihuUrl(entry.sourceUrl));
+          const more = uiNode("div", "pcard-profile__more");
+          more.appendChild(uiNode("b", "", "其他公开回答"));
+          if (otherAnswers.length) {
+            otherAnswers.forEach((entry) => {
+              const link = uiNode("a", "pcard-profile__answer");
+              link.dataset.source = "";
+              link.href = safeZhihuUrl(entry.sourceUrl);
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.append(
+                uiNode("span", "", entry.sourceTitle || entry.question),
+                uiNode("small", "", entry.claim),
+              );
+              more.appendChild(link);
+            });
+          } else {
+            more.appendChild(uiNode(
+              "p",
+              "pcard-profile__empty",
+              "已发布快照中暂未收录 TA 的其他回答。",
+            ));
+          }
+          const search = uiNode("a", "pcard-profile__search", "在知乎搜索 TA 的公开内容 →");
+          search.dataset.source = "";
+          search.href = `https://www.zhihu.com/search?type=content&q=${encodeURIComponent(name)}`;
+          search.target = "_blank";
+          search.rel = "noopener noreferrer";
+          more.appendChild(search);
+
+          profile.append(profileHead, sourceMeta, actions, more);
+          article.appendChild(profile);
+        }
         return article;
+      }
+
+      function renderInteractionAnalysis() {
+        const analysis = uiNode("section", "interaction-analysis");
+        analysis.setAttribute("aria-label", "我的互动分析与星位校准");
+        const heading = uiNode("div", "interaction-analysis__head");
+        const headingCopy = uiNode("div");
+        headingCopy.append(
+          uiNode("span", "", "本题互动分析"),
+          uiNode("h3", "", "校准我的星位"),
+        );
+        const mode = uiNode(
+          "b",
+          "interaction-analysis__mode",
+          manualStanceVal === null ? "AI 建议" : "手动校准",
+        );
+        mode.dataset.calibrationMode = "";
+        heading.append(headingCopy, mode);
+
+        const metrics = uiNode("div", "interaction-analysis__metrics");
+        const likeMetric = uiNode("span");
+        likeMetric.append(
+          uiNode("b", "", String(liked.size)),
+          document.createTextNode("站内赞同"),
+        );
+        const suggestedMetric = uiNode("span");
+        suggestedMetric.append(
+          uiNode(
+            "b",
+            "",
+            `${suggestedStanceVal > 0 ? "+" : ""}${suggestedStanceVal.toFixed(2)}`,
+          ),
+          document.createTextNode("AI 建议"),
+        );
+        const currentMetric = uiNode("span");
+        const currentValue = uiNode(
+          "b",
+          "",
+          `${stanceLabel(myStanceVal)} · ${myStanceVal > 0 ? "+" : ""}${myStanceVal.toFixed(2)}`,
+        );
+        currentValue.dataset.calibrationCurrent = "";
+        currentMetric.append(currentValue, document.createTextNode("当前星位"));
+        metrics.append(likeMetric, suggestedMetric, currentMetric);
+
+        const calibration = uiNode("div", "interaction-analysis__calibration");
+        const slider = uiNode("input");
+        slider.type = "range";
+        slider.min = "-100";
+        slider.max = "100";
+        slider.step = "1";
+        slider.value = String(Math.round(myStanceVal * 100));
+        slider.dataset.calibrationSlider = "";
+        slider.setAttribute("aria-label", "拖动校准我的立场位置");
+        slider.addEventListener("input", () => {
+          setManualStance(Number(slider.value) / 100);
+        });
+        const poles = uiNode("div", "interaction-analysis__poles");
+        poles.append(
+          uiNode("span", "", PRESET.axis.left),
+          uiNode("span", "", PRESET.axis.right),
+        );
+        calibration.append(slider, poles);
+
+        const footer = uiNode("div", "interaction-analysis__footer");
+        footer.appendChild(uiNode(
+          "p",
+          "",
+          "AI 建议只基于本题站内赞同；未同步知乎评论、回答或关注行为。",
+        ));
+        const reset = uiNode(
+          "button",
+          "interaction-analysis__reset",
+          "恢复 AI 建议位置",
+        );
+        reset.type = "button";
+        reset.dataset.calibrationReset = "";
+        reset.disabled = manualStanceVal === null;
+        footer.appendChild(reset);
+        analysis.append(heading, metrics, calibration, footer);
+        return analysis;
       }
       function commentCard(cmt, i) {
         const [name, stance, castKey, claim, funny] = cmt;
@@ -8247,7 +8847,9 @@
         meTitle.appendChild(uiNode(
           "span",
           "",
-          liked.size ? `${my > 0 ? "+" : ""}${my.toFixed(2)}` : "待形成",
+          liked.size || manualStanceVal !== null
+            ? `${my > 0 ? "+" : ""}${my.toFixed(2)}`
+            : "待形成",
         ));
         meCopy.append(meTitle, uiNode("div", "me-strip-desc", meClaim));
         const mePosition = uiNode("div", "me-strip-position");
@@ -8263,6 +8865,15 @@
           ),
           meSpectrum,
         );
+        const meActions = uiNode("div", "me-strip-actions");
+        const analysisButton = uiNode(
+          "button",
+          "pcard-me-btn pcard-me-btn--analysis",
+          interactionAnalysisOpen ? "收起互动分析" : "查看我的互动分析",
+        );
+        analysisButton.type = "button";
+        analysisButton.dataset.selfAnalysis = "";
+        analysisButton.setAttribute("aria-expanded", String(interactionAnalysisOpen));
         const meButton = uiNode(
           "button",
           "pcard-me-btn",
@@ -8273,7 +8884,8 @@
         meButton.type = "button";
         meButton.dataset.self = "";
         meButton.disabled = !personaUnlocked();
-        head.append(meAvatar, meCopy, mePosition, meButton);
+        meActions.append(analysisButton, meButton);
+        head.append(meAvatar, meCopy, mePosition, meActions);
 
         cardsEl.classList.toggle("is-awaiting-stance", !personaUnlocked());
         cardsListEl.replaceChildren();
@@ -8281,6 +8893,9 @@
         const personaDeck = renderPersonaDeck();
         if (personaDeck) cardsListEl.appendChild(personaDeck);
         cardsListEl.appendChild(head);
+        if (interactionAnalysisOpen) {
+          cardsListEl.appendChild(renderInteractionAnalysis());
+        }
         if (visibleAnswers.length) {
           const section = uiNode("div", "cards-section");
           const selectedPersona = personaByKey(personaFilter);
@@ -8441,7 +9056,7 @@
           personaDeckOpen = false;
           renderCards(true);
           requestAnimationFrame(() => {
-            cardsListEl.querySelector("[data-person-open]")?.focus();
+            cardsListEl.querySelector("[data-person-profile]")?.focus();
           });
           return;
         }
@@ -8450,10 +9065,45 @@
           requestAnimationFrame(() => personaDeckOpenEl.focus());
           return;
         }
+        if (e.target.closest("[data-self-analysis]")) {
+          interactionAnalysisOpen = !interactionAnalysisOpen;
+          renderCards();
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector("[data-self-analysis]")?.focus();
+          });
+          return;
+        }
+        if (e.target.closest("[data-calibration-reset]")) {
+          restoreSuggestedStance();
+          renderCards();
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector("[data-calibration-slider]")?.focus();
+          });
+          return;
+        }
         const likeBtn = e.target.closest("[data-like]");
         if (likeBtn) {
           e.stopPropagation();
           toggleLike(Number(likeBtn.getAttribute("data-like")));
+          return;
+        }
+        const followButton = e.target.closest("[data-follow]");
+        if (followButton) {
+          const personIndex = Number(followButton.getAttribute("data-follow"));
+          toggleLocalFollow(personIndex);
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector(`[data-follow="${personIndex}"]`)?.focus();
+          });
+          return;
+        }
+        const personProfile = e.target.closest("[data-person-profile]");
+        if (personProfile) {
+          const personIndex = Number(personProfile.getAttribute("data-person-profile"));
+          expandedPersonIndex = expandedPersonIndex === personIndex ? null : personIndex;
+          renderCards();
+          requestAnimationFrame(() => {
+            cardsListEl.querySelector(`[data-person-profile="${personIndex}"]`)?.focus();
+          });
           return;
         }
         if (e.target.closest("[data-self]")) { openSelf(); return; }

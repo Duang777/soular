@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import {
   buildNebulaShelfUrl,
+  findPublishedPersonEntries,
   getNebulaPreset,
   getNebulaLikeStorageKey,
   listNebulaPresets,
@@ -312,8 +313,8 @@ assert.match(
 );
 assert.match(
   source,
-  /const personOpen = uiNode\(\s*"button",\s*"pcard-person-open",\s*"看卡片 →",\s*\)[\s\S]*personOpen\.dataset\.personOpen = String\(i\)/,
-  "回答者观点必须提供明确的人格卡入口",
+  /const profileButton = uiNode\(\s*"button",\s*"pcard-person-open",[\s\S]*profileButton\.dataset\.personProfile = String\(i\)[\s\S]*personaButton\.dataset\.personOpen = String\(i\)/,
+  "回答者观点必须先提供档案入口，再从档案明确进入人格卡",
 );
 assert.doesNotMatch(
   source,
@@ -324,6 +325,36 @@ assert.match(
   source,
   /const personOpen = e\.target\.closest\("\[data-person-open\]"\);[\s\S]*openPerson\(Number\(personOpen\.getAttribute\("data-person-open"\)\)\)/,
   "人格卡只能由明确的查看按钮打开",
+);
+assert.match(
+  source,
+  /function renderInteractionAnalysis\(\)[\s\S]*calibrationSlider[\s\S]*恢复 AI 建议位置/,
+  "我的互动分析必须提供可拖动校准与恢复建议位置",
+);
+assert.match(
+  source,
+  /CALIBRATION_KEY[\s\S]*manualStanceVal[\s\S]*setManualStance[\s\S]*publishSelfProfileUpdate/,
+  "手动星位必须按快照保存在本地并同步到共同思想地图",
+);
+assert.match(
+  source,
+  /e\.data\.type === "nebula-user-profile"[\s\S]*applyStance\(false\);\s*publishSelfProfileUpdate\(\);/,
+  "已存在的本地表态必须在账号上下文确认后回填到共同思想地图",
+);
+assert.match(
+  source,
+  /e\.data\.type === "nebula-host-ready"[\s\S]{0,120}publishSelfProfileUpdate\(\);/,
+  "静态镜像必须在宿主握手后回填已有的本地表态",
+);
+assert.match(
+  source,
+  /function toggleLocalFollow\(i\)[\s\S]*saveFollowsLocally[\s\S]*已在星图关注/,
+  "回答者档案必须提供明确的本地星图关注状态",
+);
+assert.match(
+  source,
+  /findPublishedPersonEntries\(name, PRESET\.id\)[\s\S]*其他公开回答[\s\S]*在知乎搜索 TA 的公开内容/,
+  "回答者档案必须展示已收录的其他公开回答并提供真实知乎搜索入口",
 );
 assert.doesNotMatch(
   source,
@@ -1398,6 +1429,19 @@ assert.equal(
 
 const likeStorageKeys = new Set();
 const staticPresets = listNebulaPresets();
+const relatedAnswers = findPublishedPersonEntries("网管", "scholars-ai-math");
+assert.ok(
+  relatedAnswers.some(({ preset, sourceUrl }) =>
+    preset === "ai-math" &&
+    /^https:\/\/(?:www\.)?zhihu\.com\//.test(sourceUrl)
+  ),
+  "回答者档案必须能从其他已发布快照找到同名公开回答",
+);
+assert.deepEqual(
+  findPublishedPersonEntries("知乎回答 01", "social-connections"),
+  [],
+  "匿名占位名不得被误认为跨问题的同一回答者",
+);
 assert.equal(
   SCHOLARS_AI_MATH.serial,
   "05",
