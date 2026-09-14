@@ -2315,6 +2315,43 @@
       .cards-list::-webkit-scrollbar { width: 6px; }
       .cards-list::-webkit-scrollbar-thumb { background: rgba(143, 216, 220, 0.16); border-radius: 99px; }
       .cards-list::-webkit-scrollbar-thumb:hover { background: rgba(143, 216, 220, 0.28); }
+      .stance-guide {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 13px;
+        min-height: 68px;
+        margin-bottom: 10px;
+        padding: 12px 14px;
+        border-top: 1px solid rgba(231, 193, 127, 0.42);
+        border-bottom: 1px solid rgba(231, 193, 127, 0.2);
+        background: rgba(231, 193, 127, 0.045);
+      }
+      .stance-guide-progress {
+        color: #e7c17f;
+        font: 500 9px/1 var(--mono);
+        white-space: nowrap;
+      }
+      .stance-guide-copy {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+      .stance-guide-copy b {
+        color: #f3eee0;
+        font-size: 11.5px;
+        font-weight: 650;
+      }
+      .stance-guide-copy small {
+        color: rgba(204, 212, 214, 0.6);
+        font-size: 9.5px;
+        line-height: 1.5;
+      }
+      .stance-guide-remaining {
+        color: rgba(231, 193, 127, 0.78);
+        font: 500 8.5px/1 var(--mono);
+        white-space: nowrap;
+      }
       .persona-deck {
         display: grid;
         grid-template-columns: 44px 78px minmax(0, 1fr) minmax(132px, auto) 44px;
@@ -2531,7 +2568,7 @@
       .pcard {
         position: relative;
         display: grid;
-        grid-template-columns: 44px minmax(0, 1fr) 122px;
+        grid-template-columns: 44px minmax(0, 1fr) 160px;
         align-items: start;
         gap: 13px;
         min-height: 104px;
@@ -2634,7 +2671,7 @@
       .pcard-tag--fun { border: 1px solid rgba(231, 201, 140, 0.4); color: var(--gold); background: rgba(231, 201, 140, 0.08); }
       .pcard-side {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 44px;
+        grid-template-columns: minmax(0, 1fr) 76px;
         align-items: center;
         gap: 10px;
         align-self: center;
@@ -2650,17 +2687,27 @@
       }
       .pcard-like {
         flex: none;
-        width: 44px;
+        width: 76px;
         height: 44px;
         border-radius: 9px;
         border: 1px solid rgba(255, 255, 255, 0.06);
         background: #111820;
         color: rgba(180, 193, 197, 0.55);
-        font-size: 14px;
+        font: 600 10px/1 var(--font);
+        white-space: nowrap;
         cursor: pointer;
-        transition: border-color 0.15s ease, color 0.15s ease;
+        transition: border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
       }
       .pcard-like:hover { border-color: rgba(231, 193, 127, 0.42); color: #e7c17f; }
+      .pcard-like:active { transform: scale(0.96); }
+      .pcard-like:focus-visible {
+        outline: 2px solid rgba(231, 193, 127, 0.82);
+        outline-offset: 2px;
+      }
+      .cards.is-awaiting-stance .pcard-like:not(.is-liked) {
+        border-color: rgba(231, 193, 127, 0.38);
+        color: #e7c17f;
+      }
       .pcard-like.is-liked {
         border-color: rgba(231, 193, 127, 0.5);
         background: rgba(231, 193, 127, 0.1);
@@ -3848,6 +3895,16 @@
         .cards-rail { margin: 0 -14px; padding: 8px 14px 7px; }
         .cards-filter { min-height: 44px; padding: 0 10px; font-size: 9.5px; }
         .cards-list { padding: 10px 0 26px; }
+        .stance-guide {
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 9px 10px;
+          min-height: 0;
+          padding: 11px 10px;
+        }
+        .stance-guide-remaining {
+          grid-column: 2;
+          justify-self: start;
+        }
         .persona-deck {
           grid-template-columns: 44px 58px minmax(0, 1fr) 44px;
           grid-template-areas:
@@ -3885,7 +3942,7 @@
         .pcard-ava { width: 38px; height: 38px; }
         .pcard-side {
           grid-column: 2;
-          grid-template-columns: minmax(0, 1fr) 44px;
+          grid-template-columns: minmax(0, 1fr) 76px;
           margin-top: 2px;
         }
         .pcard-position span { margin-bottom: 6px; text-align: left; }
@@ -4101,7 +4158,7 @@
         <span class="pole" id="presetRightPole">深耕不转</span>
         <span class="sub">RIGHT POLE</span>
       </div>
-      <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停看观点 · 点赞校准你的立场</div>
+      <div class="hint">拖拽旋转 · 悬停看观点 · 点「♡ 赞同」完成表态</div>
     </div>
 
     <nav class="observatory-controls" id="observatoryControls" aria-label="星云观测控制">
@@ -4151,7 +4208,7 @@
           <small>读懂争议</small>
         </span>
       </button>
-      <button type="button" class="journey-action" id="peerDiscoveryBtn" aria-disabled="true">
+      <button type="button" class="journey-action" id="peerDiscoveryBtn">
         <span class="journey-action-icon" aria-hidden="true">
           <svg class="ui-icon" viewBox="0 0 24 24">
             <circle cx="8" cy="8" r="3"></circle>
@@ -4162,10 +4219,10 @@
         </span>
         <span class="journey-action-copy">
           <b>同频发现</b>
-          <small id="peerDiscoveryHint">还差 3 次表态</small>
+          <small id="peerDiscoveryHint">点 ♡ 赞同 · 差 3 个</small>
         </span>
       </button>
-      <button type="button" class="journey-action" id="clashBtn" aria-disabled="true">
+      <button type="button" class="journey-action" id="clashBtn">
         <span class="journey-action-icon" aria-hidden="true">
           <svg class="ui-icon" viewBox="0 0 24 24">
             <path d="M7 7h11l-3-3"></path>
@@ -4176,10 +4233,10 @@
         </span>
         <span class="journey-action-copy">
           <b>观点碰撞</b>
-          <small id="clashHint">还差 3 次表态</small>
+          <small id="clashHint">点 ♡ 赞同 · 差 3 个</small>
         </span>
       </button>
-      <button type="button" class="journey-action" id="circleBtn" aria-disabled="true" aria-pressed="false">
+      <button type="button" class="journey-action" id="circleBtn" aria-pressed="false">
         <span class="journey-action-icon" aria-hidden="true">
           <svg class="ui-icon" viewBox="0 0 24 24">
             <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"></path>
@@ -4190,7 +4247,7 @@
         </span>
         <span class="journey-action-copy">
           <b>聚焦小圈子</b>
-          <small id="circleHint">还差 3 次表态</small>
+          <small id="circleHint">点 ♡ 赞同 · 差 3 个</small>
         </span>
       </button>
     </nav>
@@ -4318,7 +4375,7 @@
         <i aria-hidden="true">✦</i>
         <span class="self-draw-entry-copy">
           <b>抽我的人格卡</b>
-          <small id="selfDrawHint">点赞后更贴近你的立场</small>
+          <small id="selfDrawHint">赞同 3 个观点后解锁</small>
         </span>
         <span aria-hidden="true">→</span>
       </button>
@@ -4469,7 +4526,7 @@
             <div class="modal-kicker">观点碰撞 · VIEWPOINT MATCH</div>
             <div class="modal-title" id="clashTitle">听听对立面怎么想</div>
             <p class="modal-sub" id="clashSubtitle">已找到与你立场距离最远的一种声音。</p>
-            <p class="modal-personalization" id="clashReason" aria-live="polite">当前根据本题表态进行匹配。</p>
+            <p class="modal-personalization" id="clashReason" aria-live="polite">当前根据你赞同的观点进行匹配。</p>
           </div>
         </div>
         <div class="seg match-mode" role="tablist" aria-label="观点匹配方式">
@@ -6487,7 +6544,7 @@
           stance: Number(stance.avg.toFixed(4)),
           likedCount: stance.n,
           likedIndexes: [...liked],
-          claim: `本题 ${stance.n} 次表态中，${matched} 次呈现「${castName}」特征：${castRole}。`,
+          claim: `本题赞同的 ${stance.n} 个观点中，${matched} 个呈现「${castName}」特征：${castRole}。`,
           interest: portraitInterest(),
         };
       }
@@ -6527,40 +6584,40 @@
         const unlocked = personaUnlocked();
         const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
         const drawEntry = document.getElementById("selfDrawEntry");
-        drawEntry.disabled = !unlocked;
-        drawEntry.setAttribute("aria-disabled", String(!unlocked));
+        drawEntry.disabled = false;
+        drawEntry.removeAttribute("aria-disabled");
         document.getElementById("selfDrawHint").textContent = unlocked
           ? `已根据 ${v.n} 个点赞匹配${CASTS[profile.cast][0]}${userPortrait ? " · 画像校准" : ""}`
-          : `再表态 ${remaining} 次解锁人格`;
+          : `再赞同 ${remaining} 个观点解锁`;
         const clashButton = document.getElementById("clashBtn");
         const circleButton = document.getElementById("circleBtn");
         const peerButton = document.getElementById("peerDiscoveryBtn");
         peerButton.classList.toggle("is-locked", !unlocked);
         clashButton.classList.toggle("is-locked", !unlocked);
         circleButton.classList.toggle("is-locked", !unlocked);
-        peerButton.setAttribute("aria-disabled", String(!unlocked));
-        clashButton.setAttribute("aria-disabled", String(!unlocked));
-        circleButton.setAttribute("aria-disabled", String(!unlocked));
+        peerButton.removeAttribute("aria-disabled");
+        clashButton.removeAttribute("aria-disabled");
+        circleButton.removeAttribute("aria-disabled");
         document.getElementById("peerDiscoveryHint").textContent = unlocked
           ? "5 位同频者"
-          : `还差 ${remaining} 次表态`;
+          : `点 ♡ 赞同 · 差 ${remaining} 个`;
         document.getElementById("clashHint").textContent = unlocked
           ? "同频或互补"
-          : `还差 ${remaining} 次表态`;
+          : `点 ♡ 赞同 · 差 ${remaining} 个`;
         document.getElementById("circleHint").textContent = unlocked
           ? "发现同路人"
-          : `还差 ${remaining} 次表态`;
+          : `点 ♡ 赞同 · 差 ${remaining} 个`;
         peerButton.setAttribute(
           "aria-label",
-          unlocked ? "打开同频发现，查看 5 位同频回答者" : `同频发现，还差 ${remaining} 次表态解锁`,
+          unlocked ? "打开同频发现，查看 5 位同频回答者" : `同频发现未解锁，打开观点卡并再赞同 ${remaining} 个观点`,
         );
         clashButton.setAttribute(
           "aria-label",
-          unlocked ? "打开观点碰撞" : `观点碰撞，还差 ${remaining} 次表态解锁`,
+          unlocked ? "打开观点碰撞" : `观点碰撞未解锁，打开观点卡并再赞同 ${remaining} 个观点`,
         );
         circleButton.setAttribute(
           "aria-label",
-          unlocked ? "聚焦小圈子" : `聚焦小圈子，还差 ${remaining} 次表态解锁`,
+          unlocked ? "聚焦小圈子" : `小圈子未解锁，打开观点卡并再赞同 ${remaining} 个观点`,
         );
       }
 
@@ -6578,7 +6635,7 @@
         applyStance(true);
         renderCardsIfOpen();
         if (!wasUnlocked && personaUnlocked()) {
-          showToast("已完成 3 次表态，你的人格与同频发现已解锁");
+          showToast("已赞同 3 个观点，你的人格与同频发现已解锁");
           if (CLUSTERS.length) queueNextChip(4200);
         }
         if (wasUnlocked && !personaUnlocked()) {
@@ -6856,7 +6913,7 @@
       }
       function openSelf() {
         if (!personaUnlocked()) {
-          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次即可解锁人格`);
+          guideToStance("人格卡");
           return;
         }
         const profile = inferSelfProfile();
@@ -6936,7 +6993,7 @@
           const button = uiNode(
             "button",
             "tip-like",
-            personaUnlocked() ? "查看我的人格卡 →" : `再表态 ${remaining} 次解锁`,
+            personaUnlocked() ? "查看我的人格卡 →" : `再赞同 ${remaining} 个观点解锁`,
           );
           button.type = "button";
           button.dataset.go = "self";
@@ -6979,7 +7036,7 @@
           const button = uiNode(
             "button",
             `tip-like${likedOne ? " is-liked" : ""}`,
-            likedOne ? "♥ 已赞" : "♡ 赞",
+            likedOne ? "♥ 已赞同" : "♡ 赞同",
           );
           button.type = "button";
           button.dataset.like = String(u.index);
@@ -7523,7 +7580,7 @@
           });
         });
         discoveryStatusEl.textContent = liked.size
-          ? `根据 ${liked.size} 次表态推荐 ${indexes.length} 个观点`
+          ? `根据你赞同的 ${liked.size} 个观点推荐 ${indexes.length} 个观点`
           : "先从光谱两端和中点认识这场讨论";
       }
 
@@ -8002,11 +8059,14 @@
         const like = uiNode(
           "button",
           `pcard-like${on ? " is-liked" : ""}`,
-          on ? "♥" : "♡",
+          on ? "♥ 已赞同" : "♡ 赞同",
         );
         like.type = "button";
         like.dataset.like = String(i);
-        like.setAttribute("aria-label", on ? "取消赞" : "赞同");
+        like.setAttribute(
+          "aria-label",
+          on ? "取消对这个观点的赞同" : "赞同这个观点，完成一次表态",
+        );
         side.append(position, like);
         article.append(avatar, body, side);
         return article;
@@ -8059,6 +8119,23 @@
         side.appendChild(position);
         article.append(avatar, body, side);
         return article;
+      }
+      function renderStanceGuide() {
+        const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+        const guide = uiNode("section", "stance-guide");
+        guide.setAttribute("role", "status");
+        guide.setAttribute("aria-live", "polite");
+        const copy = uiNode("div", "stance-guide-copy");
+        copy.append(
+          uiNode("b", "", "如何表态"),
+          uiNode("small", "", "选择你认同的观点，点击右侧「♡ 赞同」。赞同 3 个观点即可解锁发现功能。"),
+        );
+        guide.append(
+          uiNode("span", "stance-guide-progress", `表态 ${liked.size}/${PERSONA_MIN_LIKES}`),
+          copy,
+          uiNode("span", "stance-guide-remaining", `还差 ${remaining} 个`),
+        );
+        return guide;
       }
       function renderCards(resetScroll = false) {
         const scrollTop = resetScroll ? 0 : cardsListEl.scrollTop;
@@ -8123,14 +8200,16 @@
           "pcard-me-btn",
           personaUnlocked()
             ? "查看我的人格卡 →"
-            : `再表态 ${PERSONA_MIN_LIKES - liked.size} 次解锁`,
+            : `再赞同 ${PERSONA_MIN_LIKES - liked.size} 个观点解锁`,
         );
         meButton.type = "button";
         meButton.dataset.self = "";
         meButton.disabled = !personaUnlocked();
         head.append(meAvatar, meCopy, mePosition, meButton);
 
+        cardsEl.classList.toggle("is-awaiting-stance", !personaUnlocked());
         cardsListEl.replaceChildren();
+        if (!personaUnlocked()) cardsListEl.appendChild(renderStanceGuide());
         const personaDeck = renderPersonaDeck();
         if (personaDeck) cardsListEl.appendChild(personaDeck);
         cardsListEl.appendChild(head);
@@ -8168,7 +8247,7 @@
         }
         cardsListEl.scrollTop = scrollTop;
         const persona = personaByKey(personaFilter);
-        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞 ${liked.size}${persona ? ` · ${persona.name}` : ""} · 按立场从左到右排列`;
+        cardsMetaEl.textContent = `显示 ${visibleEntries.length} / ${totalEntries.length} · 已赞同 ${liked.size}${persona ? ` · ${persona.name}` : ""} · 按立场从左到右排列`;
         syncPersonaFilterUi();
       }
       function renderCardsIfOpen() {
@@ -8179,6 +8258,11 @@
         try {
           window.parent.postMessage({ type: "nebula-view-change", view }, location.origin);
         } catch (e) {}
+      }
+      function guideToStance(featureLabel) {
+        const remaining = Math.max(0, PERSONA_MIN_LIKES - liked.size);
+        openCards(".pcard-like:not(.is-liked)");
+        showToast(`点观点卡右侧「♡ 赞同」完成表态，还差 ${remaining} 个解锁${featureLabel}`);
       }
       function openCards(focusSelector = "#cardsClose") {
         if (cardsEl.classList.contains("show") || cardsTransitioning) return;
@@ -8596,7 +8680,7 @@
 
       function openPeerDiscovery() {
         if (!personaUnlocked()) {
-          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁同频发现`);
+          guideToStance("同频发现");
           return;
         }
         if (peerDiscoveryEl.classList.contains("show")) return;
@@ -8793,7 +8877,7 @@
                 const [castName, castRole] = CASTS[profile.cast];
                 return `九派人格暂定为「${castName}」——${castRole}。这来自本次快照内的观点分布，不是你的永久画像。`;
               })()
-            : `再表态 ${remaining} 次即可解锁本题人格；当前只展示立场坐标。`;
+            : `再赞同 ${remaining} 个观点即可解锁本题人格；当前只展示立场坐标。`;
           guideBodyEl.replaceChildren(
             uiNode("strong", "", "根据你的点赞"),
             document.createTextNode(
@@ -9154,7 +9238,7 @@
       }
       function openClash() {
         if (!personaUnlocked()) {
-          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁观点碰撞`);
+          guideToStance("观点碰撞");
           return;
         }
         setFollowedOnly(false, false);
@@ -9767,7 +9851,7 @@
       $("circleBtn").addEventListener("click", () => {
         if (!CLUSTERS.length) return;
         if (!personaUnlocked()) {
-          showToast(`再表态 ${PERSONA_MIN_LIKES - liked.size} 次，解锁聚焦小圈子`);
+          guideToStance("聚焦小圈子");
           return;
         }
         setExploreOpen(false);

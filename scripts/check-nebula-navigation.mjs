@@ -216,6 +216,36 @@ assert.match(
   "移动端探索快捷入口必须横向排列",
 );
 assert.match(
+  journeyActionsSource,
+  /id="peerDiscoveryHint">点 ♡ 赞同 · 差 3 个/,
+  "锁定的发现入口必须直接说明如何完成表态",
+);
+assert.doesNotMatch(
+  journeyActionsSource,
+  /aria-disabled="true"/,
+  "可打开表态指引的锁定入口不得向辅助技术声明为不可操作",
+);
+assert.match(
+  source,
+  /function renderStanceGuide\(\)[\s\S]*"如何表态"[\s\S]*"选择你认同的观点，点击右侧「♡ 赞同」/,
+  "观点阅读流必须展示可执行的表态指引",
+);
+assert.match(
+  source,
+  /function guideToStance\(featureLabel\)[\s\S]*openCards\("\.pcard-like:not\(\.is-liked\)"\)[\s\S]*showToast\(`点观点卡右侧「♡ 赞同」完成表态/,
+  "点击锁定能力必须打开观点阅读流并聚焦未赞同按钮",
+);
+assert.match(
+  source,
+  /function openPeerDiscovery\(\)[\s\S]*guideToStance\("同频发现"\)[\s\S]*function openClash\(\)[\s\S]*guideToStance\("观点碰撞"\)[\s\S]*guideToStance\("聚焦小圈子"\)/,
+  "同频、碰撞和圈子入口必须复用同一表态引导",
+);
+assert.match(
+  source,
+  /on \? "♥ 已赞同" : "♡ 赞同"[\s\S]*"赞同这个观点，完成一次表态"/,
+  "观点卡按钮必须使用可见文案说明表态动作",
+);
+assert.match(
   source,
   /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
   "星云画布必须提供可聚焦的键盘操作入口",
