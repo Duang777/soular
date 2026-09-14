@@ -3,6 +3,7 @@ export const SCHOLARS_AI_MATH = {
   version: "20260914",
   serial: "05",
   kind: "real",
+  personaTheme: "work-tech-future",
   question: "如何看待现在有学者用 AI 做数学科研？",
   peopleLabel: "真实回答观点",
   sourceQuestion: "https://www.zhihu.com/question/2049420510811967937",

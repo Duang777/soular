@@ -3,6 +3,7 @@ export const AI_MATH = {
   version: "20260912",
   serial: "02",
   kind: "real",
+  personaTheme: "work-tech-future",
   question: "AI 是否正在毁掉数学？",
   peopleLabel: "热帖与相关真实讨论",
   sourceQuestion: "https://www.zhihu.com/question/2082035913132193247",
