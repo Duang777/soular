@@ -20,6 +20,34 @@ const QUESTION_PRESETS = [
     title: "AI 是否正在毁掉数学？",
     detail: "31 个观点",
   },
+  {
+    id: "tao-ai-tradition",
+    serial: "03",
+    kind: "真实讨论",
+    title: "陶哲轩发文称「AI 正杀死数学百年开放传统」，你如何看待这一观点？",
+    detail: "5 个观点",
+  },
+  {
+    id: "pangdonglai-labor",
+    serial: "04",
+    kind: "真实讨论",
+    title: "如何看待于东来发文称胖东来再招员工都是学员性质，合同四年，不续签？意味着什么？",
+    detail: "3 个观点",
+  },
+  {
+    id: "scholars-ai-math",
+    serial: "05",
+    kind: "真实讨论",
+    title: "如何看待现在有学者用 AI 做数学科研？",
+    detail: "47 个观点",
+  },
+  {
+    id: "tao-ai-math-proof",
+    serial: "06",
+    kind: "真实讨论",
+    title: "如何看待陶哲轩等数学家大力推动的 AI 数学证明？",
+    detail: "3 个观点",
+  },
 ] as const;
 
 function PersonaHome() {
@@ -62,11 +90,11 @@ function PersonaHome() {
       <OAuthAccount />
       <section className="question-dock" aria-label="搜索观点星云">
         <div className="question-dock__topics" aria-label="已发布问题">
-          {matchingQuestions.map((question, index) => (
+          {matchingQuestions.map((question) => (
             <button
               key={question.id}
               type="button"
-              className={`question-ticket question-ticket--${index + 1}`}
+              className="question-ticket"
               onClick={() => openQuestion(question.id)}
             >
               <span className="question-ticket__meta">

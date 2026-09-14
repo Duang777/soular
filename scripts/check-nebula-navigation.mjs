@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import {
   buildNebulaShelfUrl,
+  getNebulaPreset,
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
@@ -22,6 +23,7 @@ const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
 const reactCatalogSource = readFileSync(new URL("../src/people.ts", import.meta.url), "utf8");
+const presetMetaSource = readFileSync(new URL("../src/presetMeta.ts", import.meta.url), "utf8");
 const homeSourceFile = ts.createSourceFile(
   "src/Home.tsx",
   homeSource,
@@ -32,6 +34,13 @@ const homeSourceFile = ts.createSourceFile(
 const reactSourceFile = ts.createSourceFile(
   "src/people.ts",
   reactCatalogSource,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TS,
+);
+const presetMetaSourceFile = ts.createSourceFile(
+  "src/presetMeta.ts",
+  presetMetaSource,
   ts.ScriptTarget.Latest,
   true,
   ts.ScriptKind.TS,
@@ -103,6 +112,21 @@ for (const statement of reactSourceFile.statements) {
 }
 assert.ok(reactCatalogInitializer, "React 快照版本目录不存在");
 assert.ok(reactAnswerCountInitializer, "React 快照人数目录不存在");
+let presetMetaInitializer = null;
+for (const statement of presetMetaSourceFile.statements) {
+  if (!ts.isVariableStatement(statement)) continue;
+  for (const declaration of statement.declarationList.declarations) {
+    if (
+      ts.isIdentifier(declaration.name) &&
+      declaration.name.text === "PRESET_META" &&
+      declaration.initializer
+    ) {
+      const initializer = unwrapExpression(declaration.initializer);
+      if (ts.isObjectLiteralExpression(initializer)) presetMetaInitializer = initializer;
+    }
+  }
+}
+assert.ok(presetMetaInitializer, "朋友对照快照元数据目录不存在");
 const reactCatalogEntries = reactCatalogInitializer.properties.map((property) => {
   assert.ok(ts.isPropertyAssignment(property), "React 快照目录只能包含静态属性");
   assert.ok(
@@ -113,6 +137,14 @@ const reactCatalogEntries = reactCatalogInitializer.properties.map((property) =>
   return [property.name.text, property.initializer.text];
 });
 const reactCatalog = new Map(reactCatalogEntries);
+const presetMetaIds = presetMetaInitializer.properties.map((property) => {
+  assert.ok(ts.isPropertyAssignment(property), "朋友对照快照元数据只能包含静态属性");
+  assert.ok(
+    ts.isStringLiteral(property.name) || ts.isIdentifier(property.name),
+    "朋友对照快照 id 必须是静态字符串",
+  );
+  return property.name.text;
+});
 const reactAnswerCounts = new Map(
   reactAnswerCountInitializer.properties.map((property) => {
     assert.ok(ts.isPropertyAssignment(property), "React 快照人数目录只能包含静态属性");
@@ -1184,6 +1216,16 @@ for (const preset of staticPresets) {
   assert.ok(`${preset.id}:${preset.version}`.length <= 64);
   assert.ok(!likeStorageKeys.has(likeStorageKey), "快照点赞存储键必须唯一");
   likeStorageKeys.add(likeStorageKey);
+  const detail = getNebulaPreset(preset.id);
+  if (detail.avatarBase) {
+    for (let index = 0; index < preset.answerCount; index += 1) {
+      const avatar = new URL(
+        `../public/nebula-scene/${detail.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`,
+        import.meta.url,
+      );
+      assert.ok(existsSync(avatar), `${preset.id} 缺少第 ${index + 1} 位回答者头像`);
+    }
+  }
 }
 assert.deepEqual(
   homePresets.slice().sort((left, right) => left.id.localeCompare(right.id)),
@@ -1209,6 +1251,11 @@ assert.deepEqual(
     .map(({ id, answerCount }) => [id, answerCount])
     .sort(([left], [right]) => left.localeCompare(right)),
   "React 与静态场景的快照人数目录必须双向一致",
+);
+assert.deepEqual(
+  presetMetaIds.slice().sort((left, right) => left.localeCompare(right)),
+  [...reactCatalog.keys()].sort((left, right) => left.localeCompare(right)),
+  "朋友对照元数据必须覆盖全部已发布快照",
 );
 
 console.log("nebula navigation checks passed");

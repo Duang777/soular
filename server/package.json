@@ -15,6 +15,7 @@
     "check:client-safety": "tsx scripts/check-client-safety.ts",
     "check:question-spectrum": "tsx scripts/check-question-spectrum.ts",
     "prepare:hot-spectrums": "tsx scripts/prepare-hot-spectrums.ts",
+    "prepare:question-preset": "tsx scripts/prepare-question-preset.ts",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "cf:dev": "wrangler dev",
