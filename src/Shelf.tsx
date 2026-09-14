@@ -79,6 +79,7 @@ export function ShelfPage() {
   const uRaw = searchParams.get("u");
   const requestedPresetId = searchParams.get("preset") ?? DEFAULT_NEBULA_PRESET;
   const presetId = resolveNebulaPreset(requestedPresetId);
+  const resolvedUnknownPreset = presetId !== requestedPresetId;
   const usesSnapshotPersona = requestedSelf || (uRaw !== null && /^\d+$/.test(uRaw));
   const personaState = usePersonaCasts(usesSnapshotPersona ? presetId : null);
   const expectedShelfPersonaKey = usesSnapshotPersona &&
@@ -97,7 +98,8 @@ export function ShelfPage() {
   const cast = castByKey(castKey, casts);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;
   const requestedVersion = searchParams.get("version") ?? "";
-  const validRequestedVersion = /^[a-z0-9-]{1,15}$/.test(requestedVersion)
+  const validRequestedVersion = !resolvedUnknownPreset &&
+      /^[a-z0-9-]{1,15}$/.test(requestedVersion)
     ? requestedVersion
     : "";
   const presetVersion = validRequestedVersion || currentPresetVersion;

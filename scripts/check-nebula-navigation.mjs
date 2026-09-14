@@ -606,6 +606,11 @@ assert.match(
   /fetchZhihuPortrait[\s\S]*portrait\.accountVersion !== accountVersion[\s\S]*storedSelfProfile\.accountVersion === verifiedAccountVersion/,
   "人格卡页只能展示已绑定当前账号版本的临时画像",
 );
+assert.match(
+  shelfSource,
+  /const resolvedUnknownPreset = presetId !== requestedPresetId;[\s\S]*const validRequestedVersion = !resolvedUnknownPreset &&/,
+  "已下线快照回退时不得沿用旧版本号生成错误人格卡",
+);
 assert.doesNotMatch(
   source,
   /new AbortController\(|discoveryController/,
