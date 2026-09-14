@@ -267,6 +267,21 @@ assert.doesNotMatch(
 );
 assert.match(
   source,
+  /\.cards-layout\s*\{[\s\S]*grid-template-rows:\s*minmax\(0,\s*1fr\)[\s\S]*overflow:\s*hidden/,
+  "桌面观点阅读区必须约束网格行高，避免列表伸出可视区域",
+);
+assert.match(
+  source,
+  /function routeCardsWheel\(event\)[\s\S]*window\.innerWidth < 1100[\s\S]*event\.target\.closest\("\.cards-list"\)[\s\S]*cardsListEl\.scrollBy\(\{ top: event\.deltaY \}\)/,
+  "桌面观点阅读区必须把非列表区域的纵向滚轮转发给观点列表",
+);
+assert.match(
+  source,
+  /cardsEl\.addEventListener\("wheel", routeCardsWheel, \{ passive: false \}\)/,
+  "桌面观点阅读区必须注册可阻止页面丢失滚轮的监听器",
+);
+assert.match(
+  source,
   /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
   "星云画布必须提供可聚焦的键盘操作入口",
 );

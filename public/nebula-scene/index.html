@@ -2206,13 +2206,19 @@
         flex: 1;
         display: grid;
         grid-template-columns: 190px minmax(0, 820px);
+        grid-template-rows: minmax(0, 1fr);
         justify-content: center;
         gap: 34px;
+        overflow: hidden;
         padding: 0 28px;
       }
       .cards-rail {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding-top: 25px;
         color: rgba(200, 209, 212, 0.62);
+        scrollbar-width: thin;
       }
       .cards-rail-title {
         margin-bottom: 10px;
@@ -2307,10 +2313,13 @@
       }
       .cards-list {
         min-width: 0;
+        min-height: 0;
         height: 100%;
         overflow-y: auto;
         overflow-x: clip;
+        overscroll-behavior: contain;
         padding: 18px 0 max(34px, env(safe-area-inset-bottom));
+        touch-action: pan-y;
       }
       .cards-list::-webkit-scrollbar { width: 6px; }
       .cards-list::-webkit-scrollbar-thumb { background: rgba(143, 216, 220, 0.16); border-radius: 99px; }
@@ -8331,6 +8340,18 @@
           resumeCirclePrompt();
         }, reduceMotion ? 0 : 180);
       }
+      function routeCardsWheel(event) {
+        if (
+          !cardsEl.classList.contains("show") ||
+          window.innerWidth < 1100 ||
+          Math.abs(event.deltaY) <= Math.abs(event.deltaX) ||
+          event.target.closest(".cards-list")
+        ) return;
+
+        const previousScrollTop = cardsListEl.scrollTop;
+        cardsListEl.scrollBy({ top: event.deltaY });
+        if (cardsListEl.scrollTop !== previousScrollTop) event.preventDefault();
+      }
       function openPersonaDeck() {
         const key = personaFilter || PERSONA_CATALOG[0]?.key;
         if (!key) return;
@@ -8339,6 +8360,7 @@
       }
       cardsQuickEntryBtn.addEventListener("click", () => openCards());
       personaQuickEntryBtn.addEventListener("click", openPersonaDeck);
+      cardsEl.addEventListener("wheel", routeCardsWheel, { passive: false });
       $("cardsClose").addEventListener("click", closeCards);
       cardsSearchEl.addEventListener("input", (e) => {
         cardsQuery = e.target.value.trim().toLowerCase();

@@ -64,7 +64,7 @@ type PersonaPrototype = {
 | `life-choices` | 人生选择、生活方式与精神世界 | 已验收 |
 | `relationships-family` | 亲密关系与家庭 | 待建设 |
 | `education-growth` | 教育成长与自我实现 | 待建设 |
-| `work-tech-future` | 工作、科技与未来 | 待建设 |
+| `work-tech-future` | 工作、科技与未来 | 已验收 |
 | `society-law-public-life` | 社会伦理、法律与公共生活 | 待建设 |
 | `wealth-business-consumption` | 财富、商业与消费 | 待建设 |
 | `history-war-strategy` | 历史、战争与策略 | 待建设 |
@@ -87,9 +87,27 @@ type PersonaPrototype = {
 | `owl` | 托尔斯泰 | 道德自省、回到朴素生活 | 覆盖焦虑、责任和成功标准重估 | `personas/owl.jpg` |
 | `rabbit` | 弗吉尼亚·伍尔夫 | 个体边界、精神独立 | 覆盖职业自主、身份边界和自我表达 | `personas/rabbit.jpg` |
 
+## AI 数学主题
+
+`ai-math` 与 `scholars-ai-math` 绑定 `work-tech-future`。九位人物覆盖形式化检验、
+方法怀疑、结构直觉、能力边界、问题设定、知识组织、人机协作、反例修正与猜想探索。
+
+| 稳定槽位 | 人物 | 角色描述 | 选择理由 | 视觉素材 |
+| --- | --- | --- | --- | --- |
+| `fox` | 图灵 | 形式化智能、用实验检验能力 | 覆盖明确任务、评价标准和可复现实验 | `personas/fox.jpg` |
+| `bear` | 笛卡尔 | 方法怀疑、逐层拆解问题 | 覆盖黑箱质疑、证明拆解和逐步验证 | `personas/bear.jpg` |
+| `cat` | 庞加莱 | 结构直觉、连接不同数学领域 | 覆盖数学直觉、跨域连接和创造发现 | `personas/cat.jpg` |
+| `owl` | 哥德尔 | 看见边界、警惕形式系统幻觉 | 覆盖形式边界、证明幻觉和人工审查 | `personas/owl.jpg` |
+| `rabbit` | 希尔伯特 | 提出好问题、建立研究议程 | 覆盖问题选择、研究方向和长期目标 | `personas/rabbit.jpg` |
+| `penguin` | 欧几里得 | 公理组织、沉淀可复用知识 | 覆盖知识组织、证明沉淀和可靠体系 | `personas/penguin.jpg` |
+| `redpanda` | 莱布尼茨 | 符号统一、让机器参与推理 | 覆盖形式化工具、计算推理和人机分工 | `personas/redpanda.jpg` |
+| `goat` | 拉卡托斯 | 证明与反驳、从反例中修正 | 覆盖反例检验、修正证明和同行讨论 | `personas/goat.jpg` |
+| `frog` | 拉马努金 | 直觉跃迁、先提出大胆猜想 | 覆盖猜想生成、模式探索和严格验证 | `personas/frog.jpg` |
+
 ## 素材验收
 
-九张素材位于 `public/personas/`，均为 512 × 512 JPEG，文件各自独立且大于 10 KB。
+九张符号素材位于 `public/personas/`，由不同主题按稳定槽位复用，均为 512 × 512 JPEG，
+文件各自独立且大于 10 KB。
 素材来源、用途、是否模拟历史外貌和验收状态写入每个人格的 `art` 字段，并由
 `npm run check:personas` 自动检查。
 
