@@ -4996,6 +4996,9 @@
       document.getElementById("presetPickerSerial").textContent = PRESET.serial;
       document.getElementById("presetPickerCurrent").textContent = PRESET.question;
       const availablePresets = listNebulaPresets();
+      let selectedEntryPreset =
+        availablePresets.find((preset) => preset.id === PRESET.id) ||
+        availablePresets[0];
       availablePresets.forEach((preset) => {
         const option = document.createElement("button");
         option.type = "button";
@@ -5038,36 +5041,26 @@
       function setEntryState(state) {
         entryFlowEl.dataset.state = state;
         entryTopicEls.forEach((topic) => {
-          const selected = topic.dataset.entryPreset === PRESET.id;
+          const selected = topic.dataset.entryPreset === selectedEntryPreset.id;
           topic.classList.toggle("is-selected", selected);
           topic.setAttribute("aria-pressed", String(selected));
         });
       }
       function showEntryConfirm() {
         document.getElementById("entryConfirmSerial").textContent =
-          `${PRESET.serial} / ${String(availablePresets.length).padStart(2, "0")}`;
-        document.getElementById("entryConfirmQuestion").textContent = PRESET.question;
+          `${selectedEntryPreset.serial} / ${String(availablePresets.length).padStart(2, "0")}`;
+        document.getElementById("entryConfirmQuestion").textContent =
+          selectedEntryPreset.question;
         document.getElementById("entryConfirmMeta").textContent =
-          `${PEOPLE.length} 个代表观点正在等待展开 · ${PRESET.axis.left} ↔ ${PRESET.axis.right}`;
+          `${selectedEntryPreset.answerCount} 个代表观点正在等待展开 · ${selectedEntryPreset.axis.left} ↔ ${selectedEntryPreset.axis.right}`;
         setEntryState("confirm");
         document.getElementById("entryGenerate").focus();
       }
       function selectEntryPreset(presetId) {
-        if (presetId === PRESET.id) {
-          showEntryConfirm();
-          return;
-        }
-        if (window.parent !== window.self) {
-          window.parent.postMessage(
-            { type: "nebula-preset-change", preset: presetId, entry: "confirm" },
-            location.origin,
-          );
-          return;
-        }
-        const next = new URL(location.href);
-        next.searchParams.set("preset", presetId);
-        next.searchParams.set("entry", "confirm");
-        location.href = next.href;
+        const preset = availablePresets.find((item) => item.id === presetId);
+        if (!preset) return;
+        selectedEntryPreset = preset;
+        showEntryConfirm();
       }
       entryTopicsEl.addEventListener("click", (event) => {
         const topic = event.target.closest("[data-entry-preset]");
@@ -6111,6 +6104,8 @@
       let entryGenerationStartedAt = 0;
       let entryGenerationPhase = -1;
       let entryFinishTimer = 0;
+      const ENTRY_GENERATION_DURATION_MS = 8_000;
+      const ENTRY_GENERATION_TIMELINE_SECONDS = 12;
       const entryGenerationTitleEl = document.getElementById("entryGenerationTitle");
       const entryGenerationTextEl = document.getElementById("entryGenerationText");
       const entryProgressEl = document.getElementById("entryProgress");
@@ -6152,8 +6147,6 @@
         controls.autoRotate = !reduceMotion;
         entryFlowEl.classList.add("is-done");
         entryFlowEl.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("entry-active");
-        document.body.classList.toggle("entry-exploring", entryEnabled);
         resumeCirclePrompt();
         if (entryEnabled && window.parent !== window.self) {
           window.parent.postMessage(
@@ -6163,6 +6156,8 @@
         }
         entryFinishTimer = window.setTimeout(() => {
           entryFlowEl.hidden = true;
+          document.body.classList.remove("entry-active");
+          document.body.classList.toggle("entry-exploring", entryEnabled);
           entryFinishTimer = 0;
         }, reduceMotion ? 0 : 500);
       }
@@ -6187,8 +6182,10 @@
 
       function updateEntryGeneration(now) {
         if (!entryGenerationStartedAt) return;
-        const elapsed = (now - entryGenerationStartedAt) / 1000;
-        const progress = clamp01(elapsed / 12);
+        const progress = clamp01(
+          (now - entryGenerationStartedAt) / ENTRY_GENERATION_DURATION_MS,
+        );
+        const elapsed = progress * ENTRY_GENERATION_TIMELINE_SECONDS;
         entryProgressEl.style.transform = `scaleX(${progress})`;
         entryGenerationPercentEl.textContent = `${String(Math.round(progress * 100)).padStart(2, "0")}%`;
         setEntryGenerationCopy(elapsed < 1.4 ? 0 : elapsed < 4 ? 1 : elapsed < 6.2 ? 2 : elapsed < 8.5 ? 3 : 4);
@@ -6238,7 +6235,7 @@
           if (user.star) user.star.material.opacity = avatarReveal * 0.9;
         });
 
-        if (elapsed >= 12) finishEntryGeneration();
+        if (progress >= 1) finishEntryGeneration();
       }
 
       function prepareEntryGenerationScene() {
@@ -6286,6 +6283,28 @@
       }
 
       function startEntryGeneration() {
+        if (selectedEntryPreset.id !== PRESET.id) {
+          setEntryState("generating");
+          setEntryGenerationCopy(0);
+          entryGenerationTextEl.textContent = "正在载入所选问题的观点坐标";
+          if (window.parent !== window.self) {
+            window.parent.postMessage(
+              {
+                type: "nebula-preset-change",
+                preset: selectedEntryPreset.id,
+                entry: "generate",
+              },
+              location.origin,
+            );
+            return;
+          }
+          const next = new URL(location.href);
+          next.searchParams.set("preset", selectedEntryPreset.id);
+          next.searchParams.set("entry", "confirm");
+          next.searchParams.set("generate", "1");
+          location.href = next.href;
+          return;
+        }
         prepareEntryGenerationScene();
         setEntryState("generating");
         if (reduceMotion) {
@@ -6325,6 +6344,9 @@
         document.getElementById("entryGenerate").addEventListener("click", startEntryGeneration);
         document.getElementById("entrySkip").addEventListener("click", finishEntryGeneration);
         document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
+        if (entryMode === "confirm" && sceneParams.get("generate") === "1") {
+          queueMicrotask(startEntryGeneration);
+        }
       }
 
       const AVATAR_LOAD_TIMEOUT_MS = 8000;
