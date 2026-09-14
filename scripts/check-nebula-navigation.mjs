@@ -193,6 +193,27 @@ assert.match(
   /id="observatoryControls"[\s\S]*id="randomDiscover"[\s\S]*id="followedOnly"[\s\S]*id="locateMe"[\s\S]*id="resetView"/,
   "星云必须提供随机发现、只看关注、我的位置和重置视角控制",
 );
+const journeyActionsStart = source.indexOf('<nav class="journey-actions"');
+const journeyActionsEnd = source.indexOf("</nav>", journeyActionsStart);
+const exploreMenuStart = source.indexOf('<div class="explore-menu"');
+const exploreMenuEnd = source.indexOf(
+  '<button type="button" class="explore-toggle"',
+  exploreMenuStart,
+);
+assert.ok(journeyActionsStart >= 0 && journeyActionsEnd > journeyActionsStart, "星云主界面必须提供探索快捷入口");
+assert.ok(exploreMenuStart >= 0 && exploreMenuEnd > exploreMenuStart, "知乎发现面板结构不存在");
+const journeyActionsSource = source.slice(journeyActionsStart, journeyActionsEnd);
+const exploreMenuSource = source.slice(exploreMenuStart, exploreMenuEnd);
+for (const id of ["guideBtn", "peerDiscoveryBtn", "clashBtn", "circleBtn"]) {
+  assert.match(journeyActionsSource, new RegExp(`id="${id}"`), `${id} 必须常驻在星云主界面`);
+  assert.doesNotMatch(exploreMenuSource, new RegExp(`id="${id}"`), `${id} 不得继续藏在知面板内`);
+}
+assert.doesNotMatch(source, /盒内隐藏功能/, "星云不得再把核心探索能力标记为盒内隐藏功能");
+assert.match(
+  source,
+  /@media \(max-width: 900px\)[\s\S]*\.journey-actions \{[\s\S]*flex-direction: row/,
+  "移动端探索快捷入口必须横向排列",
+);
 assert.match(
   source,
   /<canvas id="scene" tabindex="0" aria-label="观点星云交互画布"><\/canvas>/,
@@ -723,7 +744,7 @@ assert.match(
 assert.match(
   source,
   /\$\("peerDiscoveryBtn"\)\.addEventListener\("click",\s*openPeerDiscovery\)/,
-  "星云工具箱的同频发现入口必须绑定打开弹层的处理器",
+  "星云主界面的同频发现入口必须绑定打开弹层的处理器",
 );
 assert.match(
   source,
@@ -737,7 +758,7 @@ assert.match(
 );
 assert.match(
   source,
-  /activeElement === \$\("peerDiscoveryBtn"\)[\s\S]*exploreToggleEl[\s\S]*function trapPeerFocus\(event\)[\s\S]*!peerDiscoveryEl\.contains\(document\.activeElement\)/,
+  /peerReturnFocus = canRestoreActiveFocus \? activeElement : \$\("peerDiscoveryBtn"\)[\s\S]*function trapPeerFocus\(event\)[\s\S]*!peerDiscoveryEl\.contains\(document\.activeElement\)/,
   "同频弹层必须回焦到可见入口并限制键盘焦点留在弹层内",
 );
 assert.match(
@@ -875,7 +896,7 @@ assert.match(
 );
 assert.match(
   source,
-  /if \(wasOpen\) exploreToggleEl\.focus[\s\S]*clashEl\.classList\.remove\("show"\)/,
+  /if \(wasOpen\) \$\("clashBtn"\)\.focus[\s\S]*clashEl\.classList\.remove\("show"\)/,
   "关闭观点碰撞前必须把焦点恢复到可见入口",
 );
 assert.match(source, /id="matchSame"/, "匹配流程必须提供同频模式");
@@ -1013,6 +1034,11 @@ assert.match(
   source,
   /function trapGuideFocus[\s\S]*guideCloseButton\.focus\(\)/,
   "星图向导必须把键盘焦点限制在模态框内",
+);
+assert.match(
+  source,
+  /function closeGuide\(restoreFocus = true\)[\s\S]*if \(restoreFocus\) \$\("guideBtn"\)\.focus\(\)/,
+  "关闭星图向导后必须把焦点恢复到外置入口",
 );
 assert.match(
   source,
