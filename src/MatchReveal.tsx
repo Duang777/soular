@@ -256,6 +256,9 @@ export function MatchRevealPage() {
               每道题都由你先独立完成 3 次表态，再揭晓双方星位。
             </p>
             <p className="match-copy match-copy--muted">
+              只有你们双方都回答过的题目，才会进入共同思想地图。
+            </p>
+            <p className="match-copy match-copy--muted">
               当前分享者人格：{hostCast.name}（{hostCast.role}）
             </p>
             {staleEntryCount > 0 && (
@@ -401,7 +404,7 @@ export function MatchRevealPage() {
                       <span>{String(index + 1).padStart(2, "0")}</span>
                       <h3>{entryPreset.question}</h3>
                       <small>
-                        {result ? `距离 ${resultDistance(result)}` : "待回答"}
+                        {result ? `距离 ${resultDistance(result)}` : "等你回答"}
                       </small>
                     </header>
                     {result ? (
@@ -441,7 +444,7 @@ export function MatchRevealPage() {
                         className="match-map__pending"
                         onClick={() => beginQuestion(entry)}
                       >
-                        回答这道共同问题
+                        我也回答这题
                       </button>
                     )}
                   </article>

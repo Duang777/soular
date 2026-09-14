@@ -412,6 +412,11 @@ assert.match(
   /共同思想地图[\s\S]*继续下一道共同问题[\s\S]*match-map__row/,
   "揭晓后必须能继续答题并查看共同思想地图",
 );
+assert.match(
+  matchPageSource,
+  /只有你们双方都回答过的题目，才会进入共同思想地图[\s\S]*等你回答[\s\S]*我也回答这题/,
+  "共同思想地图必须明确只累计双方都回答过的问题",
+);
 assert.doesNotMatch(
   matchPageSource,
   /(?:local|session)Storage/,

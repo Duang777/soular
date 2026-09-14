@@ -1018,6 +1018,29 @@ textarea.field:focus-visible,
 }
 
 @media (max-width: 767px) {
+  .match-nav {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+
+  .brand-lockup--match {
+    width: 44px;
+    min-height: 44px;
+    padding: 5px;
+  }
+
+  .brand-lockup--match .brand-lockup__copy {
+    display: none;
+  }
+
+  .match-nav__title {
+    justify-self: center;
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
   .match-panel--map .match-actions {
     justify-items: start;
   }
