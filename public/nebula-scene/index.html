@@ -664,11 +664,39 @@
         box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
         opacity: 0;
         transform: translate(-50%, calc(-100% - 18px)) scale(0.96);
-        transition: opacity 0.16s ease, transform 0.16s ease;
+        transition:
+          opacity 0.16s ease,
+          transform 0.16s ease,
+          border-color 0.14s ease,
+          background-color 0.14s ease,
+          box-shadow 0.14s ease;
         pointer-events: none;
       }
       #tip.show { opacity: 1; transform: translate(-50%, calc(-100% - 18px)) scale(1); }
       #tip.show.below { transform: translate(-50%, 18px) scale(1); }
+      #tip.is-person-link { cursor: pointer; }
+      @media (hover: hover) {
+        #tip.is-person-link:hover {
+          border-color: rgba(143, 180, 255, 0.42);
+          background: #191c25;
+          box-shadow:
+            0 20px 48px rgba(0, 0, 0, 0.6),
+            0 0 0 1px rgba(143, 180, 255, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        #tip.is-person-link:hover .tip-cta {
+          border-color: rgba(143, 180, 255, 0.58);
+          background: rgba(143, 180, 255, 0.14);
+          color: var(--cream);
+          transform: translateX(2px);
+        }
+      }
+      #tip.show.is-person-link.is-pressing {
+        transform: translate(-50%, calc(-100% - 18px)) scale(0.975);
+      }
+      #tip.show.below.is-person-link.is-pressing {
+        transform: translate(-50%, 18px) scale(0.975);
+      }
       .tip-row { display: flex; align-items: center; gap: 9px; }
       .tip-name { font-size: 14px; font-weight: 600; }
       .tip-follow {
@@ -695,7 +723,26 @@
       }
       .tip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
       .tip-persona b { color: var(--cream); font-weight: 600; }
-      .tip-cta { margin-left: auto; color: var(--blue); font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; }
+      .tip-cta {
+        margin-left: auto;
+        min-height: 26px;
+        padding: 0 8px;
+        border: 1px solid rgba(143, 180, 255, 0.3);
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        background: rgba(143, 180, 255, 0.07);
+        color: #b8ceff;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0;
+        transition:
+          transform 0.14s ease,
+          border-color 0.14s ease,
+          background-color 0.14s ease,
+          color 0.14s ease;
+      }
 
       #loading {
         position: fixed;
@@ -778,9 +825,14 @@
         font-size: 11px;
         letter-spacing: 0.04em;
         cursor: pointer;
-        transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+        transition:
+          transform 0.1s ease,
+          border-color 0.2s ease,
+          background 0.2s ease,
+          color 0.2s ease;
       }
       .tip-like:hover { border-color: rgba(255, 255, 255, 0.34); }
+      .tip-like:active { transform: scale(0.96); }
       .tip-like.is-liked {
         border-color: transparent;
         background: var(--cta);
@@ -4092,7 +4144,7 @@
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
         .entry-generation-signal i { animation: none !important; }
-        .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .journey-actions, .journey-action, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
+        #tip, .tip-cta, .tip-like, .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .journey-actions, .journey-action, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
       }
     </style>
@@ -6885,6 +6937,7 @@
       let pointerTarget = 0;
       let hovered = null;
       let hideTipTimer = 0;
+      const TIP_POINTER_BRIDGE_MS = 1200;
 
       function updateGalaxyPointer(clientX, clientY) {
         if (reduceMotion) return;
@@ -7203,6 +7256,8 @@
       }
 
       function renderTip(u) {
+        tip.classList.toggle("is-person-link", u.kind !== "comment");
+        tip.classList.remove("is-pressing");
         const row = uiNode("div", "tip-row");
         const claim = uiNode(
           "div",
@@ -7333,16 +7388,40 @@
           activateHovered(hovered);
         }
       });
+      function clearTipPress() {
+        tip.classList.remove("is-pressing");
+      }
+      tip.addEventListener("pointerdown", (e) => {
+        if (
+          e.pointerType === "mouse" &&
+          e.button === 0 &&
+          tip.classList.contains("is-person-link") &&
+          !e.target.closest("button, .tip-tag")
+        ) {
+          tip.classList.add("is-pressing");
+        }
+      });
+      tip.addEventListener("pointerup", clearTipPress);
+      tip.addEventListener("pointercancel", clearTipPress);
       tip.addEventListener("pointerenter", cancelHideTip);
-      tip.addEventListener("pointerleave", () => scheduleHideTip(140));
+      tip.addEventListener("pointerleave", () => {
+        clearTipPress();
+        scheduleHideTip(140);
+      });
 
       canvas.addEventListener("pointermove", (e) => {
         updateGalaxyPointer(e.clientX, e.clientY);
-        setHovered(pick(e.clientX, e.clientY));
+        const nextHovered = pick(e.clientX, e.clientY);
+        if (nextHovered) {
+          setHovered(nextHovered);
+        } else if (hovered) {
+          // Keep the preview alive while the pointer crosses the canvas gap into it.
+          scheduleHideTip(TIP_POINTER_BRIDGE_MS);
+        }
       });
       canvas.addEventListener("pointerleave", (e) => {
         pointerTarget = 0;
-        scheduleHideTip(e.pointerType === "touch" ? 4200 : 240);
+        scheduleHideTip(e.pointerType === "touch" ? 4200 : TIP_POINTER_BRIDGE_MS);
       });
 
       let downX = 0, downY = 0;
