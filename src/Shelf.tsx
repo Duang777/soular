@@ -302,6 +302,7 @@ export function ShelfPage() {
     ) ??
       stagedPersonByIndex(presetId, presetVersion, index, personKey) ??
       (
+        !resolvedUnknownPreset &&
         presetId === DEFAULT_NEBULA_PRESET &&
         presetVersion === currentPresetVersion
           ? personByIndex(index)

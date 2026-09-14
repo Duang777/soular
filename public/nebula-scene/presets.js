@@ -5,6 +5,8 @@ const { AI_MATH } = await import(
 const { SCHOLARS_AI_MATH } = await import(
   `./preset-scholars-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
 );
+// Keep the source serial compatible with cached six-snapshot registries.
+const ACTIVE_SCHOLARS_AI_MATH = { ...SCHOLARS_AI_MATH, serial: "03" };
 
 const CAREER_35 = {
   id: "career-35",
@@ -106,7 +108,7 @@ const CAREER_35 = {
 const PRESETS = new Map([
   [CAREER_35.id, CAREER_35],
   [AI_MATH.id, AI_MATH],
-  [SCHOLARS_AI_MATH.id, SCHOLARS_AI_MATH],
+  [ACTIVE_SCHOLARS_AI_MATH.id, ACTIVE_SCHOLARS_AI_MATH],
 ]);
 
 export function getNebulaPreset(id) {

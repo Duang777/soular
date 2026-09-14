@@ -7,6 +7,7 @@ import {
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
+import { SCHOLARS_AI_MATH } from "../public/nebula-scene/preset-scholars-ai-math.js";
 import {
   buildPersonaCatalog,
   cyclePersonaIndex,
@@ -611,6 +612,11 @@ assert.match(
   /const resolvedUnknownPreset = presetId !== requestedPresetId;[\s\S]*const validRequestedVersion = !resolvedUnknownPreset &&/,
   "已下线快照回退时不得沿用旧版本号生成错误人格卡",
 );
+assert.match(
+  shelfSource,
+  /!resolvedUnknownPreset &&\s*presetId === DEFAULT_NEBULA_PRESET &&\s*presetVersion === currentPresetVersion/,
+  "已下线快照的人物链接不得复用默认快照中的同索引人物",
+);
 assert.doesNotMatch(
   source,
   /new AbortController\(|discoveryController/,
@@ -1200,6 +1206,16 @@ assert.equal(
 
 const likeStorageKeys = new Set();
 const staticPresets = listNebulaPresets();
+assert.equal(
+  SCHOLARS_AI_MATH.serial,
+  "05",
+  "存量快照模块必须保留旧序号供缓存中的六快照注册表使用",
+);
+assert.equal(
+  getNebulaPreset("scholars-ai-math").serial,
+  "03",
+  "当前注册表必须为保留的第三个快照提供连续序号",
+);
 const homePresets = homeCatalogInitializer.elements.map((element) => {
   const value = unwrapExpression(element);
   assert.ok(ts.isObjectLiteralExpression(value), "首页问题目录只能包含静态对象");
