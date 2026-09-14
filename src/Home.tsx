@@ -28,8 +28,29 @@ const QUESTION_PRESETS = [
     detail: "47 个观点",
   },
   {
-    id: "heritage-state",
+    id: "social-connections",
     serial: "04",
+    kind: "真实讨论",
+    title: "如何更好地社交？",
+    detail: "45 个观点",
+  },
+  {
+    id: "ai-programmer-jobs",
+    serial: "05",
+    kind: "真实讨论",
+    title: "AI 会导致程序员大批失业吗？",
+    detail: "45 个观点",
+  },
+  {
+    id: "city-or-hometown",
+    serial: "06",
+    kind: "真实讨论",
+    title: "大学毕业是去大城市好还是回小城市好？",
+    detail: "45 个观点",
+  },
+  {
+    id: "heritage-state",
+    serial: "07",
     kind: "真实讨论",
     title: "北京一独居者离世，无配偶、子女、兄弟姐妹，叔舅姑姨九人争遗产，法院判房产归国家，如何从法律角度解读？",
     detail: "20 个观点",
@@ -75,7 +96,13 @@ function PersonaHome() {
       <WaveStage iframeRef={waveFrameRef} />
       <OAuthAccount />
       <section className="question-dock" aria-label="搜索观点星云">
-        <div className="question-dock__topics" aria-label="已发布问题">
+        <div
+          className="question-dock__topics"
+          aria-label="已发布问题"
+          style={{
+            gridTemplateColumns: `repeat(${Math.max(1, matchingQuestions.length)}, minmax(0, 1fr))`,
+          }}
+        >
           {matchingQuestions.map((question) => (
             <button
               key={question.id}

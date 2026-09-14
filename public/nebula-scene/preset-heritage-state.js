@@ -1,7 +1,7 @@
 export const HERITAGE_STATE = {
   "id": "heritage-state",
   "version": "20260914",
-  "serial": "04",
+  "serial": "07",
   "kind": "real",
   "question": "北京一独居者离世，无配偶、子女、兄弟姐妹，叔舅姑姨九人争遗产，法院判房产归国家，如何从法律角度解读？",
   "peopleLabel": "知乎真实回答",

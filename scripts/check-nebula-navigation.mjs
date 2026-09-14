@@ -7,13 +7,20 @@ import {
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
+import { AI_PROGRAMMER_JOBS } from "../public/nebula-scene/preset-ai-programmer-jobs.js";
+import { CITY_OR_HOMETOWN } from "../public/nebula-scene/preset-city-or-hometown.js";
 import { SCHOLARS_AI_MATH } from "../public/nebula-scene/preset-scholars-ai-math.js";
+import { SOCIAL_CONNECTIONS } from "../public/nebula-scene/preset-social-connections.js";
 import {
   buildPersonaCatalog,
   cyclePersonaIndex,
 } from "../public/nebula-scene/persona-browser.js";
 
 const source = readFileSync(new URL("../public/nebula-scene/index.html", import.meta.url), "utf8");
+const presetRegistrySource = readFileSync(
+  new URL("../public/nebula-scene/presets.js", import.meta.url),
+  "utf8",
+);
 const nebulaHostSource = readFileSync(new URL("../src/Nebula.tsx", import.meta.url), "utf8");
 const identityRevisionSource = readFileSync(new URL("../src/identityRevision.ts", import.meta.url), "utf8");
 const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url), "utf8");
@@ -56,6 +63,18 @@ function unwrapExpression(expression) {
     current = current.expression;
   }
   return current;
+}
+
+function assertConcurrentImports(sourceText, expectedPaths, label) {
+  const promiseAllGroups = [
+    ...sourceText.matchAll(/Promise\.all\(\s*\[([\s\S]*?)\]\s*\)/g),
+  ].map((match) => match[1]);
+  assert.ok(
+    promiseAllGroups.some((group) =>
+      expectedPaths.every((path) => group.includes(path))
+    ),
+    `${label} 必须并发加载，避免每次返回星云时形成串行网络瀑布`,
+  );
 }
 
 function staticStringProperty(object, name) {
@@ -167,6 +186,52 @@ assert.doesNotMatch(
   /\.innerHTML\s*=|insertAdjacentHTML\s*\(/,
   "观点快照内容不得通过 HTML 字符串渲染",
 );
+assertConcurrentImports(
+  source,
+  [
+    "./presets.js",
+    "./peer-discovery.js",
+    "./lod.js",
+    "./persona-browser.js",
+  ],
+  "星云功能模块",
+);
+assertConcurrentImports(
+  presetRegistrySource,
+  [
+    "./preset-ai-math.js",
+    "./preset-scholars-ai-math.js",
+    "./preset-social-connections.js",
+    "./preset-ai-programmer-jobs.js",
+    "./preset-city-or-hometown.js",
+  ],
+  "星云快照模块",
+);
+assert.match(
+  appSource,
+  /<Routes location=\{backgroundLocation \?\? location\}>[\s\S]*backgroundLocation && \([\s\S]*<Route path="\/shelf\/:cast"/,
+  "星云进入人格卡时必须保留背景路由，返回时不得重建 iframe",
+);
+assert.equal(
+  nebulaHostSource.match(/backgroundLocation:\s*location/g)?.length,
+  2,
+  "自我和回答者人格卡导航都必须保留当前星云位置",
+);
+assert.match(
+  nebulaHostSource,
+  /type:\s*"nebula-host-visibility",\s*visible:\s*active/,
+  "星云背景路由必须通知 iframe 暂停或恢复渲染",
+);
+assert.match(
+  nebulaHostSource,
+  /if \(active\) selfOpenPendingRef\.current = false;/,
+  "返回保留的星云后必须允许再次打开自我人格卡",
+);
+assert.match(
+  source,
+  /type === "nebula-host-visibility"[\s\S]*running = nextRunning/,
+  "星云 iframe 必须响应宿主可见性变化",
+);
 assert.match(
   source,
   /DISCOVERY_CACHE_TTL_MS\s*=\s*10\s*\*\s*60\s*\*\s*1000/,
@@ -244,6 +309,41 @@ assert.match(
   source,
   /on \? "♥ 已赞同" : "♡ 赞同"[\s\S]*"赞同这个观点，完成一次表态"/,
   "观点卡按钮必须使用可见文案说明表态动作",
+);
+assert.match(
+  source,
+  /const personOpen = uiNode\(\s*"button",\s*"pcard-person-open",\s*"看卡片 →",\s*\)[\s\S]*personOpen\.dataset\.personOpen = String\(i\)/,
+  "回答者观点必须提供明确的人格卡入口",
+);
+assert.doesNotMatch(
+  source,
+  /article\.tabIndex = 0;[\s\S]{0,160}article\.setAttribute\("role", "link"\)/,
+  "回答者观点整行不得伪装成人格卡链接",
+);
+assert.match(
+  source,
+  /const personOpen = e\.target\.closest\("\[data-person-open\]"\);[\s\S]*openPerson\(Number\(personOpen\.getAttribute\("data-person-open"\)\)\)/,
+  "人格卡只能由明确的查看按钮打开",
+);
+assert.doesNotMatch(
+  source,
+  /const card = e\.target\.closest\("\.pcard\[data-u\]"\);[\s\S]{0,120}openPerson/,
+  "点击观点正文不得打开回答者人格卡",
+);
+assert.match(
+  source,
+  /\.cards-layout\s*\{[\s\S]*grid-template-rows:\s*minmax\(0,\s*1fr\)[\s\S]*overflow:\s*hidden/,
+  "桌面观点阅读区必须约束网格行高，避免列表伸出可视区域",
+);
+assert.match(
+  source,
+  /function routeCardsWheel\(event\)[\s\S]*window\.innerWidth < 1100[\s\S]*event\.target\.closest\("\.cards-list"\)[\s\S]*cardsListEl\.scrollBy\(\{ top: event\.deltaY \}\)/,
+  "桌面观点阅读区必须把非列表区域的纵向滚轮转发给观点列表",
+);
+assert.match(
+  source,
+  /cardsEl\.addEventListener\("wheel", routeCardsWheel, \{ passive: false \}\)/,
+  "桌面观点阅读区必须注册可阻止页面丢失滚轮的监听器",
 );
 assert.match(
   source,
@@ -542,6 +642,58 @@ assert.match(
   /getElementById\("entryHomeBack"\)\.addEventListener\("click",\s*returnToPersonaHome\)/,
   "确认页顶部返回入口必须真正返回人格卡首页",
 );
+const selectEntryPresetStart = source.indexOf("function selectEntryPreset(presetId)");
+const selectEntryPresetEnd = source.indexOf(
+  'entryTopicsEl.addEventListener("click"',
+  selectEntryPresetStart,
+);
+const startEntryGenerationStart = source.indexOf("function startEntryGeneration()");
+const startEntryGenerationEnd = source.indexOf(
+  "function showEntryConfirmFromScene()",
+  startEntryGenerationStart,
+);
+assert.ok(
+  selectEntryPresetStart >= 0 && selectEntryPresetEnd > selectEntryPresetStart,
+  "问题云朵选择逻辑不存在",
+);
+assert.ok(
+  startEntryGenerationStart >= 0 &&
+    startEntryGenerationEnd > startEntryGenerationStart,
+  "星云生成启动逻辑不存在",
+);
+const selectEntryPresetSource = source.slice(
+  selectEntryPresetStart,
+  selectEntryPresetEnd,
+);
+const startEntryGenerationSource = source.slice(
+  startEntryGenerationStart,
+  startEntryGenerationEnd,
+);
+assert.match(
+  selectEntryPresetSource,
+  /selectedEntryPreset = preset;[\s\S]*showEntryConfirm\(\)/,
+  "点击问题云朵必须只更新当前确认内容",
+);
+assert.doesNotMatch(
+  selectEntryPresetSource,
+  /postMessage|location\.href/,
+  "点击问题云朵不得触发 iframe 导航或重载",
+);
+assert.match(
+  startEntryGenerationSource,
+  /selectedEntryPreset\.id !== PRESET\.id[\s\S]*type:\s*"nebula-preset-change"[\s\S]*entry:\s*"generate"/,
+  "只有确认生成不同题目时才可请求加载目标星云",
+);
+assert.match(
+  source,
+  /const ENTRY_GENERATION_DURATION_MS = 8_000;[\s\S]*const progress = clamp01\(\s*\(now - entryGenerationStartedAt\) \/ ENTRY_GENERATION_DURATION_MS/,
+  "观点星云生成动画必须使用 8 秒时间轴",
+);
+assert.match(
+  source,
+  /entryFinishTimer = window\.setTimeout\(\(\) => \{\s*entryFlowEl\.hidden = true;\s*document\.body\.classList\.remove\("entry-active"\);\s*document\.body\.classList\.toggle\("entry-exploring", entryEnabled\)/,
+  "生成层完全隐藏后才能恢复星云工具栏",
+);
 assert.match(
   source,
   /id="sceneBack"[\s\S]*返回问题/,
@@ -558,9 +710,9 @@ assert.match(
   "生成动画揭开覆盖层前必须同步绘制暗场",
 );
 assert.match(
-  source,
-  /function startEntryGeneration\(\)\s*\{\s*prepareEntryGenerationScene\(\);\s*setEntryState\("generating"\)/,
-  "生成流程必须先准备暗场再切换覆盖层",
+  startEntryGenerationSource,
+  /selectedEntryPreset\.id !== PRESET\.id[\s\S]*prepareEntryGenerationScene\(\);\s*setEntryState\("generating"\)/,
+  "已加载题目的生成流程必须先准备暗场再切换覆盖层",
 );
 assert.match(
   source,
@@ -586,6 +738,16 @@ assert.match(
   nebulaHostSource,
   /data\?\.type === "nebula-entry-explore"[\s\S]*searchParams\.set\("explore",\s*"1"\)[\s\S]*history\.replaceState/,
   "React 外壳必须将生成后的父 URL 替换为探索态",
+);
+assert.match(
+  nebulaHostSource,
+  /data\.entry === "generate"[\s\S]*"&confirm=1&generate=1"/,
+  "React 外壳必须把跨题生成请求传给新场景",
+);
+assert.match(
+  nebulaStageSource,
+  /autoGenerate[\s\S]*autoGenerate \? "&generate=1" : ""/,
+  "星云 iframe 地址必须保留自动生成请求",
 );
 assert.match(
   nebulaHostSource,
@@ -1246,6 +1408,49 @@ assert.equal(
   "03",
   "当前注册表必须为保留的第三个快照提供连续序号",
 );
+for (
+  const preset of [
+    SOCIAL_CONNECTIONS,
+    AI_PROGRAMMER_JOBS,
+    CITY_OR_HOMETOWN,
+  ]
+) {
+  assert.equal(preset.kind, "real", `${preset.id} 必须标记为真实讨论`);
+  assert.equal(preset.people.length, 45, `${preset.id} 必须包含 45 条有效回答`);
+  assert.match(
+    preset.sourceQuestion,
+    /^https:\/\/www\.zhihu\.com\/question\/\d+$/,
+    `${preset.id} 必须保留知乎问题来源`,
+  );
+  assert.equal(
+    new Set(preset.people.map((person) => person[4])).size,
+    preset.people.length,
+    `${preset.id} 不得包含重复回答链接`,
+  );
+  for (const [index, person] of preset.people.entries()) {
+    assert.equal(
+      person[0],
+      `知乎回答 ${String(index + 1).padStart(2, "0")}`,
+      `${preset.id} 不得伪造回答者身份`,
+    );
+    assert.ok(
+      typeof person[1] === "number" && person[1] >= -1 && person[1] <= 1,
+      `${preset.id} 立场必须位于 -1 到 1`,
+    );
+    assert.ok(person[3].length > 0 && person[3].length <= 90, `${preset.id} 摘要长度非法`);
+    assert.match(
+      person[4],
+      new RegExp(`^${preset.sourceQuestion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\/answer\\/\\d+$`),
+      `${preset.id} 回答链接必须属于来源问题`,
+    );
+    assert.equal(person[6], null, `${preset.id} 不得伪造回答赞同数`);
+  }
+  assert.ok(
+    preset.people.filter((person) => person[1] < -0.2).length >= 3 &&
+      preset.people.filter((person) => person[1] > 0.2).length >= 3,
+    `${preset.id} 必须覆盖光谱两端`,
+  );
+}
 const homePresets = homeCatalogInitializer.elements.map((element) => {
   const value = unwrapExpression(element);
   assert.ok(ts.isObjectLiteralExpression(value), "首页问题目录只能包含静态对象");

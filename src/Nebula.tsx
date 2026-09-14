@@ -145,7 +145,13 @@ function storeNavigationContext(
   }
 }
 
-export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
+export function Nebula({
+  entryMode = false,
+  active = true,
+}: {
+  entryMode?: boolean;
+  active?: boolean;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const nebulaFrameRef = useRef<HTMLIFrameElement>(null);
@@ -162,6 +168,8 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
   const requestedPreset = searchParams.get("preset") ?? "";
   const presetId = resolveNebulaPreset(requestedPreset);
   const openPeerDiscovery = !entryMode && searchParams.get("peers") === "1";
+  const autoGenerate =
+    entryMode && searchParams.get("generate") === "1";
   const entryState = entryMode
     ? searchParams.get("confirm") === "1"
       ? "confirm"
@@ -177,6 +185,21 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       window.location.origin,
     );
   }, [openPeerDiscovery]);
+
+  const publishStageVisibility = useCallback(() => {
+    nebulaFrameRef.current?.contentWindow?.postMessage(
+      { type: "nebula-host-visibility", visible: active },
+      window.location.origin,
+    );
+  }, [active]);
+
+  useEffect(() => {
+    publishStageVisibility();
+  }, [presetId, publishStageVisibility]);
+
+  useEffect(() => {
+    if (active) selfOpenPendingRef.current = false;
+  }, [active]);
 
   useEffect(() => {
     if (!openPeerDiscovery) return undefined;
@@ -370,6 +393,10 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       if (data?.type === "nebula-scene-ready") {
         const source = event.source as Window | null;
         source?.postMessage({ type: "nebula-host-ready" }, event.origin);
+        source?.postMessage(
+          { type: "nebula-host-visibility", visible: active },
+          event.origin,
+        );
         if (userContextRef.current) {
           source?.postMessage(
             {
@@ -416,8 +443,10 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         typeof data.preset === "string" &&
         /^[a-z0-9-]+$/.test(data.preset)
       ) {
-        const entryQuery = entryMode && data.entry === "confirm"
-          ? "&confirm=1"
+        const entryQuery = entryMode && data.entry === "generate"
+          ? "&confirm=1&generate=1"
+          : entryMode && data.entry === "confirm"
+            ? "&confirm=1"
           : entryMode &&
               new URLSearchParams(window.location.search).get("explore") === "1"
             ? "&explore=1"
@@ -482,6 +511,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         }
         navigate(
           `/shelf/${cast}?self=1&preset=${encodeURIComponent(activePreset)}${versionQuery}${profileQuery}`,
+          { state: { backgroundLocation: location } },
         );
         return;
       }
@@ -506,7 +536,12 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
         }
         navigate(
           `/shelf/${cast}?u=${data.u}&preset=${encodeURIComponent(activePreset)}${versionQuery}${personQuery}`,
-          { state: personContext ? { person: personContext } : undefined },
+          {
+            state: {
+              backgroundLocation: location,
+              ...(personContext ? { person: personContext } : {}),
+            },
+          },
         );
       }
     }
@@ -516,6 +551,8 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
     entryMode,
     entryState,
     fromPersonaHome,
+    active,
+    location,
     navigate,
     openPeerDiscovery,
     presetId,
@@ -526,6 +563,7 @@ export function Nebula({ entryMode = false }: { entryMode?: boolean }) {
       <NebulaStage
         entryState={entryState}
         presetId={presetId}
+        autoGenerate={autoGenerate}
         openPeerDiscovery={openPeerDiscovery}
         onLoad={requestOpenPeerDiscovery}
         iframeRef={nebulaFrameRef}

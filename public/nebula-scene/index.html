@@ -2252,13 +2252,19 @@
         flex: 1;
         display: grid;
         grid-template-columns: 190px minmax(0, 820px);
+        grid-template-rows: minmax(0, 1fr);
         justify-content: center;
         gap: 34px;
+        overflow: hidden;
         padding: 0 28px;
       }
       .cards-rail {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding-top: 25px;
         color: rgba(200, 209, 212, 0.62);
+        scrollbar-width: thin;
       }
       .cards-rail-title {
         margin-bottom: 10px;
@@ -2353,10 +2359,13 @@
       }
       .cards-list {
         min-width: 0;
+        min-height: 0;
         height: 100%;
         overflow-y: auto;
         overflow-x: clip;
+        overscroll-behavior: contain;
         padding: 18px 0 max(34px, env(safe-area-inset-bottom));
+        touch-action: pan-y;
       }
       .cards-list::-webkit-scrollbar { width: 6px; }
       .cards-list::-webkit-scrollbar-thumb { background: rgba(143, 216, 220, 0.16); border-radius: 99px; }
@@ -2622,7 +2631,7 @@
         color: var(--txt);
         border-bottom: 1px solid rgba(255, 255, 255, 0.065);
         background: transparent;
-        cursor: pointer;
+        cursor: default;
         transition: background 0.16s ease;
       }
       .pcard::before {
@@ -2634,13 +2643,8 @@
         font-family: var(--mono);
         font-size: 7px;
       }
-      .pcard:hover {
+      .pcard:focus-within {
         background: rgba(143, 216, 220, 0.035);
-      }
-      .pcard:focus-visible {
-        outline: 2px solid rgba(23, 114, 246, 0.72);
-        outline-offset: -2px;
-        background: rgba(23, 114, 246, 0.05);
       }
       .pcard--comment { cursor: default; }
       .pcard--comment .pcard-side { grid-template-columns: 1fr; }
@@ -2694,13 +2698,38 @@
       .pcard-ava--me { border-color: #090d12; outline-color: rgba(231, 193, 127, 0.62); }
       .pcard-body { min-width: 0; flex: 1; }
       .pcard-row { display: flex; align-items: center; gap: 7px; }
-      .pcard-row b {
+      .pcard-row > b {
+        flex: 1;
+        min-width: 0;
         overflow: hidden;
         color: #edf1f1;
         font-size: 12.5px;
         font-weight: 620;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      .pcard-person-open {
+        flex: none;
+        min-width: 72px;
+        height: 44px;
+        margin: -8px 0;
+        padding: 0 4px;
+        border: 0;
+        border-bottom: 1px solid rgba(143, 216, 220, 0.24);
+        background: transparent;
+        color: rgba(159, 216, 219, 0.72);
+        font: 600 9px/1 var(--font);
+        cursor: pointer;
+        transition: border-color 0.14s ease, color 0.14s ease, transform 0.12s ease;
+      }
+      .pcard-person-open:hover {
+        border-bottom-color: rgba(143, 216, 220, 0.7);
+        color: #dff5f6;
+      }
+      .pcard-person-open:active { transform: scale(0.96); }
+      .pcard-person-open:focus-visible {
+        outline: 2px solid rgba(23, 114, 246, 0.78);
+        outline-offset: 2px;
       }
       .pcard-star { color: var(--gold); font-size: 12px; }
       .pcard-tag {
@@ -4795,35 +4824,34 @@
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
       const sceneParams = new URLSearchParams(location.search);
       const presetModuleVersion = sceneParams.get("v") || "dev";
-      const {
-        buildNebulaShelfUrl,
-        getNebulaLikeStorageKey,
-        getNebulaPreset,
-        listNebulaPresets,
-      } = await import(
-        `./presets.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        describePeerMatch,
-        rankPeerCandidates,
-        takePeerBatch,
-      } = await import(
-        `./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        getNebulaLodProfile,
-        NEBULA_PARTICLE_LAYER_SCHEMA,
-        resolveDistanceLod,
-        visibleParticleBudget,
-      } = await import(
-        `./lod.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
-      const {
-        buildPersonaCatalog,
-        cyclePersonaIndex,
-      } = await import(
-        `./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`
-      );
+      const [
+        {
+          buildNebulaShelfUrl,
+          getNebulaLikeStorageKey,
+          getNebulaPreset,
+          listNebulaPresets,
+        },
+        {
+          describePeerMatch,
+          rankPeerCandidates,
+          takePeerBatch,
+        },
+        {
+          getNebulaLodProfile,
+          NEBULA_PARTICLE_LAYER_SCHEMA,
+          resolveDistanceLod,
+          visibleParticleBudget,
+        },
+        {
+          buildPersonaCatalog,
+          cyclePersonaIndex,
+        },
+      ] = await Promise.all([
+        import(`./presets.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./peer-discovery.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./lod.js?v=${encodeURIComponent(presetModuleVersion)}`),
+        import(`./persona-browser.js?v=${encodeURIComponent(presetModuleVersion)}`),
+      ]);
       const personaLibrary = await window.__nebulaPersonaLibraryPromise;
       const resolvePersonaCastMap =
         typeof personaLibrary?.resolvePersonaCastMap === "function"
@@ -5095,6 +5123,9 @@
       document.getElementById("presetPickerSerial").textContent = PRESET.serial;
       document.getElementById("presetPickerCurrent").textContent = PRESET.question;
       const availablePresets = listNebulaPresets();
+      let selectedEntryPreset =
+        availablePresets.find((preset) => preset.id === PRESET.id) ||
+        availablePresets[0];
       availablePresets.forEach((preset) => {
         const option = document.createElement("button");
         option.type = "button";
@@ -5137,36 +5168,26 @@
       function setEntryState(state) {
         entryFlowEl.dataset.state = state;
         entryTopicEls.forEach((topic) => {
-          const selected = topic.dataset.entryPreset === PRESET.id;
+          const selected = topic.dataset.entryPreset === selectedEntryPreset.id;
           topic.classList.toggle("is-selected", selected);
           topic.setAttribute("aria-pressed", String(selected));
         });
       }
       function showEntryConfirm() {
         document.getElementById("entryConfirmSerial").textContent =
-          `${PRESET.serial} / ${String(availablePresets.length).padStart(2, "0")}`;
-        document.getElementById("entryConfirmQuestion").textContent = PRESET.question;
+          `${selectedEntryPreset.serial} / ${String(availablePresets.length).padStart(2, "0")}`;
+        document.getElementById("entryConfirmQuestion").textContent =
+          selectedEntryPreset.question;
         document.getElementById("entryConfirmMeta").textContent =
-          `${PEOPLE.length} 个代表观点正在等待展开 · ${PRESET.axis.left} ↔ ${PRESET.axis.right}`;
+          `${selectedEntryPreset.answerCount} 个代表观点正在等待展开 · ${selectedEntryPreset.axis.left} ↔ ${selectedEntryPreset.axis.right}`;
         setEntryState("confirm");
         document.getElementById("entryGenerate").focus();
       }
       function selectEntryPreset(presetId) {
-        if (presetId === PRESET.id) {
-          showEntryConfirm();
-          return;
-        }
-        if (window.parent !== window.self) {
-          window.parent.postMessage(
-            { type: "nebula-preset-change", preset: presetId, entry: "confirm" },
-            location.origin,
-          );
-          return;
-        }
-        const next = new URL(location.href);
-        next.searchParams.set("preset", presetId);
-        next.searchParams.set("entry", "confirm");
-        location.href = next.href;
+        const preset = availablePresets.find((item) => item.id === presetId);
+        if (!preset) return;
+        selectedEntryPreset = preset;
+        showEntryConfirm();
       }
       entryTopicsEl.addEventListener("click", (event) => {
         const topic = event.target.closest("[data-entry-preset]");
@@ -6230,6 +6251,8 @@
       let entryGenerationStartedAt = 0;
       let entryGenerationPhase = -1;
       let entryFinishTimer = 0;
+      const ENTRY_GENERATION_DURATION_MS = 8_000;
+      const ENTRY_GENERATION_TIMELINE_SECONDS = 12;
       const entryGenerationTitleEl = document.getElementById("entryGenerationTitle");
       const entryGenerationTextEl = document.getElementById("entryGenerationText");
       const entryProgressEl = document.getElementById("entryProgress");
@@ -6271,8 +6294,6 @@
         controls.autoRotate = !reduceMotion;
         entryFlowEl.classList.add("is-done");
         entryFlowEl.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("entry-active");
-        document.body.classList.toggle("entry-exploring", entryEnabled);
         resumeCirclePrompt();
         if (entryEnabled && window.parent !== window.self) {
           window.parent.postMessage(
@@ -6282,6 +6303,8 @@
         }
         entryFinishTimer = window.setTimeout(() => {
           entryFlowEl.hidden = true;
+          document.body.classList.remove("entry-active");
+          document.body.classList.toggle("entry-exploring", entryEnabled);
           entryFinishTimer = 0;
         }, reduceMotion ? 0 : 500);
       }
@@ -6306,8 +6329,10 @@
 
       function updateEntryGeneration(now) {
         if (!entryGenerationStartedAt) return;
-        const elapsed = (now - entryGenerationStartedAt) / 1000;
-        const progress = clamp01(elapsed / 12);
+        const progress = clamp01(
+          (now - entryGenerationStartedAt) / ENTRY_GENERATION_DURATION_MS,
+        );
+        const elapsed = progress * ENTRY_GENERATION_TIMELINE_SECONDS;
         entryProgressEl.style.transform = `scaleX(${progress})`;
         entryGenerationPercentEl.textContent = `${String(Math.round(progress * 100)).padStart(2, "0")}%`;
         setEntryGenerationCopy(elapsed < 1.4 ? 0 : elapsed < 4 ? 1 : elapsed < 6.2 ? 2 : elapsed < 8.5 ? 3 : 4);
@@ -6357,7 +6382,7 @@
           if (user.star) user.star.material.opacity = avatarReveal * 0.9;
         });
 
-        if (elapsed >= 12) finishEntryGeneration();
+        if (progress >= 1) finishEntryGeneration();
       }
 
       function prepareEntryGenerationScene() {
@@ -6405,6 +6430,28 @@
       }
 
       function startEntryGeneration() {
+        if (selectedEntryPreset.id !== PRESET.id) {
+          setEntryState("generating");
+          setEntryGenerationCopy(0);
+          entryGenerationTextEl.textContent = "正在载入所选问题的观点坐标";
+          if (window.parent !== window.self) {
+            window.parent.postMessage(
+              {
+                type: "nebula-preset-change",
+                preset: selectedEntryPreset.id,
+                entry: "generate",
+              },
+              location.origin,
+            );
+            return;
+          }
+          const next = new URL(location.href);
+          next.searchParams.set("preset", selectedEntryPreset.id);
+          next.searchParams.set("entry", "confirm");
+          next.searchParams.set("generate", "1");
+          location.href = next.href;
+          return;
+        }
         prepareEntryGenerationScene();
         setEntryState("generating");
         if (reduceMotion) {
@@ -6444,6 +6491,9 @@
         document.getElementById("entryGenerate").addEventListener("click", startEntryGeneration);
         document.getElementById("entrySkip").addEventListener("click", finishEntryGeneration);
         document.getElementById("sceneBack").addEventListener("click", showEntryConfirmFromScene);
+        if (entryMode === "confirm" && sceneParams.get("generate") === "1") {
+          queueMicrotask(startEntryGeneration);
+        }
       }
 
       const AVATAR_LOAD_TIMEOUT_MS = 8000;
@@ -6836,6 +6886,18 @@
       window.addEventListener("message", (e) => {
         if (e.source !== window.parent || e.origin !== location.origin) return;
         if (e.data && e.data.type === "nebula-host-ready") hostReady = true;
+        if (e.data && e.data.type === "nebula-host-visibility") {
+          const nextRunning = e.data.visible === true && !document.hidden;
+          if (running === nextRunning) return;
+          running = nextRunning;
+          if (!running) {
+            resetKeyboardMotion(false);
+          } else {
+            clock.getDelta();
+            scheduleFrame();
+          }
+          return;
+        }
         if (e.data && e.data.type === "nebula-user-profile") {
           const identityRevision =
             Number.isSafeInteger(e.data.identityRevision) &&
@@ -8158,9 +8220,6 @@
         article.dataset.signal = String(i + 1).padStart(2, "0");
         article.style.setProperty("--cast", castColor);
         article.style.setProperty("--stance", `${stancePercent(stance)}%`);
-        article.tabIndex = 0;
-        article.setAttribute("role", "link");
-        article.setAttribute("aria-label", `查看 ${name} 的人格卡`);
 
         const avatar = cardAvatar(
           name,
@@ -8173,6 +8232,15 @@
         const row = uiNode("div", "pcard-row");
         row.appendChild(uiNode("b", "", `@${name}`));
         if (FOLLOWED.has(i)) row.appendChild(uiNode("span", "pcard-star", "★"));
+        const personOpen = uiNode(
+          "button",
+          "pcard-person-open",
+          "看卡片 →",
+        );
+        personOpen.type = "button";
+        personOpen.dataset.personOpen = String(i);
+        personOpen.setAttribute("aria-label", `查看 ${name} 的人格卡`);
+        row.appendChild(personOpen);
 
         const persona = uiNode("div", "pcard-fac");
         const dot = uiNode("i");
@@ -8459,6 +8527,18 @@
           resumeCirclePrompt();
         }, reduceMotion ? 0 : 180);
       }
+      function routeCardsWheel(event) {
+        if (
+          !cardsEl.classList.contains("show") ||
+          window.innerWidth < 1100 ||
+          Math.abs(event.deltaY) <= Math.abs(event.deltaX) ||
+          event.target.closest(".cards-list")
+        ) return;
+
+        const previousScrollTop = cardsListEl.scrollTop;
+        cardsListEl.scrollBy({ top: event.deltaY });
+        if (cardsListEl.scrollTop !== previousScrollTop) event.preventDefault();
+      }
       function openPersonaDeck() {
         const key = personaFilter || PERSONA_CATALOG[0]?.key;
         if (!key) return;
@@ -8467,6 +8547,7 @@
       }
       cardsQuickEntryBtn.addEventListener("click", () => openCards());
       personaQuickEntryBtn.addEventListener("click", openPersonaDeck);
+      cardsEl.addEventListener("wheel", routeCardsWheel, { passive: false });
       $("cardsClose").addEventListener("click", closeCards);
       cardsSearchEl.addEventListener("input", (e) => {
         cardsQuery = e.target.value.trim().toLowerCase();
@@ -8514,7 +8595,7 @@
           personaDeckOpen = false;
           renderCards(true);
           requestAnimationFrame(() => {
-            cardsListEl.querySelector(".pcard[data-u]")?.focus();
+            cardsListEl.querySelector("[data-person-open]")?.focus();
           });
           return;
         }
@@ -8530,15 +8611,12 @@
           return;
         }
         if (e.target.closest("[data-self]")) { openSelf(); return; }
-        const card = e.target.closest(".pcard[data-u]");
-        if (card) openPerson(Number(card.getAttribute("data-u")));
+        const personOpen = e.target.closest("[data-person-open]");
+        if (personOpen) {
+          openPerson(Number(personOpen.getAttribute("data-person-open")));
+        }
       });
       renderPersonaFilters();
-      cardsListEl.addEventListener("keydown", (e) => {
-        if (e.key !== "Enter" || e.target.closest("button")) return;
-        const card = e.target.closest(".pcard[data-u]");
-        if (card) openPerson(Number(card.getAttribute("data-u")));
-      });
 
       // ---- 同频发现 ----
       const peerDiscoveryEl = $("peerDiscovery");

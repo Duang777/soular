@@ -68,15 +68,18 @@ assert.ok(
 );
 
 const readyThemes = PERSONA_THEMES.filter(({ status }) => status === "ready");
-assert.equal(readyThemes.length, 1, "only the accepted first theme is ready");
+assert.equal(readyThemes.length, 2, "life choices and AI math themes must be ready");
 assert.equal(
   getPersonaTheme("relationships-family"),
   null,
   "planned themes must not enter runtime",
 );
 const lifeChoices = getPersonaTheme("life-choices");
+const workTechFuture = getPersonaTheme("work-tech-future");
 assert.ok(lifeChoices);
+assert.ok(workTechFuture);
 assert.equal(lifeChoices.personas.length, 9);
+assert.equal(workTechFuture.personas.length, 9);
 assert.deepEqual(
   [...lifeChoices.personas.map(({ slot }) => slot)].sort(),
   [...PERSONA_SLOT_KEYS].sort(),
@@ -90,25 +93,47 @@ assert.ok(
     .every(({ period }) => period === "pre-modern"),
   "modern Chinese figures are outside the accepted selection boundary",
 );
+assert.deepEqual(
+  [...workTechFuture.personas.map(({ slot }) => slot)].sort(),
+  [...PERSONA_SLOT_KEYS].sort(),
+  "the AI math theme must fill every stable cast slot exactly once",
+);
+assert.deepEqual(
+  workTechFuture.personas.map(({ name }) => name),
+  [
+    "图灵",
+    "笛卡尔",
+    "庞加莱",
+    "哥德尔",
+    "希尔伯特",
+    "欧几里得",
+    "莱布尼茨",
+    "拉卡托斯",
+    "拉马努金",
+  ],
+  "AI math personas must use the accepted historical-figure set",
+);
 
-for (const persona of lifeChoices.personas) {
-  assert.match(persona.id, /^[a-z0-9-]+$/);
-  assert.ok(persona.name.length > 0);
-  assert.ok(persona.role.length > 0);
-  assert.ok(persona.description.length >= 20);
-  assert.ok(persona.selectionReason.length >= 20);
-  assert.ok(persona.signals.length >= 3);
-  assert.match(persona.portrait, /^personas\/[a-z0-9-]+\.jpg$/);
-  assert.equal(persona.art.kind, "project-original-symbolic-illustration");
-  assert.equal(persona.art.historicalLikeness, false);
-  assert.equal(persona.art.reviewed, true);
+for (const theme of readyThemes) {
+  for (const persona of theme.personas) {
+    assert.match(persona.id, /^[a-z0-9-]+$/);
+    assert.ok(persona.name.length > 0);
+    assert.ok(persona.role.length > 0);
+    assert.ok(persona.description.length >= 20);
+    assert.ok(persona.selectionReason.length >= 20);
+    assert.ok(persona.signals.length >= 3);
+    assert.match(persona.portrait, /^personas\/[a-z0-9-]+\.jpg$/);
+    assert.equal(persona.art.kind, "project-original-symbolic-illustration");
+    assert.equal(persona.art.historicalLikeness, false);
+    assert.equal(persona.art.reviewed, true);
 
-  const assetPath = resolve(publicRoot, persona.portrait);
-  assert.ok(assetPath.startsWith(`${publicRoot}/`), "asset must stay in public");
-  const assetStat = await stat(assetPath);
-  assert.ok(assetStat.size >= 10_000, `${persona.name} asset is unexpectedly small`);
-  const dimensions = jpegDimensions(await readFile(assetPath));
-  assert.deepEqual(dimensions, { width: 512, height: 512 });
+    const assetPath = resolve(publicRoot, persona.portrait);
+    assert.ok(assetPath.startsWith(`${publicRoot}/`), "asset must stay in public");
+    const assetStat = await stat(assetPath);
+    assert.ok(assetStat.size >= 10_000, `${persona.name} asset is unexpectedly small`);
+    const dimensions = jpegDimensions(await readFile(assetPath));
+    assert.deepEqual(dimensions, { width: 512, height: 512 });
+  }
 }
 
 const presetThemeIds = Object.fromEntries(
@@ -130,8 +155,20 @@ for (const [presetId, themeId] of Object.entries(PERSONA_PRESET_THEME_IDS)) {
   );
 }
 assert.equal(PERSONA_PRESET_THEME_IDS["career-35"], "life-choices");
+assert.equal(PERSONA_PRESET_THEME_IDS["ai-math"], "work-tech-future");
+assert.equal(PERSONA_PRESET_THEME_IDS["scholars-ai-math"], "work-tech-future");
+assert.equal(PERSONA_PRESET_THEME_IDS["social-connections"], "life-choices");
+assert.equal(PERSONA_PRESET_THEME_IDS["ai-programmer-jobs"], "work-tech-future");
+assert.equal(PERSONA_PRESET_THEME_IDS["city-or-hometown"], "life-choices");
 assert.equal(getNebulaPreset("career-35").personaTheme, "life-choices");
-assert.equal(getNebulaPreset("ai-math").personaTheme, undefined);
+assert.equal(getNebulaPreset("ai-math").personaTheme, "work-tech-future");
+assert.equal(
+  getNebulaPreset("scholars-ai-math").personaTheme,
+  "work-tech-future",
+);
+assert.equal(getNebulaPreset("social-connections").personaTheme, "life-choices");
+assert.equal(getNebulaPreset("ai-programmer-jobs").personaTheme, "work-tech-future");
+assert.equal(getNebulaPreset("city-or-hometown").personaTheme, "life-choices");
 
 const themedCasts = resolvePersonaCastsForPreset("career-35");
 assert.equal(themedCasts.length, 9);
@@ -139,6 +176,15 @@ assert.ok(themedCasts.every(({ themeId }) => themeId === "life-choices"));
 assert.ok(themedCasts.every(({ signals }) => signals.length >= 3));
 assert.ok(themedCasts.every(({ selectionReason }) => selectionReason.length >= 20));
 assert.ok(themedCasts.some(({ name }) => name === "加缪"));
+for (const presetId of ["ai-math", "scholars-ai-math", "ai-programmer-jobs"]) {
+  const aiMathCasts = resolvePersonaCastsForPreset(presetId);
+  assert.equal(aiMathCasts.length, 9);
+  assert.ok(
+    aiMathCasts.every(({ themeId }) => themeId === "work-tech-future"),
+  );
+  assert.ok(aiMathCasts.some(({ name }) => name === "图灵"));
+  assert.ok(aiMathCasts.every(({ name }) => !name.endsWith("派")));
+}
 
 const fallbackCasts = resolvePersonaCasts("missing-theme");
 assert.deepEqual(
@@ -279,5 +325,6 @@ assert.match(
 
 console.log(
   `persona library OK: ${PERSONA_THEMES.length} themes, ` +
-    `${lifeChoices.personas.length} accepted personas, legacy fallback intact`,
+    `${readyThemes.reduce((count, theme) => count + theme.personas.length, 0)} ` +
+    "accepted personas, legacy fallback intact",
 );

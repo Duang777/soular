@@ -385,8 +385,9 @@ npm --prefix server run prepare:question-preset -- \
   九人主题；React 人格卡、Three.js 人格卡群和 3D 人格书会共同读取人物名称、角色描述
   与抽象插画，但稳定 `cast` key 不变。
   `personaTheme` 缺失、未知、未满九人或主题仍为 `planned` 时，运行时必须完整回退原有九派。
-- `career-35` 当前绑定 `life-choices`；`ai-math` 尚未绑定已验收主题，因此继续展示原有九派。
-  完整人物选择、素材来源与使用边界见 `docs/persona-library.md`。
+- `career-35` 绑定 `life-choices`；`ai-math` 与 `scholars-ai-math` 绑定
+  `work-tech-future`，展示图灵、哥德尔等九位 AI 数学人物原型。完整人物选择、素材来源
+  与使用边界见 `docs/persona-library.md`。
 - 运行阶段：不调用 AI。先计算用户点赞回答的平均立场，再按每个九派标签的点赞数量选人格；
   同票时使用该派回答与用户平均立场的接近度破同票，最后按固定九派顺序保证结果稳定。
 - 没有点赞时使用快照的 `me.castKey` 默认人格；生成依据通过 Session Storage 带到卡片页，

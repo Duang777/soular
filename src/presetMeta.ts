@@ -45,6 +45,45 @@ const PRESET_META: Readonly<Record<string, PresetMeta>> = {
       rightTendency: "倾向工具先行",
     },
   },
+  "social-connections": {
+    question: "如何更好地社交？",
+    axis: {
+      left: "减少无效社交",
+      center: "保留关系边界",
+      right: "主动建立连接",
+      leftChoice: "重视独处",
+      rightChoice: "主动连接",
+      leftTendency: "倾向精简关系",
+      rightTendency: "倾向拓展关系",
+    },
+    guideHeadline: "如何更好地社交：一边主张减少无效关系，一边强调主动练习与建立高质量连接。",
+  },
+  "ai-programmer-jobs": {
+    question: "AI 会导致程序员大批失业吗？",
+    axis: {
+      left: "岗位大幅收缩",
+      center: "职业结构分化",
+      right: "程序员角色升级",
+      leftChoice: "提前转型",
+      rightChoice: "人机协作",
+      leftTendency: "倾向替代加速",
+      rightTendency: "倾向能力升级",
+    },
+    guideHeadline: "AI 与程序员就业：多数观点预期岗位收缩，另一侧认为责任、架构与业务判断仍需要人。",
+  },
+  "city-or-hometown": {
+    question: "大学毕业是去大城市好还是回小城市好？",
+    axis: {
+      left: "回到小城市",
+      center: "按阶段选择",
+      right: "留在大城市",
+      leftChoice: "回乡生活",
+      rightChoice: "留城发展",
+      leftTendency: "倾向生活安稳",
+      rightTendency: "倾向机会成长",
+    },
+    guideHeadline: "毕业后的城市选择：一边看重家人、成本和安稳，一边选择机会、视野和职业空间。",
+  },
   // 首个由离线管线自动组装的快照，轴文案随 preset-heritage-state.js 同步。
   "heritage-state": {
     question:

@@ -6,6 +6,7 @@ export function NebulaStage({
   style,
   entryState = null,
   presetId = "career-35",
+  autoGenerate = false,
   openPeerDiscovery = false,
   onLoad,
   iframeRef,
@@ -14,6 +15,7 @@ export function NebulaStage({
   style?: CSSProperties;
   entryState?: "discover" | "confirm" | "explore" | null;
   presetId?: string;
+  autoGenerate?: boolean;
   openPeerDiscovery?: boolean;
   onLoad?: () => void;
   iframeRef?: RefObject<HTMLIFrameElement | null>;
@@ -25,7 +27,7 @@ export function NebulaStage({
         onLoad={onLoad}
         className="landing-page-frame"
         src={withVersion(
-          `${asset("nebula-scene/index.html")}?preset=${encodeURIComponent(presetId)}${entryState ? `&entry=${entryState}` : ""}${openPeerDiscovery ? "&peers=1" : ""}`,
+          `${asset("nebula-scene/index.html")}?preset=${encodeURIComponent(presetId)}${entryState ? `&entry=${entryState}` : ""}${autoGenerate ? "&generate=1" : ""}${openPeerDiscovery ? "&peers=1" : ""}`,
         )}
         title="观点星云 · 思想银河"
       />
