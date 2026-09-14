@@ -7,7 +7,10 @@ import {
   getNebulaLikeStorageKey,
   listNebulaPresets,
 } from "../public/nebula-scene/presets.js";
+import { AI_PROGRAMMER_JOBS } from "../public/nebula-scene/preset-ai-programmer-jobs.js";
+import { CITY_OR_HOMETOWN } from "../public/nebula-scene/preset-city-or-hometown.js";
 import { SCHOLARS_AI_MATH } from "../public/nebula-scene/preset-scholars-ai-math.js";
+import { SOCIAL_CONNECTIONS } from "../public/nebula-scene/preset-social-connections.js";
 import {
   buildPersonaCatalog,
   cyclePersonaIndex,
@@ -1281,6 +1284,49 @@ assert.equal(
   "03",
   "当前注册表必须为保留的第三个快照提供连续序号",
 );
+for (
+  const preset of [
+    SOCIAL_CONNECTIONS,
+    AI_PROGRAMMER_JOBS,
+    CITY_OR_HOMETOWN,
+  ]
+) {
+  assert.equal(preset.kind, "real", `${preset.id} 必须标记为真实讨论`);
+  assert.equal(preset.people.length, 45, `${preset.id} 必须包含 45 条有效回答`);
+  assert.match(
+    preset.sourceQuestion,
+    /^https:\/\/www\.zhihu\.com\/question\/\d+$/,
+    `${preset.id} 必须保留知乎问题来源`,
+  );
+  assert.equal(
+    new Set(preset.people.map((person) => person[4])).size,
+    preset.people.length,
+    `${preset.id} 不得包含重复回答链接`,
+  );
+  for (const [index, person] of preset.people.entries()) {
+    assert.equal(
+      person[0],
+      `知乎回答 ${String(index + 1).padStart(2, "0")}`,
+      `${preset.id} 不得伪造回答者身份`,
+    );
+    assert.ok(
+      typeof person[1] === "number" && person[1] >= -1 && person[1] <= 1,
+      `${preset.id} 立场必须位于 -1 到 1`,
+    );
+    assert.ok(person[3].length > 0 && person[3].length <= 90, `${preset.id} 摘要长度非法`);
+    assert.match(
+      person[4],
+      new RegExp(`^${preset.sourceQuestion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\/answer\\/\\d+$`),
+      `${preset.id} 回答链接必须属于来源问题`,
+    );
+    assert.equal(person[6], null, `${preset.id} 不得伪造回答赞同数`);
+  }
+  assert.ok(
+    preset.people.filter((person) => person[1] < -0.2).length >= 3 &&
+      preset.people.filter((person) => person[1] > 0.2).length >= 3,
+    `${preset.id} 必须覆盖光谱两端`,
+  );
+}
 const homePresets = homeCatalogInitializer.elements.map((element) => {
   const value = unwrapExpression(element);
   assert.ok(ts.isObjectLiteralExpression(value), "首页问题目录只能包含静态对象");

@@ -5,6 +5,15 @@ const { AI_MATH } = await import(
 const { SCHOLARS_AI_MATH } = await import(
   `./preset-scholars-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
 );
+const { SOCIAL_CONNECTIONS } = await import(
+  `./preset-social-connections.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
+const { AI_PROGRAMMER_JOBS } = await import(
+  `./preset-ai-programmer-jobs.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
+const { CITY_OR_HOMETOWN } = await import(
+  `./preset-city-or-hometown.js?v=${encodeURIComponent(presetModuleVersion)}`
+);
 // Keep the source serial compatible with cached six-snapshot registries.
 const ACTIVE_SCHOLARS_AI_MATH = { ...SCHOLARS_AI_MATH, serial: "03" };
 
@@ -109,6 +118,9 @@ const PRESETS = new Map([
   [CAREER_35.id, CAREER_35],
   [AI_MATH.id, AI_MATH],
   [ACTIVE_SCHOLARS_AI_MATH.id, ACTIVE_SCHOLARS_AI_MATH],
+  [SOCIAL_CONNECTIONS.id, SOCIAL_CONNECTIONS],
+  [AI_PROGRAMMER_JOBS.id, AI_PROGRAMMER_JOBS],
+  [CITY_OR_HOMETOWN.id, CITY_OR_HOMETOWN],
 ]);
 
 export function getNebulaPreset(id) {
