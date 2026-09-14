@@ -634,6 +634,16 @@ assert.match(
 );
 assert.match(
   source,
+  /const TIP_POINTER_BRIDGE_MS = 1200;[\s\S]*canvas\.addEventListener\("pointermove", \(e\) => \{[\s\S]*const nextHovered = pick\(e\.clientX, e\.clientY\);[\s\S]*if \(nextHovered\) \{[\s\S]*setHovered\(nextHovered\);[\s\S]*\} else if \(hovered\) \{[\s\S]*scheduleHideTip\(TIP_POINTER_BRIDGE_MS\);/,
+  "鼠标从星点移向悬浮卡片时必须经过延迟关闭宽限，不能同步隐藏卡片",
+);
+assert.doesNotMatch(
+  source,
+  /canvas\.addEventListener\("pointermove", \(e\) => \{\s*updateGalaxyPointer\(e\.clientX, e\.clientY\);\s*setHovered\(pick\(e\.clientX, e\.clientY\)\);/,
+  "画布未命中星点时不得直接关闭悬浮卡片",
+);
+assert.match(
+  source,
   /getElementById\("entryBack"\)\.addEventListener\("click",\s*returnToPersonaHome\)/,
   "确认页次按钮必须真正返回人格卡首页",
 );

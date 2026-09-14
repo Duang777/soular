@@ -6885,6 +6885,7 @@
       let pointerTarget = 0;
       let hovered = null;
       let hideTipTimer = 0;
+      const TIP_POINTER_BRIDGE_MS = 1200;
 
       function updateGalaxyPointer(clientX, clientY) {
         if (reduceMotion) return;
@@ -7338,11 +7339,17 @@
 
       canvas.addEventListener("pointermove", (e) => {
         updateGalaxyPointer(e.clientX, e.clientY);
-        setHovered(pick(e.clientX, e.clientY));
+        const nextHovered = pick(e.clientX, e.clientY);
+        if (nextHovered) {
+          setHovered(nextHovered);
+        } else if (hovered) {
+          // Keep the preview alive while the pointer crosses the canvas gap into it.
+          scheduleHideTip(TIP_POINTER_BRIDGE_MS);
+        }
       });
       canvas.addEventListener("pointerleave", (e) => {
         pointerTarget = 0;
-        scheduleHideTip(e.pointerType === "touch" ? 4200 : 240);
+        scheduleHideTip(e.pointerType === "touch" ? 4200 : TIP_POINTER_BRIDGE_MS);
       });
 
       let downX = 0, downY = 0;
