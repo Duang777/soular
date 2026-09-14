@@ -62,7 +62,11 @@ if (!/^[A-Z][A-Z0-9_]*$/.test(exportName)) {
 const answerLimit = integerArgument("answers", 30, 5, 60);
 const version = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 const client = new ZhihuClient(secret);
-const spectrum = await buildQuestionSpectrum(client, questionUrl, answerLimit);
+// 主张和理由都会被 clip 截断，截断后无从判断模型原本想说什么；原文只留在 staging 供人工复核。
+let rawResponse: string | null = null;
+const spectrum = await buildQuestionSpectrum(client, questionUrl, answerLimit, (raw) => {
+  rawResponse = raw;
+});
 const stagingPath = resolve(SERVER_ROOT, `.staging/${presetId}-${version}.json`);
 const temporaryPath = `${stagingPath}.${process.pid}.tmp`;
 const warnings = [
@@ -81,6 +85,7 @@ try {
       exportName,
       question: question ?? null,
       warnings,
+      rawResponse,
     }, null, 2)}\n`,
   );
   renameSync(temporaryPath, stagingPath);

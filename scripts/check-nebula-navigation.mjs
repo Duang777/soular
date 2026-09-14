@@ -1277,6 +1277,21 @@ for (const preset of staticPresets) {
       assert.ok(existsSync(avatar), `${preset.id} 缺少第 ${index + 1} 位回答者头像`);
     }
   }
+  // 自动组装的快照逐条声明头像：具名作者用知乎 CDN 远程图，其余回落到本地九派素材。
+  // avatarBase 分支覆盖不到这种格式，写错九派名只会在运行时变成裂图，必须在这里拦住。
+  (Array.isArray(detail.people) ? detail.people : []).forEach((row, index) => {
+    const declared = row?.[7];
+    if (typeof declared !== "string" || !declared) return;
+    if (/^https:\/\/[^/]*\.?zhimg\.com\//.test(declared)) return;
+    assert.ok(
+      !/^https?:/i.test(declared),
+      `${preset.id} 第 ${index + 1} 位回答者头像只允许 zhimg.com 远程图或本地素材`,
+    );
+    assert.ok(
+      existsSync(new URL(`../public/nebula-scene/${declared}`, import.meta.url)),
+      `${preset.id} 第 ${index + 1} 位回答者头像 ${declared} 不存在`,
+    );
+  });
 }
 assert.deepEqual(
   homePresets.slice().sort((left, right) => left.id.localeCompare(right.id)),

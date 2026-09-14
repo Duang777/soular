@@ -126,6 +126,9 @@
         position: absolute;
         top: 0;
         left: 0;
+        /* 绝对定位默认按「包含块宽度 − left」收缩；极标被夹到靠边时会塌成竖排一字一行。 */
+        width: max-content;
+        max-width: 17em;
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -145,6 +148,23 @@
         background: var(--mid);
         box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
       }
+      /* 主张下方的理由行：极标只给结论，这一行给「凭什么」。preset 缺字段时整行隐藏。 */
+      .axis .pole-reason {
+        max-width: 15em;
+        margin-top: -2px;
+        padding: 6px 11px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(14, 16, 22, 0.86);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
+        font-size: 11px;
+        line-height: 1.65;
+        letter-spacing: 0.01em;
+        color: var(--txt-dim);
+        /* 20 字的理由必然折行，balance 把两行匀成等长，避免末行只剩「了，」这类孤行。 */
+        text-wrap: balance;
+      }
+      .axis .pole-reason[hidden] { display: none; }
       .axis .sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--faint); }
       @media (max-width: 720px) {
         .scene-brand { gap: 7px; }
@@ -158,8 +178,10 @@
           transform: none;
         }
         .scene-back:active { transform: scale(0.97); }
-        .axis { bottom: auto; }
+        .axis { bottom: auto; max-width: 14em; }
         .axis .sub { display: none; }
+        /* 390 px 下星云已占满屏，理由行会大面积遮挡星点；改由观点卡片视图承载。 */
+        .axis .pole-reason { display: none; }
       }
 
       .hint {
@@ -783,6 +805,7 @@
         color: var(--mute);
       }
       .tip-tag.funny { border-color: rgba(231, 201, 140, 0.5); color: var(--gold); }
+      .tip-tag.offaxis { border-color: rgba(255, 255, 255, 0.24); color: var(--mid); }
 
       .observatory-controls {
         position: fixed;
@@ -845,7 +868,9 @@
       .journey-actions {
         position: fixed;
         z-index: 14;
-        top: max(92px, calc(env(safe-area-inset-top) + 84px));
+        /* 92px 曾按「问题最多两行」写死；热榜标题普遍 40 字以上会排到四行并压住工具轨。
+           --head-bottom 由脚本按问题块实际高度写入，问题隐藏时回落到原值。 */
+        top: max(92px, calc(var(--head-bottom, 0px) + 14px), calc(env(safe-area-inset-top) + 84px));
         right: 20px;
         display: flex;
         width: 184px;
@@ -2175,6 +2200,27 @@
         color: rgba(190, 202, 205, 0.52);
         font-size: 9px;
       }
+      /* 两端＝主张（亮）＋理由（暗）。390 px 下星云极标隐藏理由，这里是唯一的承载位。 */
+      .cards-pole {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        max-width: 19em;
+      }
+      .cards-pole-end { align-items: flex-end; text-align: right; }
+      .cards-pole b {
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: var(--hi);
+      }
+      .cards-pole i {
+        font-style: normal;
+        font-size: 9px;
+        line-height: 1.55;
+        color: rgba(190, 202, 205, 0.52);
+      }
+      .cards-pole i[hidden] { display: none; }
       .cards-spectrum-track {
         position: relative;
         height: 2px;
@@ -2973,6 +3019,15 @@
       .guide-quiz-btn:hover,
       .guide-quiz-btn:focus-visible {
         border-color: rgba(143, 180, 255, 0.58);
+      }
+      /* 带理由的选项：主张一行，理由一行。preset 没给理由时按纯文本渲染。 */
+      .guide-quiz-btn:has(.guide-quiz-note) { display: grid; gap: 3px; }
+      .guide-quiz-label { font-weight: 600; }
+      .guide-quiz-note {
+        font-style: normal;
+        font-size: 9.5px;
+        line-height: 1.5;
+        color: var(--txt-faint);
       }
       .guide-input {
         display: grid;
@@ -4152,10 +4207,12 @@
       </div>
       <div class="axis axis-left">
         <span class="pole" id="presetLeftPole">必须转行</span>
+        <span class="pole-reason" id="presetLeftReason" hidden></span>
         <span class="sub">LEFT POLE</span>
       </div>
       <div class="axis axis-right">
         <span class="pole" id="presetRightPole">深耕不转</span>
+        <span class="pole-reason" id="presetRightReason" hidden></span>
         <span class="sub">RIGHT POLE</span>
       </div>
       <div class="hint">拖拽旋转 · 悬停看观点 · 点「♡ 赞同」完成表态</div>
@@ -4437,9 +4494,15 @@
         </label>
       </div>
       <div class="cards-spectrum" aria-label="立场光谱">
-        <span id="presetCardsLeftPole">必须转行</span>
+        <span class="cards-pole">
+          <b id="presetCardsLeftPole">必须转行</b>
+          <i id="presetCardsLeftReason" hidden></i>
+        </span>
         <span class="cards-spectrum-track"><i class="cards-me-marker" id="cardsMeMarker"></i></span>
-        <span id="presetCardsRightPole">深耕不转</span>
+        <span class="cards-pole cards-pole-end">
+          <b id="presetCardsRightPole">深耕不转</b>
+          <i id="presetCardsRightReason" hidden></i>
+        </span>
       </div>
       <div class="cards-layout">
         <aside class="cards-rail" aria-label="筛选观点">
@@ -4857,7 +4920,25 @@
       // 「我」的专属星位：固定在核球前方、离镜头更近，金色呼吸光圈 + 金徽章
       const DEFAULT_ME = { name: "我", castKey: "fox", claim: "点赞几个回答，星云会标出你此刻的立场位置。" };
 
-      const PRESET = getNebulaPreset(sceneParams.get("preset"));
+      const RAW_PRESET = getNebulaPreset(sceneParams.get("preset"));
+      // leftChoice / rightChoice / leftTendency / rightTendency 是人工快照才写的短标签，
+      // 自动组装的快照只有模型产出的三段主张。九处读取里只有星图向导做了回退，
+      // 其余会把 undefined 直接印到筛选条和卡片滑杆上，所以在入口处统一补齐。
+      const PRESET = (() => {
+        const axis = RAW_PRESET.axis || {};
+        const fill = (value, fallback) =>
+          typeof value === "string" && value.trim() ? value : fallback;
+        return {
+          ...RAW_PRESET,
+          axis: {
+            ...axis,
+            leftChoice: fill(axis.leftChoice, axis.left),
+            rightChoice: fill(axis.rightChoice, axis.right),
+            leftTendency: fill(axis.leftTendency, axis.left),
+            rightTendency: fill(axis.rightTendency, axis.right),
+          },
+        };
+      })();
       const CASTS = typeof resolvePersonaCastMap === "function"
         ? resolvePersonaCastMap(PRESET.personaTheme)
         : LEGACY_CASTS;
@@ -4874,12 +4955,27 @@
         ? new Set(PRESET.followed)
         : DEFAULT_FOLLOWED;
       const COMMENTS = Array.isArray(PRESET.comments) ? PRESET.comments : DEFAULT_COMMENTS;
-      const CLUSTERS = Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS;
+      // DEFAULT_CLUSTERS 的成员下标是按 48 人的 career-35 写死的，直接套到人数更少的快照上，
+      // rankedCircles 会读到 PEOPLE[43] 这种空洞并抛错，整个场景停在加载态。
+      // 越界成员一律剔除，不足两人的圈子整体丢弃：小圈子是锦上添花，不该拖垮星云。
+      const CLUSTERS = (Array.isArray(PRESET.circles) ? PRESET.circles : DEFAULT_CLUSTERS)
+        .map((circle) => ({
+          ...circle,
+          members: (Array.isArray(circle.members) ? circle.members : [])
+            .filter((index) => Number.isInteger(index) && index >= 0 && index < PEOPLE.length),
+        }))
+        .filter((circle) => circle.members.length >= 2);
       const ME = PRESET.me || DEFAULT_ME;
       const PERSONA_CATALOG = buildPersonaCatalog(CASTS, PEOPLE);
-      const personAvatarPath = (index) => PRESET.avatarBase
-        ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
-        : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
+      // 在线生成的快照没有逐条下载的头像文件：站内搜索每题只能补全 2-3 位作者，
+      // 具名的用知乎 CDN 原图，其余回落到自有九派素材，因此改由第 8 位字段逐条指定。
+      const personAvatarPath = (index) => {
+        const declared = PEOPLE[index]?.[7];
+        if (typeof declared === "string" && declared) return declared;
+        return PRESET.avatarBase
+          ? `${PRESET.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`
+          : `avatars/u${String(index + 1).padStart(2, "0")}.jpg`;
+      };
       function avatarRetrySource(source) {
         const next = new URL(source, location.href);
         next.searchParams.set("avatar-retry", String(Date.now()));
@@ -4921,6 +5017,37 @@
       document.getElementById("presetQuestion").textContent = PRESET.question;
       document.getElementById("presetLeftPole").textContent = PRESET.axis.left;
       document.getElementById("presetRightPole").textContent = PRESET.axis.right;
+      // 未提供理由的 preset 保持单行极标，不渲染空壳。
+      // 曾在逗号处强制插换行避免拆词，但理由允许写到 20 字、约 220px，必然超过 165px 的极标宽度：
+      // 第一段先自然折行，强制换行再切一刀，末尾就剩「了，」这种孤行。改回自然折行，
+      // 由 CSS 的 text-wrap: balance 把行长匀开。
+      const applyPoleReason = (elementId, reason) => {
+        const element = document.getElementById(elementId);
+        const text = typeof reason === "string" ? reason.trim() : "";
+        element.textContent = text;
+        element.hidden = !text;
+      };
+      applyPoleReason("presetLeftReason", PRESET.axis.leftReason);
+      applyPoleReason("presetRightReason", PRESET.axis.rightReason);
+      applyPoleReason("presetCardsLeftReason", PRESET.axis.leftReason);
+      applyPoleReason("presetCardsRightReason", PRESET.axis.rightReason);
+      // 问题块高度随标题字数变化（热榜标题常排到四行），工具轨不能再按固定 92px 让位。
+      // 问题块在窄屏被隐藏，此时高度为 0，CSS 侧的 max() 会回落到原有下限。
+      const questionBlock = document.querySelector(".question");
+      if (questionBlock) {
+        const syncHeadBottom = () => {
+          const { height } = questionBlock.getBoundingClientRect();
+          document.documentElement.style.setProperty(
+            "--head-bottom",
+            `${height > 0 ? Math.ceil(questionBlock.getBoundingClientRect().bottom) : 0}px`,
+          );
+        };
+        syncHeadBottom();
+        if (typeof ResizeObserver === "function") {
+          new ResizeObserver(syncHeadBottom).observe(questionBlock);
+        }
+        window.addEventListener("resize", syncHeadBottom);
+      }
       document.getElementById("presetSeries").textContent = `GALAXY STORIES · ${PRESET.serial}`;
       document.getElementById("presetOpenLabel").textContent = `OPEN · ${PRESET.serial}`;
       document.getElementById("presetCardsQuestion").textContent = PRESET.question;
@@ -5761,6 +5888,25 @@
       let meAvatarSource = DEFAULT_ME_AVATAR;
       let userPortrait = null;
       const avatarTargets = [];
+      /**
+       * 立场居中的「真折中」和只是蹭话题的「在谈别的事」在光谱上位置几乎重合，
+       * 只有离轴度能把两者分开：偏题的压暗但不隐藏，仍可悬停、点开、阅读原文。
+       *
+       * 关键区分：relevance 为 0 表示模型没标注，不是判定它偏题，因此按正常渲染。
+       * 把未标注当偏题会冤枉大多数回答，也会让没有该字段的既有快照整片变暗。
+       *
+       * 只分两档而不做连续渐变：渐变会让 20 颗星得到 20 个互相分不出的亮度。
+       * 单靠透明度也不够——0.78 的 alpha 叠在近黑背景上物理亮度只降 22%，
+       * 按暗场亮度感知的幂律折算仅约 8%，肉眼看不出，所以同时压尺寸并撤掉光晕。
+       */
+      const OFF_AXIS_THRESHOLD = 0.6;
+      const OFF_AXIS_OPACITY = 0.38;
+      const OFF_AXIS_SCALE = 0.7;
+      const OFF_AXIS_GLOW = 0.05;
+      const isOffAxis = (value) => {
+        const relevance = typeof value === "number" && Number.isFinite(value) ? value : 0;
+        return relevance > 0 && relevance < OFF_AXIS_THRESHOLD;
+      };
       const users = PEOPLE.map(([name, stance, castKey, claim], i) => {
         const [castName, castRole, castColor] = CASTS[castKey];
         const axisVal = Math.max(-1, Math.min(1, positions[i].x / XSPAN));
@@ -5801,6 +5947,7 @@
           avatarCanvas: holder.canvas, avatarState: "loading", avatarPaintSignature: "",
           baseY: y, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5,
           scale: 1,
+          offAxis: isOffAxis(PEOPLE[i][8]),
         };
         avatar.userData.user = user;
         group.add(avatar);
@@ -7022,6 +7169,8 @@
           const likedOne = liked.has(u.index);
           row.appendChild(uiNode("span", "tip-name", `@${u.name}`));
           if (u.followed) row.appendChild(uiNode("span", "tip-follow", "★ 关注"));
+          // 星点被压暗必须给出理由，否则只会被当成头像没加载完。
+          if (u.offAxis) row.appendChild(uiNode("span", "tip-tag offaxis", "偏离这条轴"));
           const persona = uiNode("div", "tip-persona");
           const dot = uiNode("span", "tip-dot");
           dot.style.background = u.castColor;
@@ -7231,19 +7380,24 @@
         const personaSelected = Boolean(personaFilter) && !u.isMe && u.castKey === personaFilter;
         const hoverBoost = hovered === u ? 1.3 : personaSelected ? 1.08 : 1;
         u.scale += (hoverBoost - u.scale) * (reduceMotion ? 1 : 0.14);
-        u.avatar.scale.setScalar(baseAva * u.scale);
-        u.glow.scale.setScalar(baseGlow * u.scale);
+        // 悬停时恢复原样，否则偏题的星点会小到点不准、暗到看不清自己选中了谁。
+        const offAxis = Boolean(u.offAxis) && hovered !== u;
+        const offAxisScale = offAxis ? OFF_AXIS_SCALE : 1;
+        u.avatar.scale.setScalar(baseAva * u.scale * offAxisScale);
+        u.glow.scale.setScalar(baseGlow * u.scale * offAxisScale);
         const breathe = 0.9 + Math.sin(t * 1.3 + u.phase) * 0.1;
         const dimmedByFocus = focusSet && !u.isMe && !focusSet.has(u.index);
         const dimmedByFollow = followedOnly && !u.isMe && !u.followed;
         const personaDimmed = Boolean(personaFilter) && !u.isMe && u.castKey !== personaFilter;
         const dimmed = dimmedByFocus || dimmedByFollow || personaDimmed;
         const fadeRate = reduceMotion ? 1 : 0.12;
-        const avaTarget = dimmed ? 0.07 : 1;
+        const avaTarget = dimmed ? 0.07 : offAxis ? OFF_AXIS_OPACITY : 1;
         u.avatar.material.opacity += (avaTarget - u.avatar.material.opacity) * fadeRate;
         const glowTarget = dimmed
           ? 0.03
-          : (hovered === u ? 0.68 : personaSelected ? 0.42 : (u.isMe ? 0.44 : 0.18) * breathe);
+          : offAxis
+            ? OFF_AXIS_GLOW
+            : (hovered === u ? 0.68 : personaSelected ? 0.42 : (u.isMe ? 0.44 : 0.18) * breathe);
         u.glow.material.opacity += (glowTarget - u.glow.material.opacity) * fadeRate;
         if (u.star) u.star.material.opacity = dimmed ? 0.04 : 0.75 + Math.sin(t * 2.4 + u.phase) * 0.25;
         if (u.heart && u.heart.visible) {
@@ -8814,9 +8968,9 @@
           {
             question: "你更接近光谱哪一端？",
             choices: [
-              { label: axis.left, stance: -0.65 },
-              { label: axis.center, stance: 0 },
-              { label: axis.right, stance: 0.65 },
+              { label: axis.left, note: axis.leftReason, stance: -0.65 },
+              { label: axis.center, note: axis.centerReason, stance: 0 },
+              { label: axis.right, note: axis.rightReason, stance: 0.65 },
             ],
           },
         ];
@@ -8916,7 +9070,16 @@
         const current = questions[guideQuizStep];
         const choices = uiNode("div", "guide-quiz-choices");
         current.choices.forEach((choice) => {
-          const button = uiNode("button", "guide-quiz-btn", choice.label);
+          const button = uiNode("button", "guide-quiz-btn");
+          const note = typeof choice.note === "string" ? choice.note.trim() : "";
+          if (note) {
+            button.append(
+              uiNode("b", "guide-quiz-label", choice.label),
+              uiNode("i", "guide-quiz-note", note),
+            );
+          } else {
+            button.textContent = choice.label;
+          }
           button.type = "button";
           button.addEventListener("keydown", (event) => {
             if (

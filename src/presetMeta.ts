@@ -23,15 +23,15 @@ const PRESET_META: Readonly<Record<string, PresetMeta>> = {
   "ai-math": {
     question: "AI 是否正在毁掉数学？",
     axis: {
-      left: "警惕生态伤害",
-      center: "审慎协作",
-      right: "拥抱研究加速",
+      left: "数学是在练人的思维",
+      center: "AI 能用，但得有人复核",
+      right: "AI 已经做出了真数学",
       leftChoice: "警惕AI冲击",
       rightChoice: "拥抱AI协作",
-      leftTendency: "倾向审慎治理",
-      rightTendency: "倾向人机协同",
+      leftTendency: "更看重想明白",
+      rightTendency: "更看重用起来",
     },
-    guideHeadline: "AI 与数学：数学家担忧研究方法与共同体，支持者看到的是验证、协作与加速。",
+    guideHeadline: "这题吵的是：数学家怕人不再自己想，支持者说机器验得过就是真成果。",
   },
   "scholars-ai-math": {
     question: "如何看待现在有学者用 AI 做数学科研？",
@@ -43,6 +43,16 @@ const PRESET_META: Readonly<Record<string, PresetMeta>> = {
       rightChoice: "拥抱工具",
       leftTendency: "倾向人工把关",
       rightTendency: "倾向工具先行",
+    },
+  },
+  // 首个由离线管线自动组装的快照，轴文案随 preset-heritage-state.js 同步。
+  "heritage-state": {
+    question:
+      "北京一独居者离世，无配偶、子女、兄弟姐妹，叔舅姑姨九人争遗产，法院判房产归国家，如何从法律角度解读？",
+    axis: {
+      left: "我觉得没继承权就该归国家",
+      center: "我觉得该给尽扶养义务的…",
+      right: "我觉得亲戚来争遗产就是…",
     },
   },
 };

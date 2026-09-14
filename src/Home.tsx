@@ -27,6 +27,13 @@ const QUESTION_PRESETS = [
     title: "如何看待现在有学者用 AI 做数学科研？",
     detail: "47 个观点",
   },
+  {
+    id: "heritage-state",
+    serial: "04",
+    kind: "真实讨论",
+    title: "北京一独居者离世，无配偶、子女、兄弟姐妹，叔舅姑姨九人争遗产，法院判房产归国家，如何从法律角度解读？",
+    detail: "20 个观点",
+  },
 ] as const;
 
 function PersonaHome() {

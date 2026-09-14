@@ -28,11 +28,13 @@ export const NEBULA_PRESET_VERSIONS: Readonly<Record<string, string>> = {
   "career-35": "1",
   "ai-math": "20260912",
   "scholars-ai-math": "20260914",
+  "heritage-state": "20260914",
 };
 export const NEBULA_PRESET_ANSWER_COUNTS: Readonly<Record<string, number>> = {
   "career-35": 48,
   "ai-math": 31,
   "scholars-ai-math": 47,
+  "heritage-state": 20,
 };
 const MAX_TRANSIENT_SELF_PROFILES = 24;
 const transientSelfProfiles = new Map<string, unknown>();

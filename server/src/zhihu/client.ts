@@ -28,6 +28,8 @@ function sleep(ms: number): Promise<void> {
 const HOT_LIST_TTL_SECONDS = 6 * 60 * 60;
 const HOT_LIST_LIMIT = 30;
 const SEARCH_TTL_SECONDS = 5 * 60;
+/** 站内搜索上游硬上限，调大无效，见 zhihuSearch 注释。 */
+const ZHIHU_SEARCH_COUNT = 10;
 const QUESTION_ANSWERS_TTL_SECONDS = 10 * 60;
 
 export class ZhihuApiError extends Error {
@@ -270,6 +272,21 @@ export class ZhihuClient {
     };
     return this.cached(this.queryKey("/api/v1/content/global_search", params), SEARCH_TTL_SECONDS, () =>
       this.envelope<GlobalSearchData>("/api/v1/content/global_search", params),
+    );
+  }
+
+  /**
+   * 站内内容搜索，与只搜全网的 globalSearch 不同，这里返回作者名、头像和赞同数。
+   * question_answers 分页拿不到这三项，只能靠这里回填。
+   * 实测上游恒定返回 10 条：Count 填 10、20、50 结果完全一致，换 query 写法也一样，
+   * 因此不开放 Count 参数，避免后续再去试探。
+   */
+  zhihuSearch(query: string): Promise<GlobalSearchData> {
+    const trimmed = query.trim();
+    if (!trimmed) throw new ZhihuApiError(10001, "搜索关键词 Query 不能为空");
+    const params: Query = { Query: trimmed, Count: ZHIHU_SEARCH_COUNT };
+    return this.cached(this.queryKey("/api/v1/content/zhihu_search", params), SEARCH_TTL_SECONDS, () =>
+      this.envelope<GlobalSearchData>("/api/v1/content/zhihu_search", params),
     );
   }
 
