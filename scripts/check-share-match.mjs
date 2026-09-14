@@ -21,10 +21,24 @@ const appCssSource = readFileSync(
   new URL("../src/app.css", import.meta.url),
   "utf8",
 );
+const nebulaSource = readFileSync(
+  new URL("../src/Nebula.tsx", import.meta.url),
+  "utf8",
+);
+const nebulaSceneSource = readFileSync(
+  new URL("../public/nebula-scene/index.html", import.meta.url),
+  "utf8",
+);
+const thoughtMapStoreSource = readFileSync(
+  new URL("../src/thoughtMapStore.ts", import.meta.url),
+  "utf8",
+);
 
 const CAST_KEYS = new Set([
   "fox", "bear", "cat", "owl", "rabbit", "penguin", "redpanda", "goat", "frog",
 ]);
+const KNOWN_PRESETS = new Set(["career-35", "ai-math"]);
+const MAX_SHARE_MATCH_ENTRIES = 6;
 
 function encodeStance(stance) {
   return Math.round(Math.max(-1, Math.min(1, stance)) * 100);
@@ -35,13 +49,69 @@ function decodeStance(code) {
   return code / 100;
 }
 
+function validEntry(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (
+    typeof value.preset !== "string" ||
+    !KNOWN_PRESETS.has(value.preset) ||
+    typeof value.version !== "string" ||
+    !/^[a-z0-9-]{1,15}$/.test(value.version) ||
+    !CAST_KEYS.has(value.cast) ||
+    typeof value.stance !== "number" ||
+    !Number.isFinite(value.stance)
+  ) return null;
+  return {
+    preset: value.preset,
+    version: value.version,
+    cast: value.cast,
+    stance: Math.max(-1, Math.min(1, value.stance)),
+  };
+}
+
+function uniqueEntries(values) {
+  const presets = new Set();
+  const entries = [];
+  values.forEach((value) => {
+    const entry = validEntry(value);
+    if (!entry || presets.has(entry.preset)) return;
+    presets.add(entry.preset);
+    entries.push(entry);
+  });
+  return entries.slice(0, MAX_SHARE_MATCH_ENTRIES);
+}
+
+function encodeMapEntry(entry) {
+  return [
+    entry.preset,
+    entry.version,
+    entry.cast,
+    encodeStance(entry.stance),
+  ].join("~");
+}
+
+function parseMapEntry(value) {
+  const [preset, version, cast, stanceValue, ...rest] = value.split("~");
+  if (rest.length || !/^-?\d{1,3}$/.test(stanceValue ?? "")) return null;
+  const stance = decodeStance(Number(stanceValue));
+  return stance === null
+    ? null
+    : validEntry({ preset, version, cast, stance });
+}
+
 function buildShareMatchUrl(origin, basePath, payload) {
   const base = basePath.endsWith("/") ? basePath : `${basePath}/`;
   const s = encodeStance(payload.stance);
+  const entries = uniqueEntries([payload, ...(payload.entries ?? [])]);
+  const additionalEntries = entries.filter(({ preset }) =>
+    preset !== payload.preset
+  );
+  const mapQuery = additionalEntries.length
+    ? `&m=${encodeURIComponent(additionalEntries.map(encodeMapEntry).join(","))}`
+    : "";
   return `${origin}${base}match?preset=${encodeURIComponent(payload.preset)}` +
     `&version=${encodeURIComponent(payload.version)}` +
     `&cast=${encodeURIComponent(payload.cast)}` +
-    `&s=${s}`;
+    `&s=${s}${mapQuery}`;
 }
 
 function parseShareMatchQuery(params) {
@@ -49,9 +119,8 @@ function parseShareMatchQuery(params) {
   const version = params.get("version") ?? "";
   const cast = params.get("cast") ?? "";
   const stanceValue = params.get("s");
-  const knownPresets = new Set(["career-35", "ai-math"]);
 
-  if (!preset || !knownPresets.has(preset)) return null;
+  if (!preset || !KNOWN_PRESETS.has(preset)) return null;
   if (!/^[a-z0-9-]{1,15}$/.test(version)) return null;
   if (!CAST_KEYS.has(cast)) return null;
   if (stanceValue === null || !/^-?\d{1,3}$/.test(stanceValue)) return null;
@@ -59,7 +128,16 @@ function parseShareMatchQuery(params) {
   const stance = decodeStance(stanceCode);
   if (stance === null) return null;
 
-  return { preset, version, cast, stance };
+  const primary = { preset, version, cast, stance };
+  const encodedMap = params.get("m");
+  const mapEntries = encodedMap && encodedMap.length <= 768
+    ? encodedMap
+        .split(",")
+        .slice(0, MAX_SHARE_MATCH_ENTRIES)
+        .map(parseMapEntry)
+        .filter(Boolean)
+    : [];
+  return { ...primary, entries: uniqueEntries([primary, ...mapEntries]) };
 }
 
 function stanceLabel(stance, axis) {
@@ -133,7 +211,56 @@ assert.deepEqual(parsed, {
   version: "20260912",
   cast: "fox",
   stance: 0.42,
+  entries: [{
+    preset: "ai-math",
+    version: "20260912",
+    cast: "fox",
+    stance: 0.42,
+  }],
 });
+
+const mapUrl = buildShareMatchUrl("https://soular.top", "/", {
+  preset: "ai-math",
+  version: "20260912",
+  cast: "fox",
+  stance: 0.42,
+  entries: [
+    {
+      preset: "ai-math",
+      version: "20260912",
+      cast: "fox",
+      stance: 0.42,
+    },
+    {
+      preset: "career-35",
+      version: "1",
+      cast: "owl",
+      stance: -0.38,
+    },
+  ],
+});
+assert.equal(
+  mapUrl,
+  "https://soular.top/match?preset=ai-math&version=20260912&cast=fox&s=42" +
+    "&m=career-35~1~owl~-38",
+);
+assert.deepEqual(
+  parseShareMatchQuery(new URL(mapUrl).searchParams)?.entries,
+  [
+    {
+      preset: "ai-math",
+      version: "20260912",
+      cast: "fox",
+      stance: 0.42,
+    },
+    {
+      preset: "career-35",
+      version: "1",
+      cast: "owl",
+      stance: -0.38,
+    },
+  ],
+);
 
 assert.equal(parseShareMatchQuery(new URLSearchParams("preset=ai-math&cast=fox&s=42")), null);
 assert.equal(
@@ -244,6 +371,56 @@ assert.match(
   cardDrawSource,
   /share-sheet__url-label">\{shareLinkLabel\}[\s\S]*share-sheet__url-label">对照链接/,
   "分享面板必须明确区分人格卡链接与对照链接",
+);
+assert.match(
+  productionSource,
+  /export type ShareMatchEntry[\s\S]*MAX_SHARE_MATCH_ENTRIES = 6[\s\S]*params\.get\("m"\)/,
+  "朋友对照链接必须支持最多 6 个经过校验的共同问题坐标",
+);
+assert.match(
+  productionSource,
+  /export function summarizeThoughtMap[\s\S]*averageGap[\s\S]*alignedCount/,
+  "共同思想地图必须基于多题结果生成可解释摘要",
+);
+assert.match(
+  cardDrawSource,
+  /readThoughtMapPositions[\s\S]*entries:\s*matchEntries/,
+  "分享人格卡时必须附带当前账号已完成的共同问题坐标",
+);
+assert.match(
+  thoughtMapStoreSource,
+  /STORAGE_PREFIX = "jiupai:thought-map:v1:"[\s\S]*profile\.likedCount >= 3[\s\S]*nebulaPresetVersion\(profile\.preset\) === profile\.version/,
+  "本地共同问题目录必须按账号隔离且只保留已解锁的当前快照",
+);
+assert.match(
+  nebulaSceneSource,
+  /type:\s*"nebula-self-profile-update"/,
+  "星云完成表态后必须向 React 外壳同步当前题目坐标",
+);
+assert.match(
+  nebulaSource,
+  /data\?\.type === "nebula-self-profile-update"[\s\S]*rememberThoughtMapPosition/,
+  "React 外壳必须校验并保存当前账号的题目坐标",
+);
+assert.match(
+  matchPageSource,
+  /type Phase = "intro" \| "quiz" \| "reveal" \| "map"/,
+  "朋友对照流程必须包含累计地图阶段",
+);
+assert.match(
+  matchPageSource,
+  /共同思想地图[\s\S]*继续下一道共同问题[\s\S]*match-map__row/,
+  "揭晓后必须能继续答题并查看共同思想地图",
+);
+assert.doesNotMatch(
+  matchPageSource,
+  /(?:local|session)Storage/,
+  "公开对照页不得读取分享者或接收者浏览器存储",
+);
+assert.match(
+  appCssSource,
+  /\.match-map__row[\s\S]*\.match-map__track[\s\S]*\.match-map__marker--host[\s\S]*\.match-map__marker--guest/,
+  "共同思想地图必须复用金色朋友与冷青自己双星位语言",
 );
 
 console.log("share match checks passed");
