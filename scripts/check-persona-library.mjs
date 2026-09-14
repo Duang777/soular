@@ -197,6 +197,11 @@ assert.match(
 );
 assert.match(
   shelfPageSource,
+  /const personaLoading = reactPersonaLoading;/,
+  "React must not block the persona card on the heavy 3D shelf handshake",
+);
+assert.match(
+  shelfPageSource,
   /shelfParams\.set\("personaRetry", String\(personaState\.loadAttempt\)\)/,
   "the 3D shelf must receive the active persona retry attempt",
 );
@@ -214,6 +219,30 @@ assert.match(
   shelfPageSource,
   /event\.origin\s*!==\s*window\.location\.origin[\s\S]*event\.source\s*!==\s*shelfFrameRef\.current\?\.contentWindow/,
   "the 3D shelf fallback handshake must validate origin and source window",
+);
+const personaBootstrapPosition = shelfSceneSource.indexOf(
+  "window.__shelfPersonaLibraryPromise",
+);
+const threeImportPosition = shelfSceneSource.indexOf(
+  'import * as THREE from "three"',
+);
+assert.ok(
+  personaBootstrapPosition >= 0 &&
+    threeImportPosition >= 0 &&
+    personaBootstrapPosition < threeImportPosition,
+  "the shelf must start loading its persona theme before the Three.js graph",
+);
+const nebulaPersonaBootstrapPosition = nebulaSceneSource.indexOf(
+  "window.__nebulaPersonaLibraryPromise",
+);
+const nebulaThreeImportPosition = nebulaSceneSource.indexOf(
+  'import * as THREE from "three"',
+);
+assert.ok(
+  nebulaPersonaBootstrapPosition >= 0 &&
+    nebulaThreeImportPosition >= 0 &&
+    nebulaPersonaBootstrapPosition < nebulaThreeImportPosition,
+  "the nebula must start loading its persona theme before the Three.js graph",
 );
 assert.match(
   matchRevealSource,

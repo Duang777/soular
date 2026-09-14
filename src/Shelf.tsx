@@ -92,8 +92,7 @@ export function ShelfPage() {
     shelfPersonaResultMatches && shelfPersonaResult.status === "fallback";
   const casts = shelfPersonaFailed ? CASTS : personaState.casts;
   const reactPersonaLoading = personaState.status === "loading";
-  const personaLoading = reactPersonaLoading ||
-    Boolean(expectedShelfPersonaKey && !shelfPersonaResultMatches);
+  const personaLoading = reactPersonaLoading;
   const validCast = CASTS.some((item) => item.key === castKey);
   const cast = castByKey(castKey, casts);
   const currentPresetVersion = nebulaPresetVersion(presetId)!;

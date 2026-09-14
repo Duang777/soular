@@ -1733,6 +1733,71 @@
     </div>
   </main>
 
+  <script>
+    (() => {
+      const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
+      const OPTIONAL_PERSONA_RETRY_TIMEOUT_MS = 8000;
+      const pageParams = new URLSearchParams(location.search);
+      const requestedPresetId = pageParams.get("preset");
+      const requestedPersonaRetry = pageParams.get("personaRetry");
+      const personaLoadAttempt =
+        requestedPersonaRetry && /^(?:0|[1-9]\d{0,5})$/.test(requestedPersonaRetry)
+          ? Number(requestedPersonaRetry)
+          : 0;
+
+      function notifyParentPersonaStatus(status) {
+        if (!requestedPresetId || window.parent === window) return;
+        window.parent.postMessage({
+          type: "persona-shelf-status",
+          preset: requestedPresetId,
+          loadAttempt: personaLoadAttempt,
+          status
+        }, location.origin);
+      }
+
+      if (!requestedPresetId) {
+        window.__shelfPersonaLibraryPromise = Promise.resolve(null);
+        return;
+      }
+
+      const personaLibraryUrl = new URL("../persona-library.js", location.href);
+      const sceneVersion = pageParams.get("v");
+      if (sceneVersion) personaLibraryUrl.searchParams.set("v", sceneVersion);
+      const isPersonaRetry = personaLoadAttempt > 0;
+      if (isPersonaRetry) {
+        personaLibraryUrl.searchParams.set("retry", String(personaLoadAttempt));
+      }
+      const timeoutMs = isPersonaRetry
+        ? OPTIONAL_PERSONA_RETRY_TIMEOUT_MS
+        : OPTIONAL_PERSONA_TIMEOUT_MS;
+      let timeoutId = 0;
+
+      window.__shelfPersonaLibraryPromise = Promise.race([
+        import(personaLibraryUrl.href),
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(
+            () => reject(new Error("persona library load timed out")),
+            timeoutMs
+          );
+        })
+      ]).then(({
+        getPersonaThemeForPreset,
+        resolvePersonaCastsForPreset
+      }) => {
+        const personaTheme = getPersonaThemeForPreset(requestedPresetId);
+        const personaCasts = resolvePersonaCastsForPreset(requestedPresetId);
+        const ready =
+          Boolean(personaTheme) &&
+          Array.isArray(personaCasts) &&
+          personaCasts.length === 9;
+        notifyParentPersonaStatus(ready ? "ready" : "fallback");
+        return ready ? { personaTheme, personaCasts } : null;
+      }).catch(() => {
+        notifyParentPersonaStatus("fallback");
+        return null;
+      }).finally(() => window.clearTimeout(timeoutId));
+    })();
+  </script>
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -2095,25 +2160,6 @@
             }
     ];
 
-    const OPTIONAL_PERSONA_TIMEOUT_MS = 4000;
-    const OPTIONAL_PERSONA_RETRY_TIMEOUT_MS = 8000;
-    async function importOptionalPersonaLibrary(url, timeoutMs) {
-      let timeoutId = 0;
-      try {
-        return await Promise.race([
-          import(url),
-          new Promise((_, reject) => {
-            timeoutId = window.setTimeout(
-              () => reject(new Error("persona library load timed out")),
-              timeoutMs
-            );
-          })
-        ]);
-      } finally {
-        window.clearTimeout(timeoutId);
-      }
-    }
-
     function syncStaticFallbackCatalog() {
       const fallbackBooks = [...document.querySelectorAll(".fallback-book")];
       if (fallbackBooks.length !== BOOKS.length) return;
@@ -2128,41 +2174,10 @@
 
     const pageParams = new URLSearchParams(location.search);
     const requestedPresetId = pageParams.get("preset");
-    const requestedPersonaRetry = pageParams.get("personaRetry");
-    const personaLoadAttempt =
-      requestedPersonaRetry && /^(?:0|[1-9]\d{0,5})$/.test(requestedPersonaRetry)
-        ? Number(requestedPersonaRetry)
-        : 0;
-    function notifyParentPersonaStatus(status) {
-      if (!requestedPresetId || window.parent === window) return;
-      window.parent.postMessage({
-        type: "persona-shelf-status",
-        preset: requestedPresetId,
-        loadAttempt: personaLoadAttempt,
-        status
-      }, location.origin);
-    }
-
     if (requestedPresetId) {
-      try {
-        const personaLibraryUrl = new URL("../persona-library.js", import.meta.url);
-        const sceneVersion = pageParams.get("v");
-        if (sceneVersion) personaLibraryUrl.searchParams.set("v", sceneVersion);
-        const isPersonaRetry = personaLoadAttempt > 0;
-        if (isPersonaRetry) {
-          personaLibraryUrl.searchParams.set("retry", String(personaLoadAttempt));
-        }
-        const {
-          getPersonaThemeForPreset,
-          resolvePersonaCastsForPreset
-        } = await importOptionalPersonaLibrary(
-          personaLibraryUrl.href,
-          isPersonaRetry
-            ? OPTIONAL_PERSONA_RETRY_TIMEOUT_MS
-            : OPTIONAL_PERSONA_TIMEOUT_MS
-        );
-        const personaTheme = getPersonaThemeForPreset(requestedPresetId);
-        const personaCasts = resolvePersonaCastsForPreset(requestedPresetId);
+      const personaResult = await window.__shelfPersonaLibraryPromise;
+      if (personaResult) {
+        const { personaTheme, personaCasts } = personaResult;
         const personasBySlot = new Map(
           personaCasts.map((persona) => [persona.key, persona])
         );
@@ -2189,10 +2204,6 @@
           });
           syncStaticFallbackCatalog();
         }
-        notifyParentPersonaStatus("ready");
-      } catch {
-        notifyParentPersonaStatus("fallback");
-        // Keep the classic nine books when the optional persona library is unavailable.
       }
     }
 
