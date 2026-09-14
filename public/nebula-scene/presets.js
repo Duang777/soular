@@ -1,19 +1,17 @@
 const presetModuleVersion = new URL(import.meta.url).searchParams.get("v") || "dev";
-const { AI_MATH } = await import(
-  `./preset-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
-);
-const { SCHOLARS_AI_MATH } = await import(
-  `./preset-scholars-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`
-);
-const { SOCIAL_CONNECTIONS } = await import(
-  `./preset-social-connections.js?v=${encodeURIComponent(presetModuleVersion)}`
-);
-const { AI_PROGRAMMER_JOBS } = await import(
-  `./preset-ai-programmer-jobs.js?v=${encodeURIComponent(presetModuleVersion)}`
-);
-const { CITY_OR_HOMETOWN } = await import(
-  `./preset-city-or-hometown.js?v=${encodeURIComponent(presetModuleVersion)}`
-);
+const [
+  { AI_MATH },
+  { SCHOLARS_AI_MATH },
+  { SOCIAL_CONNECTIONS },
+  { AI_PROGRAMMER_JOBS },
+  { CITY_OR_HOMETOWN },
+] = await Promise.all([
+  import(`./preset-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`),
+  import(`./preset-scholars-ai-math.js?v=${encodeURIComponent(presetModuleVersion)}`),
+  import(`./preset-social-connections.js?v=${encodeURIComponent(presetModuleVersion)}`),
+  import(`./preset-ai-programmer-jobs.js?v=${encodeURIComponent(presetModuleVersion)}`),
+  import(`./preset-city-or-hometown.js?v=${encodeURIComponent(presetModuleVersion)}`),
+]);
 // Keep the source serial compatible with cached six-snapshot registries.
 const ACTIVE_SCHOLARS_AI_MATH = { ...SCHOLARS_AI_MATH, serial: "03" };
 
