@@ -418,6 +418,13 @@
       .entry-flow[data-state="confirm"] .entry-confirm { display: block; }
       .entry-flow[data-state="confirm"] .entry-home-back { display: inline-flex; }
       .entry-flow[data-state="confirm"] .entry-topic {
+        --cloud-drift-x: -10px;
+        --cloud-drift-y: 6px;
+        --cloud-return-x: 12px;
+        --cloud-return-y: -5px;
+        --cloud-float-duration: 8.5s;
+        --cloud-flow-duration: 6.5s;
+        --cloud-delay: 0s;
         isolation: isolate;
         width: min(240px, 20vw);
         min-height: 108px;
@@ -428,45 +435,160 @@
         box-shadow: none;
         opacity: 0.82;
         text-align: center;
+        animation:
+          entry-topic-float var(--cloud-float-duration) ease-in-out
+          var(--cloud-delay) infinite alternate;
+        will-change: translate;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(2) {
+        --cloud-drift-x: 13px;
+        --cloud-drift-y: -5px;
+        --cloud-return-x: -8px;
+        --cloud-return-y: 8px;
+        --cloud-float-duration: 9.5s;
+        --cloud-flow-duration: 7.2s;
+        --cloud-delay: -3.1s;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(3) {
+        --cloud-drift-x: -14px;
+        --cloud-drift-y: -7px;
+        --cloud-return-x: 8px;
+        --cloud-return-y: 5px;
+        --cloud-float-duration: 8s;
+        --cloud-flow-duration: 6s;
+        --cloud-delay: -6.4s;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(4) {
+        --cloud-drift-x: 9px;
+        --cloud-drift-y: 8px;
+        --cloud-return-x: -12px;
+        --cloud-return-y: -5px;
+        --cloud-float-duration: 10s;
+        --cloud-flow-duration: 7.5s;
+        --cloud-delay: -1.8s;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(5) {
+        --cloud-drift-x: -8px;
+        --cloud-drift-y: -10px;
+        --cloud-return-x: 14px;
+        --cloud-return-y: 7px;
+        --cloud-float-duration: 8.8s;
+        --cloud-flow-duration: 6.8s;
+        --cloud-delay: -5.2s;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(6) {
+        --cloud-drift-x: 12px;
+        --cloud-drift-y: 7px;
+        --cloud-return-x: -10px;
+        --cloud-return-y: -8px;
+        --cloud-float-duration: 9s;
+        --cloud-flow-duration: 6.4s;
+        --cloud-delay: -7.3s;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:nth-child(7) {
+        --cloud-drift-x: -12px;
+        --cloud-drift-y: 5px;
+        --cloud-return-x: 10px;
+        --cloud-return-y: -9px;
+        --cloud-float-duration: 9.8s;
+        --cloud-flow-duration: 5.8s;
+        --cloud-delay: -4.4s;
       }
       .entry-flow[data-state="confirm"] .entry-topic::before {
         content: "";
         position: absolute;
         top: 50%;
         left: 50%;
-        z-index: -2;
+        z-index: -3;
         width: 108px;
         height: 46px;
         border-radius: 50%;
-        background: rgba(168, 183, 192, 0.26);
+        background: rgba(168, 183, 192, 0.32);
         box-shadow:
-          -86px 16px 0 4px rgba(139, 156, 166, 0.18),
-          -48px -11px 0 12px rgba(185, 197, 202, 0.17),
-          48px -14px 0 16px rgba(178, 191, 197, 0.19),
-          92px 12px 0 2px rgba(128, 146, 158, 0.16),
-          0 20px 0 22px rgba(143, 160, 170, 0.2);
+          -86px 16px 0 4px rgba(139, 156, 166, 0.23),
+          -48px -11px 0 12px rgba(185, 197, 202, 0.22),
+          48px -14px 0 16px rgba(178, 191, 197, 0.24),
+          92px 12px 0 2px rgba(128, 146, 158, 0.2),
+          0 20px 0 22px rgba(143, 160, 170, 0.25);
         filter: blur(8px);
         transform: translate(-50%, -50%);
         transition: opacity 0.22s ease, transform 0.22s ease;
+        animation:
+          entry-cloud-body-a var(--cloud-flow-duration) ease-in-out
+          var(--cloud-delay) infinite alternate;
+        will-change: translate;
       }
       .entry-flow[data-state="confirm"] .entry-topic::after {
         content: "";
         position: absolute;
         top: 45%;
         left: 50%;
-        z-index: -1;
+        z-index: -2;
         width: 74px;
         height: 28px;
         border-radius: 50%;
-        background: rgba(237, 232, 214, 0.14);
+        background: rgba(237, 232, 214, 0.19);
         box-shadow:
-          -55px 9px 0 2px rgba(231, 226, 211, 0.09),
-          -25px -17px 0 8px rgba(235, 231, 218, 0.11),
-          34px -15px 0 9px rgba(231, 226, 209, 0.1),
-          62px 6px 0 1px rgba(224, 218, 198, 0.08);
+          -55px 9px 0 2px rgba(231, 226, 211, 0.13),
+          -25px -17px 0 8px rgba(235, 231, 218, 0.16),
+          34px -15px 0 9px rgba(231, 226, 209, 0.15),
+          62px 6px 0 1px rgba(224, 218, 198, 0.12);
         filter: blur(5px);
         transform: translate(-50%, -50%);
         transition: opacity 0.22s ease, transform 0.22s ease;
+        animation:
+          entry-cloud-body-b var(--cloud-flow-duration) ease-in-out
+          var(--cloud-delay) infinite alternate-reverse;
+        will-change: translate;
+      }
+      .entry-topic-cloud {
+        display: none;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic-cloud {
+        position: absolute;
+        inset: -24px -38px;
+        z-index: -1;
+        display: block;
+        opacity: 0.88;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic-cloud::before,
+      .entry-flow[data-state="confirm"] .entry-topic-cloud::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-radius: 50%;
+        filter: blur(11px);
+        transform-origin: center;
+        will-change: transform, opacity;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic-cloud::before {
+        width: 128px;
+        height: 36px;
+        background: rgba(178, 191, 198, 0.23);
+        box-shadow:
+          -92px 8px 0 5px rgba(145, 162, 172, 0.18),
+          -42px -18px 0 11px rgba(203, 210, 210, 0.16),
+          52px 15px 0 15px rgba(162, 178, 187, 0.19),
+          104px -9px 0 3px rgba(189, 198, 198, 0.13);
+        animation:
+          entry-cloud-stream-a var(--cloud-flow-duration) ease-in-out
+          var(--cloud-delay) infinite alternate;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic-cloud::after {
+        width: 92px;
+        height: 24px;
+        background: rgba(242, 237, 220, 0.16);
+        box-shadow:
+          -68px -7px 0 5px rgba(226, 222, 209, 0.12),
+          -24px 13px 0 9px rgba(235, 230, 214, 0.14),
+          48px -13px 0 8px rgba(224, 222, 212, 0.13),
+          78px 9px 0 2px rgba(230, 224, 208, 0.11);
+        animation:
+          entry-cloud-stream-b var(--cloud-flow-duration)
+          ease-in-out var(--cloud-delay) infinite alternate-reverse;
       }
       .entry-flow[data-state="confirm"] .entry-topic:nth-child(even) {
         text-align: center;
@@ -484,6 +606,28 @@
         opacity: 1;
         transform: translate(-50%, calc(-50% - 4px));
       }
+      .entry-flow[data-state="confirm"] .entry-topic:hover,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible {
+        animation-play-state: paused;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:hover .entry-topic-cloud,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible .entry-topic-cloud,
+      .entry-flow[data-state="confirm"] .entry-topic.is-selected .entry-topic-cloud {
+        opacity: 0.94;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:hover .entry-topic-cloud::before,
+      .entry-flow[data-state="confirm"] .entry-topic:hover .entry-topic-cloud::after,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible .entry-topic-cloud::before,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible .entry-topic-cloud::after,
+      .entry-flow[data-state="confirm"] .entry-topic:hover::before,
+      .entry-flow[data-state="confirm"] .entry-topic:hover::after,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible::before,
+      .entry-flow[data-state="confirm"] .entry-topic:focus-visible::after {
+        animation-play-state: paused;
+      }
+      .entry-flow[data-state="confirm"] .entry-topic:active {
+        transform: translate(-50%, calc(-50% - 1px)) scale(0.985);
+      }
       .entry-flow[data-state="confirm"] .entry-topic:hover::before,
       .entry-flow[data-state="confirm"] .entry-topic:focus-visible::before,
       .entry-flow[data-state="confirm"] .entry-topic.is-selected::before {
@@ -495,6 +639,50 @@
         text-shadow: 0 0 10px rgba(231, 201, 140, 0.66);
       }
       .entry-flow[data-state="confirm"] .entry-topic.is-selected b { color: var(--cream); }
+      @keyframes entry-topic-float {
+        from {
+          translate: var(--cloud-drift-x) var(--cloud-drift-y);
+        }
+        to {
+          translate: var(--cloud-return-x) var(--cloud-return-y);
+        }
+      }
+      @keyframes entry-cloud-body-a {
+        from { translate: -9px 3px; }
+        to { translate: 11px -4px; }
+      }
+      @keyframes entry-cloud-body-b {
+        from { translate: 8px -4px; }
+        to { translate: -10px 5px; }
+      }
+      @keyframes entry-cloud-stream-a {
+        0% {
+          opacity: 0.42;
+          transform: translate(-62%, -51%) rotate(-3deg) scale(0.88, 0.82);
+        }
+        55% {
+          opacity: 0.78;
+          transform: translate(-47%, -56%) rotate(1deg) scale(1.08, 1);
+        }
+        100% {
+          opacity: 0.48;
+          transform: translate(-36%, -46%) rotate(4deg) scale(0.94, 1.08);
+        }
+      }
+      @keyframes entry-cloud-stream-b {
+        0% {
+          opacity: 0.34;
+          transform: translate(-38%, -42%) rotate(3deg) scale(1.04, 0.9);
+        }
+        48% {
+          opacity: 0.66;
+          transform: translate(-56%, -52%) rotate(-2deg) scale(0.9, 1.08);
+        }
+        100% {
+          opacity: 0.4;
+          transform: translate(-68%, -58%) rotate(-5deg) scale(1.1, 0.94);
+        }
+      }
       .entry-confirm { width: min(860px, calc(100vw - 360px)); }
       .entry-confirm h1 {
         font-size: clamp(22px, 3.2vw, 44px);
@@ -3925,11 +4113,19 @@
           padding: 18px 22px 14px;
           text-align: center;
           transform: none;
+          animation: none;
         }
         .entry-flow[data-state="confirm"] .entry-topic:hover,
         .entry-flow[data-state="confirm"] .entry-topic:focus-visible,
         .entry-flow[data-state="confirm"] .entry-topic.is-selected {
           transform: translateY(-3px);
+        }
+        .entry-flow[data-state="confirm"] .entry-topic:active {
+          transform: scale(0.985);
+        }
+        .entry-flow[data-state="confirm"] .entry-topic-cloud {
+          inset: -18px -28px;
+          opacity: 0.56;
         }
         .entry-flow[data-state="confirm"] .entry-topic::before { transform: translate(-50%, -50%) scale(0.86); }
         .entry-flow[data-state="confirm"] .entry-topic::after { transform: translate(-50%, -50%) scale(0.82); }
@@ -4195,6 +4391,11 @@
       @media (prefers-reduced-motion: reduce) {
         .entry-flow, .entry-topic { transition: none !important; }
         .entry-spark,
+        .entry-flow[data-state="confirm"] .entry-topic,
+        .entry-flow[data-state="confirm"] .entry-topic::before,
+        .entry-flow[data-state="confirm"] .entry-topic::after,
+        .entry-flow[data-state="confirm"] .entry-topic-cloud::before,
+        .entry-flow[data-state="confirm"] .entry-topic-cloud::after,
         .entry-generation-signal i { animation: none !important; }
         #tip, .tip-cta, .tip-like, .verdict, .circle-chip, .focus-banner, .toast, .pcard, .peer-action, .observatory-controls, .observatory-control, .journey-actions, .journey-action, .persona-quick-entry, .persona-quick-portrait, .persona-deck-entry, .persona-deck-nav, .persona-deck-action, .explore-menu, .explore-toggle, .topic-picker-options, .topic-picker-chevron, .seg-btn, .gbtn, .cards-back, .guide-pick, .guide-quiz-btn, .guide-suggestion { transition: none !important; }
         .explore-nudge-line, .explore-nudge .ui-icon, .seg-btn.is-launching .view-glyph, .cards.is-entering, .cards.is-leaving { animation: none !important; }
@@ -5274,7 +5475,10 @@
         entryQuestion.textContent = preset.question;
         const entryMeta = document.createElement("small");
         entryMeta.textContent = `${preset.answerCount} 个代表观点 · ${preset.axis.left} ↔ ${preset.axis.right}`;
-        entryTopic.append(entrySerial, entryQuestion, entryMeta);
+        const entryCloud = document.createElement("span");
+        entryCloud.className = "entry-topic-cloud";
+        entryCloud.setAttribute("aria-hidden", "true");
+        entryTopic.append(entryCloud, entrySerial, entryQuestion, entryMeta);
         entryTopicsEl.appendChild(entryTopic);
       });
       const entryTopicEls = [...entryTopicsEl.querySelectorAll("[data-entry-preset]")];
