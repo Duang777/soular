@@ -3118,7 +3118,6 @@ textarea.field:focus-visible,
 }
 
 .draw-face__claim {
-  display: -webkit-box;
   box-sizing: border-box;
   width: 100%;
   margin-top: 6px;
@@ -3133,6 +3132,10 @@ textarea.field:focus-visible,
   box-shadow: inset 0 1px 0 rgba(243, 240, 233, 0.07);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
+}
+
+.draw-face__claim > span {
+  display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3582,6 +3585,9 @@ textarea.field:focus-visible,
     padding: 5px 9px;
     font-size: 9.5px;
     line-height: 1.45;
+  }
+
+  .draw-face__claim > span {
     -webkit-line-clamp: 3;
   }
 

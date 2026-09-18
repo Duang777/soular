@@ -240,7 +240,7 @@ assert.match(
 );
 assert.match(
   appCssSource,
-  /@media \(max-width: 560px\)[\s\S]*\.draw-face__interest > span \{[\s\S]*text-overflow: ellipsis;[\s\S]*white-space: nowrap;[\s\S]*\.draw-face__description \{[\s\S]*-webkit-line-clamp: 2;[\s\S]*\.draw-face__claim \{[\s\S]*-webkit-line-clamp: 3;/,
+  /\.draw-face__claim > span \{[\s\S]*overflow: hidden;[\s\S]*-webkit-line-clamp: 2;[\s\S]*@media \(max-width: 560px\)[\s\S]*\.draw-face__interest > span \{[\s\S]*text-overflow: ellipsis;[\s\S]*white-space: nowrap;[\s\S]*\.draw-face__description \{[\s\S]*-webkit-line-clamp: 2;[\s\S]*\.draw-face__claim > span \{[\s\S]*-webkit-line-clamp: 3;/,
   "mobile persona metadata must stay inside the card frame",
 );
 assert.match(
