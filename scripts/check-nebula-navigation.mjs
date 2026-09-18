@@ -242,6 +242,11 @@ assert.match(
 );
 assert.match(appSource, /path="\/" element=\{<Home \/>\}/, "首页必须保留人格卡与问题入口");
 assert.match(
+  homeSource,
+  /className="question-dock__landing" to="\/landing"/,
+  "首页必须保留品牌落地页入口",
+);
+assert.match(
   appSource,
   /const Landing = lazy\([\s\S]*path="\/landing"[\s\S]*<Suspense[\s\S]*<Landing \/>/,
   "品牌落地页必须保留独立公开路由并按需加载",
