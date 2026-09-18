@@ -248,8 +248,8 @@ assert.match(
 );
 assert.match(
   appSource,
-  /path="\/landing" element=\{<Landing \/>\}/,
-  "品牌落地页必须保留独立公开路由",
+  /const Landing = lazy\([\s\S]*path="\/landing"[\s\S]*<Suspense[\s\S]*<Landing \/>/,
+  "品牌落地页必须保留独立公开路由并按需加载",
 );
 assert.match(
   appSource,
@@ -275,6 +275,16 @@ assert.match(
   landingSource,
   /<Link className="landing-cta" to="\/">[\s\S]*进入思想银河/,
   "品牌落地页主操作必须进入现有首页流程",
+);
+assert.match(
+  landingSource,
+  /prefers-reduced-motion: reduce[\s\S]*reducedMotion \?[\s\S]*threeui-background/,
+  "品牌落地页必须在减少动态效果模式下使用静态背景",
+);
+assert.match(
+  landingSource,
+  /class SceneErrorBoundary[\s\S]*getDerivedStateFromError[\s\S]*<StructureFlowCollection/,
+  "品牌落地页动画失败时必须保留静态背景",
 );
 assert.match(
   oauthAccountSource,

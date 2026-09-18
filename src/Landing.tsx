@@ -1,3 +1,9 @@
+import {
+  Component,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link } from "react-router-dom";
 import {
   StructureFlowCollection,
@@ -5,17 +11,57 @@ import {
 } from "@designcodeio/threeui";
 import "@designcodeio/threeui/style.css";
 
+class SceneErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed
+      ? <div className="threeui-background" />
+      : this.props.children;
+  }
+}
+
+function useReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return reducedMotion;
+}
+
 export function Scene() {
+  const reducedMotion = useReducedMotion();
+
   return (
     <div className="shader-frame">
-      <StructureFlowCollection
-        variant="structure-flow"
-        speed={1.00}
-        pointSize={0.080}
-        opacity={0.40}
-        maskStart={0.20}
-        maskSolid={0.50}
-      />
+      {reducedMotion ? (
+        <div className="threeui-background" />
+      ) : (
+        <SceneErrorBoundary>
+          <StructureFlowCollection
+            variant="structure-flow"
+            speed={1.00}
+            pointSize={0.080}
+            opacity={0.40}
+            maskStart={0.20}
+            maskSolid={0.50}
+          />
+        </SceneErrorBoundary>
+      )}
     </div>
   );
 }
@@ -23,13 +69,15 @@ export function Scene() {
 export function WordmarkScene() {
   return (
     <div className="shader-frame">
-      <TextAnimationCollection
-        variant="particle-wordmark"
-        mode="dark"
-        hue={0}
-        saturation={1.00}
-        brightness={1.00}
-      />
+      <SceneErrorBoundary>
+        <TextAnimationCollection
+          variant="particle-wordmark"
+          mode="dark"
+          hue={0}
+          saturation={1.00}
+          brightness={1.00}
+        />
+      </SceneErrorBoundary>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -7,13 +8,15 @@ import {
   type Location,
 } from "react-router-dom";
 import { Home } from "./Home";
-import { Landing } from "./Landing";
 import { LoginGate } from "./LoginGate";
 import { MatchRevealPage } from "./MatchReveal";
 import { Nebula } from "./Nebula";
 import { ShelfPage } from "./Shelf";
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+const Landing = lazy(() =>
+  import("./Landing").then((module) => ({ default: module.Landing }))
+);
 
 function backgroundLocationFromState(state: unknown): Location | null {
   if (!state || typeof state !== "object" || Array.isArray(state)) return null;
@@ -41,7 +44,14 @@ function AppRoutes() {
       >
         <Routes location={backgroundLocation ?? location}>
           <Route path="/" element={<Home />} />
-          <Route path="/landing" element={<Landing />} />
+          <Route
+            path="/landing"
+            element={(
+              <Suspense fallback={<div className="landing-root" aria-busy="true" />}>
+                <Landing />
+              </Suspense>
+            )}
+          />
           <Route path="/nebula" element={<Nebula active={!backgroundLocation} />} />
           <Route path="/match" element={<MatchRevealPage />} />
           <Route path="/shelf/:cast" element={<ShelfPage />} />
