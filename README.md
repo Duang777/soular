@@ -9,13 +9,21 @@
   沿着光谱阅读、表态和比较，找到自己在讨论中的坐标，也找到与你同频的人。
 </p>
 
-<p align="center">
-  <a href="https://soular.top/"><strong>在线体验</strong></a> ·
-  <a href="https://soular.top/landing">了解思想银河</a> ·
-  <a href="https://soular.top/nebula?preset=ai-math">探索真实热点</a> ·
-  <a href="https://duang777.github.io/soular/">静态镜像</a> ·
-  <a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">产品方案</a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><a href="https://soular.top/"><strong>🌐 在线体验</strong></a></td>
+    <td align="center" width="14">·</td>
+    <td align="center"><a href="https://soular.top/landing">🚀 了解 Soular</a></td>
+    <td align="center" width="14">·</td>
+    <td align="center"><a href="https://soular.top/nebula?preset=ai-math">🌌 真实热点</a></td>
+    <td align="center" width="14">·</td>
+    <td align="center"><a href="https://duang777.github.io/soular/">📖 镜像</a></td>
+    <td align="center" width="14">·</td>
+    <td align="center"><a href="./product-manual/soular-product-manual.pdf">📘 产品手册</a></td>
+    <td align="center" width="14">·</td>
+    <td align="center"><a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">📝 产品方案</a></td>
+  </tr>
+</table>
 
 <p align="center"><code>React 19</code> · <code>TypeScript</code> · <code>Three.js</code> · <code>Cloudflare Workers</code></p>
 
@@ -33,9 +41,44 @@
 | 品牌介绍 | [了解思想银河](https://soular.top/landing) | 了解产品定位、探索路径与开源信息 |
 | 真实热点星云 | [AI 是否正在毁掉数学？](https://soular.top/nebula?preset=ai-math) | 31 位真实回答者组成的观点光谱 |
 | 静态镜像 | [GitHub Pages](https://duang777.github.io/soular/) | 浏览首页，进入内容时前往正式站登录 |
+| 产品手册 | [soular-product-manual.pdf](./product-manual/soular-product-manual.pdf) | 知乎风格 PDF 手册，含算法细节 |
 | 开源仓库 | [Duang777/soular](https://github.com/Duang777/soular) | 源码、产品规格与开发文档 |
 
 首页目前列出 7 个问题入口，包含 6 个真实讨论和 1 个示例问题，共 274 个观点坐标。
+
+<details open>
+<summary><strong>📘 产品手册 · 已发布 PDF</strong></summary>
+
+<br />
+
+<table>
+  <tr>
+    <td width="200" align="center" valign="top" style="padding:8px 12px;">
+      <a href="./product-manual/soular-product-manual.pdf"><img src="https://raw.githubusercontent.com/Duang777/soular/main/docs/images/manual-cover.png" alt="产品手册封面" width="170" style="border:1px solid #e1e4e8; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.08);" /></a>
+    </td>
+    <td valign="middle" style="padding:8px 12px;">
+      <strong style="font-size:20px;">思想银河</strong>
+      <span style="color:#888; font-size:13px; margin-left:6px;">Soular · 产品手册 v1.0</span>
+      <p style="color:#aaa; font-size:12px; margin:2px 0 10px 0;">12 页 A4 · 知乎风格 · 含算法细节</p>
+      <strong style="font-size:14px;">手册内容</strong>
+      <ul style="margin:4px 0 0 0; padding-left:18px; font-size:13px; line-height:1.7;">
+        <li>产品简介与核心体验</li>
+        <li>观点星云的坐标映射算法（三步公式）</li>
+        <li>人格匹配权重与星位计算</li>
+        <li>数据生产管线与内容安全</li>
+        <li>技术架构与开源参与</li>
+      </ul>
+      <p style="margin:14px 0 0 0;">
+        <a href="./product-manual/soular-product-manual.pdf" style="background:#1772f6; color:#fff; padding:7px 18px; border-radius:4px; text-decoration:none; font-size:14px; font-weight:500;">⬇ 下载 PDF</a>
+        <a href="./product-manual/soular-product-manual.html" style="margin-left:10px; color:#1772f6; font-size:14px;">在线 HTML 预览 →</a>
+      </p>
+    </td>
+  </tr>
+</table>
+
+</details>
+
+## 一次完整体验
 
 ## 从一个问题出发
 
