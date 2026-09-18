@@ -40,23 +40,24 @@
 
 <table>
   <tr>
-    <td width="220" align="center" valign="middle">
-      <strong style="font-size:18px;">思想银河</strong><br />
-      <sub style="color:#888;">Soular · 产品手册 v1.0</sub><br /><br />
-      <sub style="color:#aaa;">12 页 A4 · 知乎风格</sub>
+    <td width="200" align="center" valign="top" style="padding:8px 12px;">
+      <a href="./product-manual/soular-product-manual.pdf"><img src="./docs/images/manual-cover.png" alt="产品手册封面" width="170" style="border:1px solid #e1e4e8; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.08);" /></a>
     </td>
-    <td valign="middle">
-      <strong>手册内容</strong>
-      <ul style="margin:6px 0 0 0; padding-left:18px; font-size:14px;">
+    <td valign="middle" style="padding:8px 12px;">
+      <strong style="font-size:20px;">思想银河</strong>
+      <span style="color:#888; font-size:13px; margin-left:6px;">Soular · 产品手册 v1.0</span>
+      <p style="color:#aaa; font-size:12px; margin:2px 0 10px 0;">12 页 A4 · 知乎风格 · 含算法细节</p>
+      <strong style="font-size:14px;">手册内容</strong>
+      <ul style="margin:4px 0 0 0; padding-left:18px; font-size:13px; line-height:1.7;">
         <li>产品简介与核心体验</li>
         <li>观点星云的坐标映射算法（三步公式）</li>
         <li>人格匹配权重与星位计算</li>
         <li>数据生产管线与内容安全</li>
         <li>技术架构与开源参与</li>
       </ul>
-      <p style="margin:10px 0 0 0;">
-        <a href="./product-manual/soular-product-manual.pdf" style="background:#1772f6; color:#fff; padding:6px 16px; border-radius:4px; text-decoration:none; font-size:14px;">⬇ 下载 PDF</a>
-        <a href="./product-manual/soular-product-manual.html" style="margin-left:8px; color:#1772f6; font-size:14px;">在线 HTML 预览 →</a>
+      <p style="margin:14px 0 0 0;">
+        <a href="./product-manual/soular-product-manual.pdf" style="background:#1772f6; color:#fff; padding:7px 18px; border-radius:4px; text-decoration:none; font-size:14px; font-weight:500;">⬇ 下载 PDF</a>
+        <a href="./product-manual/soular-product-manual.html" style="margin-left:10px; color:#1772f6; font-size:14px;">在线 HTML 预览 →</a>
       </p>
     </td>
   </tr>
