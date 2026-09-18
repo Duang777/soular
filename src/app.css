@@ -5624,6 +5624,51 @@ textarea.field:focus-visible,
   }
 }
 
+@media (max-height: 560px) and (orientation: landscape) {
+  .soular-opening__header {
+    min-height: 58px;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  .soular-opening__story {
+    inset: 58px 24px 52px;
+  }
+
+  .soular-opening__story > .soular-opening__particle-caption {
+    top: calc(50% + 72px);
+  }
+
+  .soular-opening__reveal > img {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 6px;
+  }
+
+  .soular-opening__reveal > p {
+    margin-bottom: 6px;
+    font-size: 9px;
+  }
+
+  .soular-opening__reveal h2 {
+    font-size: 40px;
+  }
+
+  .soular-opening__reveal > span {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+
+  .soular-opening__reveal button {
+    min-height: 44px;
+    margin-top: 12px;
+  }
+
+  .soular-opening__footer {
+    min-height: 52px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .soular-opening,
   .soular-opening__story > div,

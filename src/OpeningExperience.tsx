@@ -11,6 +11,8 @@ import { asset } from "./cast";
 const OPENING_STORAGE_KEY = "soular:opening:zhihu-nebula:v1";
 const OPENING_DURATION_MS = 8_400;
 const EXIT_DURATION_MS = 620;
+const RESIZE_DEBOUNCE_MS = 120;
+const MAX_CANVAS_PIXELS = 4_000_000;
 
 type OpeningPhase = "zhihu" | "soular" | "partnership" | "reveal";
 type OpeningVisibility = "active" | "exiting" | "done";
@@ -68,24 +70,31 @@ function sampleWordmark({
   step: number;
 }): Point[] {
   const mask = document.createElement("canvas");
+  const maskHeight = Math.min(height, Math.ceil(fontSize * 1.5));
   mask.width = width;
-  mask.height = height;
+  mask.height = maskHeight;
   const context = mask.getContext("2d", { willReadFrequently: true });
   if (!context) return [];
 
-  context.clearRect(0, 0, width, height);
+  context.clearRect(0, 0, width, maskHeight);
   context.fillStyle = "#ffffff";
   context.font = `700 ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(text, width * 0.5, height * 0.48);
+  context.fillText(text, width * 0.5, maskHeight * 0.5);
 
-  const pixels = context.getImageData(0, 0, width, height).data;
+  let pixels: Uint8ClampedArray;
+  try {
+    pixels = context.getImageData(0, 0, width, maskHeight).data;
+  } catch {
+    return [];
+  }
   const points: Point[] = [];
-  for (let y = 0; y < height; y += step) {
+  const targetOffsetY = height * 0.48 - maskHeight * 0.5;
+  for (let y = 0; y < maskHeight; y += step) {
     for (let x = 0; x < width; x += step) {
       const alphaIndex = (y * width + x) * 4 + 3;
-      if (pixels[alphaIndex] > 96) points.push({ x, y });
+      if (pixels[alphaIndex] > 96) points.push({ x, y: y + targetOffsetY });
     }
   }
   return points;
@@ -322,7 +331,24 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   const skipRef = useRef<HTMLButtonElement>(null);
   const finishedRef = useRef(false);
   const completionTimerRef = useRef<number | null>(null);
-  const openingVisible = visibility !== "done";
+  const locationKey = `${location.pathname}\n${location.search}`;
+  const previousLocationRef = useRef({
+    key: locationKey,
+    pathname: location.pathname,
+  });
+  const explicitReplay = new URLSearchParams(location.search).get("intro") === "1";
+  const locationChanged = previousLocationRef.current.key !== locationKey;
+  const routeRestartPending = locationChanged &&
+    canShowOpening(location.pathname, location.search) &&
+    (previousLocationRef.current.pathname === "/landing" || explicitReplay);
+  const openingActive = visibility === "active" || routeRestartPending;
+  const openingVisible = visibility !== "done" || routeRestartPending;
+
+  const clearCompletionTimer = useCallback(() => {
+    if (completionTimerRef.current === null) return;
+    window.clearTimeout(completionTimerRef.current);
+    completionTimerRef.current = null;
+  }, []);
 
   const finish = useCallback(() => {
     if (finishedRef.current) return;
@@ -333,19 +359,60 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
       // 会话存储不可用时仍允许进入首页。
     }
     setVisibility("exiting");
+    clearCompletionTimer();
     completionTimerRef.current = window.setTimeout(() => {
+      completionTimerRef.current = null;
       setVisibility("done");
     }, EXIT_DURATION_MS);
-  }, []);
+  }, [clearCompletionTimer]);
+
+  useEffect(() => {
+    if (!locationChanged) return;
+    const previousPathname = previousLocationRef.current.pathname;
+    previousLocationRef.current = {
+      key: locationKey,
+      pathname: location.pathname,
+    };
+
+    if (!canShowOpening(location.pathname, location.search)) {
+      clearCompletionTimer();
+      finishedRef.current = false;
+      setPhase("zhihu");
+      setVisibility("done");
+      return;
+    }
+
+    if (previousPathname !== "/landing" && !explicitReplay) return;
+
+    clearCompletionTimer();
+    finishedRef.current = false;
+    setPhase("zhihu");
+    setVisibility("active");
+  }, [
+    clearCompletionTimer,
+    explicitReplay,
+    location.pathname,
+    location.search,
+    locationChanged,
+    locationKey,
+  ]);
 
   useEffect(() => {
     if (!openingVisible) return undefined;
     skipRef.current?.focus();
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") finish();
     };
+    const onMotionPreferenceChange = (event: MediaQueryListEvent) => {
+      if (event.matches) finish();
+    };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    motionPreference.addEventListener("change", onMotionPreferenceChange);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      motionPreference.removeEventListener("change", onMotionPreferenceChange);
+    };
   }, [finish, openingVisible]);
 
   useEffect(() => {
@@ -364,7 +431,13 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) {
-      finish();
+      try {
+        window.sessionStorage.setItem(OPENING_STORAGE_KEY, "seen");
+      } catch {
+        // 会话存储不可用时仍直接放行首页。
+      }
+      finishedRef.current = true;
+      setVisibility("done");
       return undefined;
     }
 
@@ -372,12 +445,18 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     let width = 0;
     let height = 0;
     let particles: Particle[] = [];
+    let resizeTimer = 0;
     const startedAt = performance.now();
 
     const resize = () => {
       width = Math.max(1, window.innerWidth);
       height = Math.max(1, window.innerHeight);
-      const deviceScale = Math.min(window.devicePixelRatio || 1, 1.75);
+      const pixelBudgetScale = Math.sqrt(MAX_CANVAS_PIXELS / (width * height));
+      const deviceScale = Math.min(
+        window.devicePixelRatio || 1,
+        1.75,
+        Math.max(0.75, pixelBudgetScale),
+      );
       canvas.width = Math.round(width * deviceScale);
       canvas.height = Math.round(height * deviceScale);
       canvas.style.width = `${width}px`;
@@ -387,6 +466,11 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
       particles = createParticles({ count: particleCount, width, height });
     };
 
+    const scheduleResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(resize, RESIZE_DEBOUNCE_MS);
+    };
+
     const render = (now: number) => {
       const progress = clamp((now - startedAt) / OPENING_DURATION_MS);
       drawFrame(context, width, height, particles, progress);
@@ -394,19 +478,16 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     };
 
     resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", scheduleResize);
     animationFrame = window.requestAnimationFrame(render);
     return () => {
       window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("resize", resize);
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", scheduleResize);
     };
   }, [finish, visibility]);
 
-  useEffect(() => () => {
-    if (completionTimerRef.current !== null) {
-      window.clearTimeout(completionTimerRef.current);
-    }
-  }, []);
+  useEffect(() => clearCompletionTimer, [clearCompletionTimer]);
 
   return (
     <>
@@ -415,7 +496,7 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
         aria-hidden={openingVisible ? true : undefined}
         inert={openingVisible ? true : undefined}
       >
-        {visibility === "active" ? null : children}
+        {openingActive ? null : children}
       </div>
       {openingVisible ? (
         <section

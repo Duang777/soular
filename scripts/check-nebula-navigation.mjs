@@ -274,6 +274,16 @@ assert.match(
 );
 assert.match(
   openingSource,
+  /previousPathname !== "\/landing"[\s\S]*explicitReplay[\s\S]*setVisibility\("active"\)/,
+  "落地页进入首页与显式重播必须重新启动开场",
+);
+assert.match(
+  openingSource,
+  /motionPreference\.addEventListener\("change", onMotionPreferenceChange\)[\s\S]*motionPreference\.removeEventListener\("change", onMotionPreferenceChange\)/,
+  "开场运行期间必须响应减少动态效果偏好变化",
+);
+assert.match(
+  openingSource,
   /event\.key === "Escape"[\s\S]*跳过开场[\s\S]*进入思想银河/,
   "开场动画必须提供键盘退出、跳过与明确进入动作",
 );
