@@ -9,13 +9,19 @@
   沿着光谱阅读、点赞和比较，最后找到自己在讨论中的坐标。
 </p>
 
-<p align="center">
-  <a href="https://soular.top/"><strong>soular.top</strong></a> ·
-  <a href="https://soular.top/nebula?preset=ai-math">探索真实热点</a> ·
-  <a href="https://duang777.github.io/soular/">GitHub Pages</a> ·
-  <a href="./product-manual/soular-product-manual.pdf">产品手册 PDF</a> ·
-  <a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">产品方案</a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><a href="https://soular.top/"><strong>🌐 soular.top</strong></a></td>
+    <td align="center" width="16">·</td>
+    <td align="center"><a href="https://soular.top/nebula?preset=ai-math">🌌 真实热点</a></td>
+    <td align="center" width="16">·</td>
+    <td align="center"><a href="https://duang777.github.io/soular/">📖 镜像</a></td>
+    <td align="center" width="16">·</td>
+    <td align="center"><a href="./product-manual/soular-product-manual.pdf">📘 产品手册</a></td>
+    <td align="center" width="16">·</td>
+    <td align="center"><a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">📝 产品方案</a></td>
+  </tr>
+</table>
 
 <p align="center"><code>React 19</code> · <code>TypeScript</code> · <code>Three.js</code></p>
 
