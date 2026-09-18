@@ -47,7 +47,7 @@
 <table>
   <tr>
     <td width="200" align="center" valign="top" style="padding:8px 12px;">
-      <a href="./product-manual/soular-product-manual.pdf"><img src="./docs/images/manual-cover.png" alt="产品手册封面" width="170" style="border:1px solid #e1e4e8; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.08);" /></a>
+      <a href="./product-manual/soular-product-manual.pdf"><img src="https://raw.githubusercontent.com/Duang777/soular/codex/nebula-primary-flow/docs/images/manual-cover.png" alt="产品手册封面" width="170" style="border:1px solid #e1e4e8; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.08);" /></a>
     </td>
     <td valign="middle" style="padding:8px 12px;">
       <strong style="font-size:20px;">思想银河</strong>
