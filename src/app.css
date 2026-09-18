@@ -4541,7 +4541,11 @@ textarea.field:focus-visible,
   color: #f7f7f4;
   background: var(--landing-black);
   scroll-behavior: smooth;
-  scrollbar-color: rgba(255, 255, 255, 0.3) var(--landing-black);
+  scrollbar-width: none;
+}
+
+.landing-root::-webkit-scrollbar {
+  display: none;
 }
 
 .landing-root *,
