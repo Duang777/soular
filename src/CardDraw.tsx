@@ -632,8 +632,9 @@ export function CardDraw({
                 </figure>
               )}
               <div className={`draw-face__meta${person ? " draw-face__meta--person" : ""}`}>
-                <span className="draw-face__volume">{person ? `${cast.volume} · ${cast.name}` : cast.volume}</span>
-                <strong className="draw-face__name">{personName}</strong>
+                <span className="draw-face__volume">{cast.volume}</span>
+                <strong className="draw-face__name">{cast.name}</strong>
+                {person && <span className="draw-face__subject">{personName}</span>}
                 <span className="draw-face__role">{cast.role}</span>
                 {cast.description && !person && (
                   <span className="draw-face__description">{cast.description}</span>

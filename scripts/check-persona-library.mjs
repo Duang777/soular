@@ -203,6 +203,7 @@ assert.deepEqual(
 
 const [
   cardDrawSource,
+  appCssSource,
   matchRevealSource,
   personaThemeSource,
   shelfPageSource,
@@ -210,6 +211,7 @@ const [
   nebulaSceneSource,
 ] = await Promise.all([
   readFile(join(root, "src/CardDraw.tsx"), "utf8"),
+  readFile(join(root, "src/app.css"), "utf8"),
   readFile(join(root, "src/MatchReveal.tsx"), "utf8"),
   readFile(join(root, "src/personaTheme.ts"), "utf8"),
   readFile(join(root, "src/Shelf.tsx"), "utf8"),
@@ -225,6 +227,21 @@ assert.match(
   cardDrawSource,
   /const SHUFFLE_MS = 900;[\s\S]*const FLIP_MS = 480;[\s\S]*const ENTER_BOOK_MS = 480;/,
   "persona card transitions must stay within the page response budget",
+);
+assert.match(
+  cardDrawSource,
+  /draw-face__volume">\{cast\.volume\}[\s\S]*draw-face__name">\{cast\.name\}[\s\S]*person && <span className="draw-face__subject">\{personName\}/,
+  "person cards must present the persona name before the account name",
+);
+assert.match(
+  appCssSource,
+  /\.draw-card \{\s*width: clamp\(216px, 36vmin, 312px\);[\s\S]*\.draw-face__name \{[\s\S]*white-space: nowrap;/,
+  "persona cards must keep their title visible from mobile through tablet widths",
+);
+assert.match(
+  appCssSource,
+  /@media \(max-width: 560px\)[\s\S]*\.draw-face__interest > span \{[\s\S]*text-overflow: ellipsis;[\s\S]*white-space: nowrap;[\s\S]*\.draw-face__description \{[\s\S]*-webkit-line-clamp: 2;[\s\S]*\.draw-face__claim \{[\s\S]*-webkit-line-clamp: 3;/,
+  "mobile persona metadata must stay inside the card frame",
 );
 assert.match(
   personaThemeSource,
