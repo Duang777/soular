@@ -7571,7 +7571,7 @@
             personaUnlocked() ? "查看我的人格卡 →" : `再赞同 ${remaining} 个观点解锁`,
           );
           button.type = "button";
-          button.dataset.go = "self";
+          button.dataset.openPerson = "";
           button.disabled = !personaUnlocked();
           actions.appendChild(button);
           appendAvatarRecovery(actions, u);

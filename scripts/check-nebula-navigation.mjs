@@ -314,8 +314,18 @@ assert.match(
 );
 assert.match(
   loginGateSource,
-  /state !== "authorized" && protectedLocation[\s\S]*<Navigate to="\/\?login=required" replace \/>/,
-  "未登录进入产品内容时必须回到首页登录提示",
+  /anonymousAccess = state === "anonymous"[\s\S]*accessGranted = state === "authorized" \|\| anonymousAccess[\s\S]*!isOfficialOrigin \|\| anonymousAccess[\s\S]*continueAnonymously[\s\S]*setState\("anonymous"\)[\s\S]*!accessGranted && protectedLocation[\s\S]*onClose=\{continueAnonymously\}/,
+  "关闭登录提示后必须在当前标签页允许匿名进入产品内容",
+);
+assert.doesNotMatch(
+  loginGateSource,
+  /state === "checking" && protectedLocation/,
+  "登录状态检查期间也必须允许用户立即关闭提示进入匿名体验",
+);
+assert.match(
+  source,
+  /personaUnlocked\(\) \? "查看我的人格卡 →"[\s\S]*button\.dataset\.openPerson = ""/,
+  "我的星位浮层必须复用现有的人格卡点击委托",
 );
 assert.match(
   landingSource,

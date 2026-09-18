@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   fetchZhihuAccountStatus,
   setActiveZhihuAccountVersion,
@@ -14,7 +14,12 @@ import {
 const OFFICIAL_ORIGIN = "https://soular.top";
 const PUBLIC_PATHS = new Set(["/", "/landing"]);
 
-type GateState = "checking" | "authorized" | "required" | "unavailable";
+type GateState =
+  | "checking"
+  | "authorized"
+  | "anonymous"
+  | "required"
+  | "unavailable";
 
 function LoginPrompt({
   state,
@@ -50,15 +55,15 @@ function LoginPrompt({
       <button
         className="login-gate__close"
         type="button"
-        aria-label="关闭登录提示"
+        aria-label="暂不登录，进入匿名体验"
         onClick={() => dialogRef.current?.close()}
       >
         ×
       </button>
       <section className="login-gate__panel">
-        <p className="login-gate__eyebrow">ZHIHU ACCOUNT · REQUIRED</p>
-        <h1 id="login-gate-title">登录知乎，继续探索</h1>
-        <p>用你的知乎公开兴趣校准星谱，再进入观点、人格与匹配内容。</p>
+        <p className="login-gate__eyebrow">ZHIHU ACCOUNT · OPTIONAL</p>
+        <h1 id="login-gate-title">登录知乎，校准你的星谱</h1>
+        <p>登录后会加入公开兴趣画像；关闭窗口也可以直接匿名进入。</p>
         {state === "checking" ? (
           <div className="login-gate__status" role="status" aria-live="polite">
             正在确认登录状态…
@@ -94,6 +99,8 @@ export function LoginGate({ children }: { children: ReactNode }) {
   const searchParams = new URLSearchParams(location.search);
   const loginFailed = searchParams.get("oauth") === "error";
   const promptOpen = searchParams.get("login") === "required" || loginFailed;
+  const anonymousAccess = state === "anonymous";
+  const accessGranted = state === "authorized" || anonymousAccess;
   const protectedLocation = !PUBLIC_PATHS.has(location.pathname) ||
     (
       location.pathname === "/" &&
@@ -116,7 +123,9 @@ export function LoginGate({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (bypassedForDevelopment || !isOfficialOrigin) return undefined;
+    if (bypassedForDevelopment || !isOfficialOrigin || anonymousAccess) {
+      return undefined;
+    }
     let controller = new AbortController();
     const refresh = () => {
       controller.abort();
@@ -134,26 +143,34 @@ export function LoginGate({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [bypassedForDevelopment, checkAccount, isOfficialOrigin, retry]);
+  }, [anonymousAccess, bypassedForDevelopment, checkAccount, isOfficialOrigin, retry]);
 
   useEffect(() => {
     if (state === "authorized" && promptOpen) navigate("/", { replace: true });
   }, [navigate, promptOpen, state]);
 
-  if (state === "checking" && protectedLocation) {
-    return (
-      <div className="login-gate__status login-gate__status--page">
-        正在确认登录状态…
-      </div>
-    );
-  }
-  if (state !== "authorized" && protectedLocation) {
-    return <Navigate to="/?login=required" replace />;
-  }
-
   const loginHref = isOfficialOrigin
     ? "/api/oauth/start"
     : `${OFFICIAL_ORIGIN}/api/oauth/start`;
+  const continueAnonymously = () => {
+    setState("anonymous");
+    if (promptOpen) navigate("/", { replace: true });
+  };
+
+  if (!accessGranted && protectedLocation) {
+    return (
+      <LoginPrompt
+        state={state}
+        loginFailed={loginFailed}
+        loginHref={loginHref}
+        onClose={continueAnonymously}
+        onRetry={() => {
+          setState("checking");
+          setRetry((value) => value + 1);
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -163,7 +180,7 @@ export function LoginGate({ children }: { children: ReactNode }) {
           state={state}
           loginFailed={loginFailed}
           loginHref={loginHref}
-          onClose={() => navigate("/", { replace: true })}
+          onClose={continueAnonymously}
           onRetry={() => {
             setState("checking");
             setRetry((value) => value + 1);
