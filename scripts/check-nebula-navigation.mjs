@@ -279,8 +279,8 @@ assert.match(
 );
 assert.match(
   openingSource,
-  /function sampleWordmark[\s\S]*text: "知乎"[\s\S]*text: "思想银河"[\s\S]*createParticles\(\{ count: particleCount, width, height \}\)/,
-  "开场动画必须由画布粒子依次渲染知乎与思想银河字形",
+  /function sampleWordmark[\s\S]*text: "知乎"[\s\S]*text: "思想银河"[\s\S]*text: "知乎 × 思想银河"[\s\S]*createParticles\(\{ count: particleCount, width, height \}\)/,
+  "开场动画必须由画布粒子依次渲染知乎、思想银河与联名字形",
 );
 assert.match(
   loginGateSource,

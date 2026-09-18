@@ -5396,7 +5396,7 @@ textarea.field:focus-visible,
 
 .soular-opening[data-phase="zhihu"] .soular-opening__particle-caption--zhihu,
 .soular-opening[data-phase="soular"] .soular-opening__particle-caption--soular,
-.soular-opening[data-phase="galaxy"] .soular-opening__particle-caption--galaxy,
+.soular-opening[data-phase="partnership"] .soular-opening__particle-caption--partnership,
 .soular-opening[data-phase="reveal"] .soular-opening__reveal {
   visibility: visible;
   pointer-events: auto;
@@ -5406,7 +5406,7 @@ textarea.field:focus-visible,
 
 .soular-opening[data-phase="zhihu"] .soular-opening__particle-caption--zhihu,
 .soular-opening[data-phase="soular"] .soular-opening__particle-caption--soular,
-.soular-opening[data-phase="galaxy"] .soular-opening__particle-caption--galaxy {
+.soular-opening[data-phase="partnership"] .soular-opening__particle-caption--partnership {
   transform: translate(-50%, 0);
 }
 
