@@ -107,7 +107,7 @@ function drawFrame(
     context.globalAlpha = 1;
   }
 
-  const maxRadius = Math.min(width * 0.44, height * 0.48);
+  const maxRadius = Math.min(width * 0.5, height * 0.54);
   particles.forEach((particle, index) => {
     const startX = particle.startX * width;
     const startY = particle.startY * height;
@@ -285,7 +285,7 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
-      const particleCount = width < 600 ? 150 : 260;
+      const particleCount = width < 600 ? 190 : 340;
       particles = createParticles(particleCount);
     };
 

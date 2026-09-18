@@ -5402,11 +5402,11 @@ textarea.field:focus-visible,
 .soular-opening__zhihu-lockup > span {
   display: grid;
   place-items: center;
-  width: 92px;
-  height: 92px;
+  width: 108px;
+  height: 108px;
   color: #fff;
   background: #1772f6;
-  font-size: 54px;
+  font-size: 62px;
   font-weight: 700;
   box-shadow:
     0 0 0 1px rgba(105, 165, 255, 0.42),
@@ -5415,7 +5415,7 @@ textarea.field:focus-visible,
 
 .soular-opening__zhihu-lockup > b {
   color: #fff;
-  font-size: 54px;
+  font-size: 62px;
   font-weight: 700;
 }
 
@@ -5430,7 +5430,7 @@ textarea.field:focus-visible,
   margin: 0;
   color: #f3f0e9;
   font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
-  font-size: 52px;
+  font-size: 60px;
   font-weight: 700;
   line-height: 1.35;
 }
@@ -5479,7 +5479,7 @@ textarea.field:focus-visible,
 .soular-opening__galaxy-copy strong {
   color: #f3f0e9;
   font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
-  font-size: 44px;
+  font-size: 52px;
   font-weight: 700;
   line-height: 1.4;
 }
@@ -5490,9 +5490,9 @@ textarea.field:focus-visible,
 }
 
 .soular-opening__reveal > img {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 18px;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 20px;
   box-shadow: 0 0 54px rgba(23, 114, 246, 0.2);
 }
 
@@ -5504,7 +5504,7 @@ textarea.field:focus-visible,
   margin: 0;
   color: #f3f0e9;
   font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
-  font-size: 64px;
+  font-size: 74px;
   line-height: 1.2;
 }
 
@@ -5619,13 +5619,13 @@ textarea.field:focus-visible,
   }
 
   .soular-opening__zhihu-lockup > span {
-    width: 68px;
-    height: 68px;
-    font-size: 40px;
+    width: 76px;
+    height: 76px;
+    font-size: 44px;
   }
 
   .soular-opening__zhihu-lockup > b {
-    font-size: 40px;
+    font-size: 44px;
   }
 
   .soular-opening__question h1 {
@@ -5645,17 +5645,17 @@ textarea.field:focus-visible,
   }
 
   .soular-opening__galaxy-copy strong {
-    font-size: 34px;
+    font-size: 38px;
   }
 
   .soular-opening__reveal > img {
-    width: 58px;
-    height: 58px;
-    margin-bottom: 14px;
+    width: 66px;
+    height: 66px;
+    margin-bottom: 16px;
   }
 
   .soular-opening__reveal h2 {
-    font-size: 46px;
+    font-size: 52px;
   }
 
   .soular-opening__reveal > span {
@@ -5704,7 +5704,7 @@ textarea.field:focus-visible,
   }
 
   .soular-opening__reveal h2 {
-    font-size: 42px;
+    font-size: 46px;
   }
 }
 
