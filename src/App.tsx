@@ -7,6 +7,7 @@ import {
   type Location,
 } from "react-router-dom";
 import { Home } from "./Home";
+import { Landing } from "./Landing";
 import { LoginGate } from "./LoginGate";
 import { MatchRevealPage } from "./MatchReveal";
 import { Nebula } from "./Nebula";
@@ -40,6 +41,7 @@ function AppRoutes() {
       >
         <Routes location={backgroundLocation ?? location}>
           <Route path="/" element={<Home />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/nebula" element={<Nebula active={!backgroundLocation} />} />
           <Route path="/match" element={<MatchRevealPage />} />
           <Route path="/shelf/:cast" element={<ShelfPage />} />

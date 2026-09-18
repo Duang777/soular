@@ -162,6 +162,15 @@ npm run dev
 http://localhost:4325/nebula?preset=ai-math
 ```
 
+品牌落地页位于：
+
+```text
+http://localhost:4325/landing
+```
+
+首屏使用 ThreeUI Structure Flow 粒子场，页面末尾以独立收尾页展示 `Soular`
+Particle Wordmark 动画和 GitHub 入口。
+
 需要调试 Worker 时，再安装服务端依赖并启动本地服务：
 
 ```bash
@@ -191,7 +200,8 @@ npm run server:dev
 
 ```text
 .
-├── src/                          # React 路由、应用外壳、人格卡与共同思想地图
+├── src/                          # React 路由、落地页、应用外壳、人格卡与共同思想地图
+│   └── shaders/                 # ThreeUI 注册源码与本地导入入口
 ├── public/
 │   ├── persona-library.js        # 主题人格库、稳定槽位与素材记录
 │   ├── brand/                    # Logo、站点图标与品牌资产

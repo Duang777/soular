@@ -17,6 +17,8 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
+      "@designcodeio/threeui": ["./src/shaders/threeui.ts"],
+      "@designcodeio/threeui/style.css": ["./src/shaders/threeui.css"],
       "@/*": ["./src/*"]
     }
   },

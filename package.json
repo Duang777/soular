@@ -22,9 +22,11 @@
     "deploy": "npm run build && npm run server:check && npm run server:deploy"
   },
   "dependencies": {
+    "@designcodeio/threeui": "^1.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.18.3"
+    "react-router-dom": "^7.18.3",
+    "three": "^0.160.1"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

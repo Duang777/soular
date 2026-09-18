@@ -29,6 +29,7 @@ const portraitSource = readFileSync(new URL("../src/zhihuPortrait.ts", import.me
 const oauthAccountSource = readFileSync(new URL("../src/OAuthAccount.tsx", import.meta.url), "utf8");
 const firstLoginGuideSource = readFileSync(new URL("../src/FirstLoginGuide.tsx", import.meta.url), "utf8");
 const loginGateSource = readFileSync(new URL("../src/LoginGate.tsx", import.meta.url), "utf8");
+const landingSource = readFileSync(new URL("../src/Landing.tsx", import.meta.url), "utf8");
 const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
@@ -242,18 +243,33 @@ assert.match(
 assert.match(appSource, /path="\/" element=\{<Home \/>\}/, "首页必须保留人格卡与问题入口");
 assert.match(
   appSource,
+  /path="\/landing" element=\{<Landing \/>\}/,
+  "品牌落地页必须保留独立公开路由",
+);
+assert.match(
+  appSource,
   /<LoginGate>[\s\S]*<AppRoutes \/>/,
   "所有产品路由必须经过登录门槛",
 );
 assert.match(
   loginGateSource,
-  /protectedLocation = location\.pathname !== "\/"[\s\S]*searchParams\.get\("confirm"\) === "1"[\s\S]*searchParams\.get\("explore"\) === "1"/,
-  "登录门槛必须覆盖产品直链与首页探索态",
+  /PUBLIC_PATHS = new Set\(\["\/", "\/landing"\]\)/,
+  "首页和品牌落地页必须保持公开",
+);
+assert.match(
+  loginGateSource,
+  /protectedLocation = !PUBLIC_PATHS\.has\(location\.pathname\)[\s\S]*location\.pathname === "\/"[\s\S]*searchParams\.get\("confirm"\) === "1"[\s\S]*searchParams\.get\("explore"\) === "1"/,
+  "登录门槛必须覆盖非公开直链与首页探索态",
 );
 assert.match(
   loginGateSource,
   /state !== "authorized" && protectedLocation[\s\S]*<Navigate to="\/\?login=required" replace \/>/,
   "未登录进入产品内容时必须回到首页登录提示",
+);
+assert.match(
+  landingSource,
+  /<Link className="landing-cta" to="\/">[\s\S]*进入思想银河/,
+  "品牌落地页主操作必须进入现有首页流程",
 );
 assert.match(
   oauthAccountSource,

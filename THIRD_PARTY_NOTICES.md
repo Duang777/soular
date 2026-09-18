@@ -1,5 +1,35 @@
 # Third-Party Notices
 
+## ThreeUI Structure Flow
+
+The Structure Flow component and shared styles in `src/shaders/` come from
+ThreeUI:
+
+- Source: https://threeui.com/source-code/structure-flow.json
+- Source revision: `SHA-256 40eb5bac81e3`
+- Package: `@designcodeio/threeui`
+- License: MIT
+- Copyright: 2026 Meng To
+
+The registered source files retain their published contents. Local adapters
+connect the collection's other variants to the official package exports.
+
+## ThreeUI Particle Wordmark
+
+The Particle Wordmark component, canonical HTML, and shared styles in
+`src/shaders/` come from ThreeUI:
+
+- Source: https://threeui.com/source-code/particle-wordmark.json
+- Source revision: `5a736cd3c1f6f19802f61ebb10e1701b9f7aa26e`
+- Package: `@designcodeio/threeui`
+- License: MIT
+- Copyright: 2026 Meng To
+
+The registered files retain their published contents and checksums. A Vite
+transform changes the generated SVG wordmark to `Soular`, scales it for the
+shorter name, and matches its frame background to the landing page without
+editing the registered source.
+
 ## Its Hover Icons
 
 The inline SVG paths for the sparkles, refresh, message-circle, users, and close

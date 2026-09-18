@@ -12,6 +12,7 @@ import {
 } from "./zhihuPortrait";
 
 const OFFICIAL_ORIGIN = "https://soular.top";
+const PUBLIC_PATHS = new Set(["/", "/landing"]);
 
 type GateState = "checking" | "authorized" | "required" | "unavailable";
 
@@ -93,9 +94,14 @@ export function LoginGate({ children }: { children: ReactNode }) {
   const searchParams = new URLSearchParams(location.search);
   const loginFailed = searchParams.get("oauth") === "error";
   const promptOpen = searchParams.get("login") === "required" || loginFailed;
-  const protectedLocation = location.pathname !== "/" ||
-    searchParams.get("confirm") === "1" ||
-    searchParams.get("explore") === "1";
+  const protectedLocation = !PUBLIC_PATHS.has(location.pathname) ||
+    (
+      location.pathname === "/" &&
+      (
+        searchParams.get("confirm") === "1" ||
+        searchParams.get("explore") === "1"
+      )
+    );
 
   const checkAccount = useCallback(async (signal: AbortSignal) => {
     try {
