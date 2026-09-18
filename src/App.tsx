@@ -7,6 +7,7 @@ import {
   useLocation,
   type Location,
 } from "react-router-dom";
+import { AmbientAudio } from "./AmbientAudio";
 import { Home } from "./Home";
 import { LoginGate } from "./LoginGate";
 import { MatchRevealPage } from "./MatchReveal";
@@ -78,6 +79,7 @@ export function App() {
           <AppRoutes />
         </LoginGate>
       </OpeningExperience>
+      <AmbientAudio />
     </BrowserRouter>
   );
 }
