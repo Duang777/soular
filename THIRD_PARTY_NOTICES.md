@@ -1,5 +1,17 @@
 # Third-Party Notices
 
+## FiftySounds Vienna
+
+The opening soundtrack is an edited 8.4-second excerpt of “Vienna” by
+FiftySounds:
+
+- Source: https://www.fiftysounds.com/royalty-free-music/vienna.html
+- License: https://www.fiftysounds.com/music-license.html
+- Required attribution: https://www.fiftysounds.com
+
+The local copy is trimmed, loudness-normalized, and faded to match the opening
+animation. The source and attribution link remain visible in the opening footer.
+
 ## ThreeUI Structure Flow
 
 The Structure Flow component and shared styles in `src/shaders/` come from

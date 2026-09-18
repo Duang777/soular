@@ -645,8 +645,12 @@ export function CardDraw({
                     <span>{interestWords.join(" · ")}</span>
                   </span>
                 )}
-                {person && <span className="draw-face__claim">“{person.claim}”</span>}
-                {selfProfile && <span className="draw-face__claim">{selfProfile.claim}</span>}
+                {person && (
+                  <span className="draw-face__claim"><span>“{person.claim}”</span></span>
+                )}
+                {selfProfile && (
+                  <span className="draw-face__claim"><span>{selfProfile.claim}</span></span>
+                )}
               </div>
               <span className="draw-face__spark" aria-hidden="true">✦</span>
             </div>

@@ -294,6 +294,25 @@ assert.match(
 );
 assert.match(
   openingSource,
+  /audio\/opening-vienna\.mp3/,
+  "开场音乐必须使用本地素材",
+);
+assert.match(
+  openingSource,
+  /OPENING_CUES_MS[\s\S]*OPENING_CUES_MS\.soular[\s\S]*OPENING_CUES_MS\.partnership[\s\S]*OPENING_CUES_MS\.reveal/,
+  "粒子重排与界面阶段必须共享同一组音乐节拍点",
+);
+assert.match(
+  openingSource,
+  /useState\(true\)[\s\S]*audio\.play\(\)\.catch[\s\S]*pointerdown[\s\S]*audio\.currentTime = Math\.min\(elapsed/,
+  "开场音乐必须默认开启，并在自动播放受阻后从当前动画进度接续",
+);
+assert.ok(
+  existsSync(new URL("../public/audio/opening-vienna.mp3", import.meta.url)),
+  "开场音乐文件必须随静态站点发布",
+);
+assert.match(
+  openingSource,
   /event\.key === "Escape"[\s\S]*跳过开场[\s\S]*进入思想银河/,
   "开场动画必须提供键盘退出、跳过与明确进入动作",
 );
