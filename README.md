@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://soular.top/"><strong>在线体验</strong></a> ·
+  <a href="https://soular.top/landing">了解思想银河</a> ·
   <a href="https://soular.top/nebula?preset=ai-math">探索真实热点</a> ·
   <a href="https://duang777.github.io/soular/">静态镜像</a> ·
   <a href="https://my.feishu.cn/wiki/WsfvwI271i19wSkOjz2cwQPlnOd">产品方案</a>
@@ -29,6 +30,7 @@
 | 入口 | 地址 | 可以看到什么 |
 | --- | --- | --- |
 | 正式站 | [soular.top](https://soular.top/) | 浏览首页，登录知乎后进入完整产品流程与兴趣星谱 |
+| 品牌介绍 | [了解思想银河](https://soular.top/landing) | 了解产品定位、探索路径与开源信息 |
 | 真实热点星云 | [AI 是否正在毁掉数学？](https://soular.top/nebula?preset=ai-math) | 31 位真实回答者组成的观点光谱 |
 | 静态镜像 | [GitHub Pages](https://duang777.github.io/soular/) | 浏览首页，进入内容时前往正式站登录 |
 | 开源仓库 | [Duang777/soular](https://github.com/Duang777/soular) | 源码、产品规格与开发文档 |

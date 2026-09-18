@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CASTS } from "./cast";
 import { Nebula } from "./Nebula";
 import { OAuthAccount } from "./OAuthAccount";
@@ -155,17 +155,11 @@ function PersonaHome() {
             <span aria-hidden="true">→</span>
           </button>
         </form>
-        <div className="question-dock__footer">
-          <p className="question-dock__hint" role="status">
-            {matchingQuestions.length
-              ? "从一个问题出发，看见观点的星系"
-              : "还没有发布这个问题的观点星云"}
-          </p>
-          <Link className="question-dock__landing" to="/landing">
-            <span>了解 Soular</span>
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
+        <p className="question-dock__hint" role="status">
+          {matchingQuestions.length
+            ? "从一个问题出发，看见观点的星系"
+            : "还没有发布这个问题的观点星云"}
+        </p>
       </section>
     </main>
   );
