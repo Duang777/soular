@@ -334,6 +334,11 @@ assert.match(
 );
 assert.match(
   matchPageSource,
+  /const QUIZ_CHOICE_LOCK_MS = 320;/,
+  "朋友对照问卷的防重复锁不得拖慢换题反馈",
+);
+assert.match(
+  matchPageSource,
   /onClick=\{\(\) => \{\s*lockChoices\(\);\s*setPhase\("quiz"\)/,
   "朋友对照问卷入口必须阻止重复激活穿透到第一题",
 );

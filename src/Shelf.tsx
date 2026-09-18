@@ -83,13 +83,14 @@ export function ShelfPage() {
   const usesSnapshotPersona = requestedSelf || (uRaw !== null && /^\d+$/.test(uRaw));
   const personaState = usePersonaCasts(usesSnapshotPersona ? presetId : null);
   const expectedShelfPersonaKey = usesSnapshotPersona &&
-      personaState.status === "ready"
+      personaState.status !== "fallback"
     ? `${presetId}:${personaState.loadAttempt}`
     : null;
   const shelfPersonaResultMatches =
     shelfPersonaResult?.key === expectedShelfPersonaKey;
   const shelfPersonaFailed =
     shelfPersonaResultMatches && shelfPersonaResult.status === "fallback";
+  const shelfUsesPersona = expectedShelfPersonaKey !== null && !shelfPersonaFailed;
   const casts = shelfPersonaFailed ? CASTS : personaState.casts;
   const reactPersonaLoading = personaState.status === "loading";
   const personaLoading = reactPersonaLoading;
@@ -247,11 +248,7 @@ export function ShelfPage() {
     return <Navigate to="/" replace />;
   }
   const shelfParams = new URLSearchParams({ cast: cast.key });
-  if (
-    usesSnapshotPersona &&
-    personaState.status === "ready" &&
-    !shelfPersonaFailed
-  ) {
+  if (shelfUsesPersona) {
     shelfParams.set("preset", presetId);
     if (personaState.loadAttempt > 0) {
       shelfParams.set("personaRetry", String(personaState.loadAttempt));
@@ -363,14 +360,12 @@ export function ShelfPage() {
 
   return (
     <div className="shelf-root">
-      {!reactPersonaLoading && (
-        <iframe
-          ref={shelfFrameRef}
-          className="landing-page-frame"
-          src={src}
-          title={`${cast.name} · 思想银河`}
-        />
-      )}
+      <iframe
+        ref={shelfFrameRef}
+        className="landing-page-frame"
+        src={src}
+        title={`${cast.name} · 思想银河`}
+      />
       <img src={asset("kanshan/wave.gif")} alt="" className="kanshan kanshan-shelf" />
       <nav className="shelf-nav" aria-label="书页">
         <BrandMark className="brand-lockup--shelf" />

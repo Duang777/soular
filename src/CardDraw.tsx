@@ -22,9 +22,9 @@ type DrawMode = "enter" | "revisit";
 type Phase = "shuffle" | "flip" | "reveal";
 type CopyState = "idle" | "done" | "error";
 
-const SHUFFLE_MS = 1900;
-const FLIP_MS = 850;
-const ENTER_BOOK_MS = 950;
+const SHUFFLE_MS = 900;
+const FLIP_MS = 480;
+const ENTER_BOOK_MS = 480;
 
 function selfCardQuery(preset: string, version?: string) {
   return `?self=1&preset=${encodeURIComponent(preset)}` +

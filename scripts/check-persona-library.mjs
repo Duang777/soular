@@ -222,6 +222,11 @@ assert.match(
   "self posters must preserve the user's current-question conclusion",
 );
 assert.match(
+  cardDrawSource,
+  /const SHUFFLE_MS = 900;[\s\S]*const FLIP_MS = 480;[\s\S]*const ENTER_BOOK_MS = 480;/,
+  "persona card transitions must stay within the page response budget",
+);
+assert.match(
   personaThemeSource,
   /personaLibraryPromise\s*=\s*null;[\s\S]*personaLibraryAttempt\s*=\s*attempt\s*\+\s*1/,
   "failed React persona imports must advance to a fresh retry URL",
@@ -253,13 +258,18 @@ assert.match(
 );
 assert.match(
   shelfPageSource,
-  /usesSnapshotPersona\s*&&\s*personaState\.status\s*===\s*"ready"/,
-  "the 3D shelf must only receive a theme after React accepts the library",
+  /usesSnapshotPersona\s*&&\s*personaState\.status\s*!==\s*"fallback"[\s\S]*const shelfUsesPersona = expectedShelfPersonaKey !== null && !shelfPersonaFailed;[\s\S]*if \(shelfUsesPersona\) \{\s*shelfParams\.set\("preset", presetId\)/,
+  "the 3D shelf must start resolving the theme alongside React",
+);
+assert.doesNotMatch(
+  shelfPageSource,
+  /!reactPersonaLoading\s*&&\s*\(\s*<iframe/,
+  "the 3D shelf must not wait for React's persona decision",
 );
 assert.match(
   shelfPageSource,
-  /!reactPersonaLoading\s*&&\s*\(\s*<iframe/,
-  "the 3D shelf must wait for React's persona decision",
+  /<iframe\s*ref=\{shelfFrameRef\}[\s\S]*src=\{src\}/,
+  "the 3D shelf must mount immediately so its heavy assets load in parallel",
 );
 assert.match(
   shelfPageSource,

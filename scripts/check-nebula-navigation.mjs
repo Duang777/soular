@@ -850,8 +850,8 @@ assert.match(
 );
 assert.match(
   source,
-  /const ENTRY_GENERATION_DURATION_MS = 8_000;[\s\S]*const progress = clamp01\(\s*\(now - entryGenerationStartedAt\) \/ ENTRY_GENERATION_DURATION_MS/,
-  "观点星云生成动画必须使用 8 秒时间轴",
+  /const ENTRY_GENERATION_DURATION_MS = 3_200;[\s\S]*const progress = clamp01\(\s*\(now - entryGenerationStartedAt\) \/ ENTRY_GENERATION_DURATION_MS/,
+  "观点星云生成动画必须在 3.2 秒内完成",
 );
 assert.match(
   source,

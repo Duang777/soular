@@ -21,7 +21,7 @@ type MatchResult = ThoughtMapResult & {
   entry: ShareMatchEntry;
 };
 
-const QUIZ_CHOICE_LOCK_MS = 800;
+const QUIZ_CHOICE_LOCK_MS = 320;
 
 function MatchHeader() {
   return (
