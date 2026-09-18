@@ -11,8 +11,7 @@ import { asset } from "./cast";
 const OPENING_STORAGE_KEY = "soular:opening:zhihu-nebula:v1";
 const OPENING_DURATION_MS = 8_400;
 const EXIT_DURATION_MS = 620;
-const OPENING_SOUND_VOLUME = 0.72;
-const OPENING_CUES_MS = {
+const OPENING_TIMELINE_MS = {
   zhihuGatherStart: 250,
   zhihuGatherEnd: 1_650,
   soularStart: 1_850,
@@ -197,15 +196,21 @@ function drawFrame(
   const cue = (start: number, end: number) =>
     (elapsed - start) / (end - start);
   const zhihuBlend = easeInOut(
-    cue(OPENING_CUES_MS.zhihuGatherStart, OPENING_CUES_MS.zhihuGatherEnd),
+    cue(
+      OPENING_TIMELINE_MS.zhihuGatherStart,
+      OPENING_TIMELINE_MS.zhihuGatherEnd,
+    ),
   );
   const soularBlend = easeInOut(
-    cue(OPENING_CUES_MS.soularStart, OPENING_CUES_MS.soular),
+    cue(OPENING_TIMELINE_MS.soularStart, OPENING_TIMELINE_MS.soular),
   );
   const partnershipBlend = easeInOut(
-    cue(OPENING_CUES_MS.partnershipStart, OPENING_CUES_MS.partnership),
+    cue(OPENING_TIMELINE_MS.partnershipStart, OPENING_TIMELINE_MS.partnership),
   );
-  const galaxyCue = cue(OPENING_CUES_MS.reveal, OPENING_CUES_MS.galaxySettle);
+  const galaxyCue = cue(
+    OPENING_TIMELINE_MS.reveal,
+    OPENING_TIMELINE_MS.galaxySettle,
+  );
   const galaxyBlend = easeInOut(galaxyCue);
   const galaxyAlpha = clamp(galaxyCue);
 
@@ -363,12 +368,9 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   );
   const [phase, setPhase] = useState<OpeningPhase>("zhihu");
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
-  const openingStartedAtRef = useRef(0);
   const finishedRef = useRef(false);
   const completionTimerRef = useRef<number | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const locationKey = `${location.pathname}\n${location.search}`;
   const previousLocationRef = useRef({
     key: locationKey,
@@ -391,7 +393,6 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    audioRef.current?.pause();
     try {
       window.sessionStorage.setItem(OPENING_STORAGE_KEY, "seen");
     } catch {
@@ -456,58 +457,14 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (visibility !== "active") return undefined;
-    openingStartedAtRef.current = performance.now();
     const phaseTimers = [
-      window.setTimeout(() => setPhase("soular"), OPENING_CUES_MS.soular),
-      window.setTimeout(() => setPhase("partnership"), OPENING_CUES_MS.partnership),
-      window.setTimeout(() => setPhase("reveal"), OPENING_CUES_MS.reveal),
+      window.setTimeout(() => setPhase("soular"), OPENING_TIMELINE_MS.soular),
+      window.setTimeout(() => setPhase("partnership"), OPENING_TIMELINE_MS.partnership),
+      window.setTimeout(() => setPhase("reveal"), OPENING_TIMELINE_MS.reveal),
       window.setTimeout(finish, OPENING_DURATION_MS),
     ];
     return () => phaseTimers.forEach(window.clearTimeout);
   }, [finish, visibility]);
-
-  useEffect(() => {
-    if (visibility !== "active") return undefined;
-    const audio = audioRef.current;
-    if (!audio) return undefined;
-    setSoundEnabled(true);
-    audio.currentTime = 0;
-    audio.volume = OPENING_SOUND_VOLUME;
-    void audio.play().catch(() => undefined);
-    const resumeOnFirstGesture = () => {
-      if (!audio.paused) return;
-      const elapsed = Math.max(0, (performance.now() - openingStartedAtRef.current) / 1_000);
-      const duration = Number.isFinite(audio.duration)
-        ? audio.duration
-        : OPENING_DURATION_MS / 1_000;
-      audio.currentTime = Math.min(elapsed, Math.max(0, duration - 0.05));
-      void audio.play().catch(() => undefined);
-    };
-    window.addEventListener("pointerdown", resumeOnFirstGesture, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", resumeOnFirstGesture);
-      audio.pause();
-      audio.currentTime = 0;
-    };
-  }, [visibility]);
-
-  const toggleSound = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (soundEnabled) {
-      audio.pause();
-      setSoundEnabled(false);
-      return;
-    }
-    const elapsed = Math.max(0, (performance.now() - openingStartedAtRef.current) / 1_000);
-    const duration = Number.isFinite(audio.duration)
-      ? audio.duration
-      : OPENING_DURATION_MS / 1_000;
-    audio.currentTime = Math.min(elapsed, Math.max(0, duration - 0.05));
-    audio.volume = OPENING_SOUND_VOLUME;
-    setSoundEnabled(true);
-    void audio.play().catch(() => undefined);
-  }, [soundEnabled]);
 
   useEffect(() => {
     if (visibility !== "active") return undefined;
@@ -591,12 +548,6 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
           aria-modal="true"
           aria-labelledby="soular-opening-title"
         >
-          <audio
-            ref={audioRef}
-            src={asset("audio/opening-vienna.mp3")}
-            preload="auto"
-            aria-hidden="true"
-          />
           <canvas ref={canvasRef} className="soular-opening__canvas" aria-hidden="true" />
           <header className="soular-opening__header">
             <div className="soular-opening__partnership" aria-label="知乎与思想银河">
@@ -605,20 +556,9 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
               <img src={asset("brand/soular-mark.svg")} alt="" />
               <span>SOULAR</span>
             </div>
-            <div className="soular-opening__header-actions">
-              <button
-                className="soular-opening__sound"
-                type="button"
-                aria-label={soundEnabled ? "关闭开场音乐" : "播放开场音乐"}
-                aria-pressed={soundEnabled}
-                onClick={toggleSound}
-              >
-                <span aria-hidden="true">♫</span><b>{soundEnabled ? "声音开" : "声音关"}</b>
-              </button>
-              <button ref={skipRef} type="button" onClick={finish}>
-                跳过开场 <span aria-hidden="true">↗</span>
-              </button>
-            </div>
+            <button ref={skipRef} type="button" onClick={finish}>
+              跳过开场 <span aria-hidden="true">↗</span>
+            </button>
           </header>
 
           <div className="soular-opening__story">
@@ -678,10 +618,7 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
               <li data-active={phase === "partnership"}><span>03</span> 联名</li>
               <li data-active={phase === "reveal"}><span>04</span> 相遇</li>
             </ol>
-            <p>
-              SOULAR · IDEAS IN ORBIT · MUSIC
-              {" "}<a href="https://www.fiftysounds.com" target="_blank" rel="noreferrer">FIFTYSOUNDS</a>
-            </p>
+            <p>SOULAR · IDEAS IN ORBIT</p>
           </footer>
         </section>
       ) : null}
