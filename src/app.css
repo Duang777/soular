@@ -2269,11 +2269,53 @@ textarea.field:focus-visible,
   transform: scale(0.96);
 }
 
-.question-dock__hint {
+.question-dock__footer {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   margin: 8px 0 0;
+}
+
+.question-dock__hint {
+  margin: 0;
   color: var(--mute);
   font-size: 10px;
   text-align: center;
+}
+
+.question-dock__landing {
+  display: inline-flex;
+  min-height: 26px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid rgba(196, 165, 116, 0.34);
+  border-radius: 5px;
+  color: rgba(243, 240, 233, 0.72);
+  background: rgba(15, 15, 16, 0.72);
+  font: 500 10px/1 var(--font-sans);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+
+.question-dock__landing:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .question-dock__landing:hover {
+    border-color: rgba(196, 165, 116, 0.72);
+    color: var(--cream);
+  }
+}
+
+.question-dock__landing:active {
+  transform: translateY(1px);
 }
 
 .nebula-entry {
