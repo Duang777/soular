@@ -19,7 +19,8 @@
     "server:check": "npm --prefix server run check",
     "server:typecheck": "npm --prefix server run typecheck",
     "server:deploy": "npm --prefix server run deploy",
-    "deploy": "npm run build && npm run server:check && npm run server:deploy"
+    "deploy:check": "node scripts/deploy.mjs check",
+    "deploy": "node scripts/deploy.mjs deploy"
   },
   "dependencies": {
     "@designcodeio/threeui": "^1.2.0",

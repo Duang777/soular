@@ -193,8 +193,13 @@ npm run server:dev
 | `npm run check:peer-discovery` | 检查同频发现、换一批与账号隔离 |
 | `npm run check:personas` | 检查主题目录、九人格契约、素材和降级 |
 | `npm run server:check` | 检查 Worker 类型、OAuth、安全边界与观点接口 |
+| `npm run deploy:check` | 在 `main` 干净工作区完成构建、服务检查与 Wrangler dry-run |
+| `npm run deploy` | 校验后部署，并用当前 Git SHA 标记 Cloudflare 版本 |
 
 </details>
+
+部署命令只接受干净的 `main` 分支。检查模式不会上传 Worker；正式部署记录
+`git:<完整 SHA>` message 和 12 位短 SHA tag，便于从线上版本追溯到源码。
 
 ## 代码结构
 

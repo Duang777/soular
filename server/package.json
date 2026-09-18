@@ -21,7 +21,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "cf:dev": "wrangler dev",
     "cf:kv:create": "wrangler kv namespace create SOUL_MATCH",
-    "deploy": "wrangler deploy",
+    "deploy": "node ../scripts/deploy.mjs deploy",
     "cf:logs": "wrangler tail",
     "cf:secret": "wrangler secret put"
   },
