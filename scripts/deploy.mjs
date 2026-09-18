@@ -38,9 +38,18 @@ function repositoryRevision() {
     throw new Error(`Deployment requires a clean worktree:\n${status}`);
   }
 
+  run("git", ["fetch", "--quiet", "origin", "main"]);
+  const sha = capture("git", ["rev-parse", "HEAD"]);
+  const remoteSha = capture("git", ["rev-parse", "refs/remotes/origin/main"]);
+  if (sha !== remoteSha) {
+    throw new Error(
+      `Deployment requires HEAD to match origin/main; local ${sha.slice(0, 12)}, remote ${remoteSha.slice(0, 12)}.`,
+    );
+  }
+
   return {
-    sha: capture("git", ["rev-parse", "HEAD"]),
-    shortSha: capture("git", ["rev-parse", "--short=12", "HEAD"]),
+    sha,
+    shortSha: sha.slice(0, 12),
   };
 }
 

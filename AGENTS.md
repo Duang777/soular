@@ -52,6 +52,7 @@ npm run server:typecheck     # 检查服务端 TypeScript
 - 保留基本无障碍能力、减少动态效果设置、键盘退出与焦点行为，以及至少 44 px 的移动端触控区域。
 - 不要编辑生成的 `dist/` 输出或仓库内的第三方 Three.js 文件。
 - 除非用户明确要求，否则不要部署。
+- 正式部署只能从与 `origin/main` 完全一致的干净 `main` 执行，并记录对应 Git SHA。
 
 ## 改动验证
 

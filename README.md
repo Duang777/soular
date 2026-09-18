@@ -198,8 +198,9 @@ npm run server:dev
 
 </details>
 
-部署命令只接受干净的 `main` 分支。检查模式不会上传 Worker；正式部署记录
-`git:<完整 SHA>` message 和 12 位短 SHA tag，便于从线上版本追溯到源码。
+部署命令只接受与 `origin/main` 完全一致的干净 `main` 分支。检查模式不会上传
+Worker；正式部署记录 `git:<完整 SHA>` message 和 12 位短 SHA tag，便于从
+线上版本追溯到源码。
 
 ## 代码结构
 
