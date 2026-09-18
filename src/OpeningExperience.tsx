@@ -12,6 +12,16 @@ const OPENING_STORAGE_KEY = "soular:opening:zhihu-nebula:v1";
 const OPENING_DURATION_MS = 8_400;
 const EXIT_DURATION_MS = 620;
 const OPENING_SOUND_VOLUME = 0.72;
+const OPENING_CUES_MS = {
+  zhihuGatherStart: 250,
+  zhihuGatherEnd: 1_650,
+  soularStart: 1_850,
+  soular: 2_650,
+  partnershipStart: 3_550,
+  partnership: 4_350,
+  reveal: 5_500,
+  galaxySettle: 7_000,
+} as const;
 const RESIZE_DEBOUNCE_MS = 120;
 const MAX_CANVAS_PIXELS = 4_000_000;
 
@@ -183,11 +193,21 @@ function drawFrame(
   const centerY = height * 0.48;
   const shortEdge = Math.min(width, height);
   const stageScale = openingStageScale(width, height);
-  const zhihuBlend = easeInOut((progress - 0.02) / 0.18);
-  const soularBlend = easeInOut((progress - 0.28) / 0.14);
-  const partnershipBlend = easeInOut((progress - 0.56) / 0.12);
-  const galaxyBlend = easeInOut((progress - 0.75) / 0.18);
-  const galaxyAlpha = clamp((progress - 0.75) / 0.18);
+  const elapsed = progress * OPENING_DURATION_MS;
+  const cue = (start: number, end: number) =>
+    (elapsed - start) / (end - start);
+  const zhihuBlend = easeInOut(
+    cue(OPENING_CUES_MS.zhihuGatherStart, OPENING_CUES_MS.zhihuGatherEnd),
+  );
+  const soularBlend = easeInOut(
+    cue(OPENING_CUES_MS.soularStart, OPENING_CUES_MS.soular),
+  );
+  const partnershipBlend = easeInOut(
+    cue(OPENING_CUES_MS.partnershipStart, OPENING_CUES_MS.partnership),
+  );
+  const galaxyCue = cue(OPENING_CUES_MS.reveal, OPENING_CUES_MS.galaxySettle);
+  const galaxyBlend = easeInOut(galaxyCue);
+  const galaxyAlpha = clamp(galaxyCue);
 
   if (galaxyAlpha > 0) {
     const glow = context.createRadialGradient(
@@ -348,7 +368,7 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   const openingStartedAtRef = useRef(0);
   const finishedRef = useRef(false);
   const completionTimerRef = useRef<number | null>(null);
-  const [soundPlaying, setSoundPlaying] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const locationKey = `${location.pathname}\n${location.search}`;
   const previousLocationRef = useRef({
     key: locationKey,
@@ -372,7 +392,6 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     if (finishedRef.current) return;
     finishedRef.current = true;
     audioRef.current?.pause();
-    setSoundPlaying(false);
     try {
       window.sessionStorage.setItem(OPENING_STORAGE_KEY, "seen");
     } catch {
@@ -439,9 +458,9 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     if (visibility !== "active") return undefined;
     openingStartedAtRef.current = performance.now();
     const phaseTimers = [
-      window.setTimeout(() => setPhase("soular"), 2_300),
-      window.setTimeout(() => setPhase("partnership"), 4_700),
-      window.setTimeout(() => setPhase("reveal"), 6_500),
+      window.setTimeout(() => setPhase("soular"), OPENING_CUES_MS.soular),
+      window.setTimeout(() => setPhase("partnership"), OPENING_CUES_MS.partnership),
+      window.setTimeout(() => setPhase("reveal"), OPENING_CUES_MS.reveal),
       window.setTimeout(finish, OPENING_DURATION_MS),
     ];
     return () => phaseTimers.forEach(window.clearTimeout);
@@ -451,13 +470,22 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
     if (visibility !== "active") return undefined;
     const audio = audioRef.current;
     if (!audio) return undefined;
+    setSoundEnabled(true);
     audio.currentTime = 0;
     audio.volume = OPENING_SOUND_VOLUME;
-    void audio.play().then(() => setSoundPlaying(true)).catch(() => setSoundPlaying(false));
-    const onEnded = () => setSoundPlaying(false);
-    audio.addEventListener("ended", onEnded);
+    void audio.play().catch(() => undefined);
+    const resumeOnFirstGesture = () => {
+      if (!audio.paused) return;
+      const elapsed = Math.max(0, (performance.now() - openingStartedAtRef.current) / 1_000);
+      const duration = Number.isFinite(audio.duration)
+        ? audio.duration
+        : OPENING_DURATION_MS / 1_000;
+      audio.currentTime = Math.min(elapsed, Math.max(0, duration - 0.05));
+      void audio.play().catch(() => undefined);
+    };
+    window.addEventListener("pointerdown", resumeOnFirstGesture, { once: true });
     return () => {
-      audio.removeEventListener("ended", onEnded);
+      window.removeEventListener("pointerdown", resumeOnFirstGesture);
       audio.pause();
       audio.currentTime = 0;
     };
@@ -466,17 +494,20 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   const toggleSound = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!audio.paused) {
+    if (soundEnabled) {
       audio.pause();
-      setSoundPlaying(false);
+      setSoundEnabled(false);
       return;
     }
     const elapsed = Math.max(0, (performance.now() - openingStartedAtRef.current) / 1_000);
-    const duration = Number.isFinite(audio.duration) ? audio.duration : OPENING_DURATION_MS / 1_000;
+    const duration = Number.isFinite(audio.duration)
+      ? audio.duration
+      : OPENING_DURATION_MS / 1_000;
     audio.currentTime = Math.min(elapsed, Math.max(0, duration - 0.05));
     audio.volume = OPENING_SOUND_VOLUME;
-    void audio.play().then(() => setSoundPlaying(true)).catch(() => setSoundPlaying(false));
-  }, []);
+    setSoundEnabled(true);
+    void audio.play().catch(() => undefined);
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (visibility !== "active") return undefined;
@@ -578,11 +609,11 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
               <button
                 className="soular-opening__sound"
                 type="button"
-                aria-label={soundPlaying ? "关闭开场音乐" : "播放开场音乐"}
-                aria-pressed={soundPlaying}
+                aria-label={soundEnabled ? "关闭开场音乐" : "播放开场音乐"}
+                aria-pressed={soundEnabled}
                 onClick={toggleSound}
               >
-                <span aria-hidden="true">♫</span><b>{soundPlaying ? "声音开" : "声音"}</b>
+                <span aria-hidden="true">♫</span><b>{soundEnabled ? "声音开" : "声音关"}</b>
               </button>
               <button ref={skipRef} type="button" onClick={finish}>
                 跳过开场 <span aria-hidden="true">↗</span>

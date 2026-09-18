@@ -299,8 +299,13 @@ assert.match(
 );
 assert.match(
   openingSource,
-  /OPENING_SOUND_VOLUME[\s\S]*audio\.currentTime = Math\.min\(elapsed/,
-  "用户手动开启音乐时必须追齐动画时间轴",
+  /OPENING_CUES_MS[\s\S]*OPENING_CUES_MS\.soular[\s\S]*OPENING_CUES_MS\.partnership[\s\S]*OPENING_CUES_MS\.reveal/,
+  "粒子重排与界面阶段必须共享同一组音乐节拍点",
+);
+assert.match(
+  openingSource,
+  /useState\(true\)[\s\S]*audio\.play\(\)\.catch[\s\S]*pointerdown[\s\S]*audio\.currentTime = Math\.min\(elapsed/,
+  "开场音乐必须默认开启，并在自动播放受阻后从当前动画进度接续",
 );
 assert.ok(
   existsSync(new URL("../public/audio/opening-vienna.mp3", import.meta.url)),
