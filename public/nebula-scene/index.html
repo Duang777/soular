@@ -674,7 +674,7 @@
       #tip {
         position: fixed;
         z-index: 8;
-        width: 248px;
+        width: min(284px, calc(100vw - 32px));
         padding: 13px 14px 12px;
         border: 1px solid var(--line);
         border-radius: 14px;
@@ -692,29 +692,6 @@
       }
       #tip.show { opacity: 1; transform: translate(-50%, calc(-100% - 18px)) scale(1); }
       #tip.show.below { transform: translate(-50%, 18px) scale(1); }
-      #tip.is-person-link { cursor: pointer; }
-      @media (hover: hover) {
-        #tip.is-person-link:hover {
-          border-color: rgba(143, 180, 255, 0.42);
-          background: #191c25;
-          box-shadow:
-            0 20px 48px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(143, 180, 255, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-        #tip.is-person-link:hover .tip-cta {
-          border-color: rgba(143, 180, 255, 0.58);
-          background: rgba(143, 180, 255, 0.14);
-          color: var(--cream);
-          transform: translateX(2px);
-        }
-      }
-      #tip.show.is-person-link.is-pressing {
-        transform: translate(-50%, calc(-100% - 18px)) scale(0.975);
-      }
-      #tip.show.below.is-person-link.is-pressing {
-        transform: translate(-50%, 18px) scale(0.975);
-      }
       .tip-row { display: flex; align-items: center; gap: 9px; }
       .tip-name { font-size: 14px; font-weight: 600; }
       .tip-follow {
@@ -733,34 +710,73 @@
         margin-top: 10px;
         padding-top: 9px;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-        display: flex;
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr) 34px;
         align-items: center;
-        gap: 8px;
+        column-gap: 10px;
         font-size: 11px;
         color: var(--mute);
       }
       .tip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+      .tip-persona.is-comment { grid-template-columns: 8px minmax(0, 1fr); }
+      .tip-persona-copy { min-width: 0; }
+      .tip-persona-kicker {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 9px;
+        line-height: 1.2;
+      }
+      .tip-persona-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px 6px;
+        line-height: 1.45;
+      }
       .tip-persona b { color: var(--cream); font-weight: 600; }
+      .tip-persona-role { color: var(--mute); }
       .tip-cta {
-        margin-left: auto;
-        min-height: 26px;
-        padding: 0 8px;
+        position: relative;
+        width: 34px;
+        height: 34px;
+        padding: 0;
         border: 1px solid rgba(143, 180, 255, 0.3);
-        border-radius: 4px;
+        border-radius: 50%;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         background: rgba(143, 180, 255, 0.07);
         color: #b8ceff;
-        font-family: var(--mono);
-        font-size: 10px;
+        font-size: 16px;
         font-weight: 600;
+        line-height: 1;
         letter-spacing: 0;
+        cursor: pointer;
         transition:
           transform 0.14s ease,
           border-color 0.14s ease,
           background-color 0.14s ease,
           color 0.14s ease;
       }
+      .tip-cta::before {
+        content: "";
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+      }
+      .tip-cta:hover {
+        border-color: rgba(143, 180, 255, 0.58);
+        background: rgba(143, 180, 255, 0.14);
+        color: var(--cream);
+        transform: translateX(2px);
+      }
+      .tip-cta:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 3px;
+      }
+      .tip-cta:active { transform: scale(0.94); }
 
       #loading {
         position: fixed;
@@ -2122,17 +2138,23 @@
       .verdict.show { display: inline-flex; opacity: 1; transform: translate(-50%, 0); }
       .v-spark { color: var(--lav); font-size: 13px; flex: none; }
       .v-clear {
+        display: grid;
         flex: none;
+        width: 28px;
+        height: 28px;
         margin-left: 4px;
         border: 0;
+        border-radius: 50%;
+        place-items: center;
         background: transparent;
         color: var(--txt-faint);
         font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
+        font-size: 18px;
+        line-height: 1;
+        letter-spacing: 0;
         cursor: pointer;
       }
-      .v-clear:hover { color: var(--hi); }
+      .v-clear:hover { background: rgba(255, 255, 255, 0.08); color: var(--hi); }
 
       /* ===== 观点光谱索引：内容优先的单列阅读流 ===== */
       .cards {
@@ -4588,8 +4610,8 @@
 
     <div class="verdict" id="verdict">
       <span class="v-spark">✦</span>
-      <span id="verdictText"></span>
-      <button type="button" class="v-clear" id="verdictClear">清除</button>
+      <span id="verdictText" aria-live="polite"></span>
+      <button type="button" class="v-clear" id="verdictClear" aria-label="关闭立场摘要" title="关闭">×</button>
     </div>
 
     <div class="cards" id="cards">
@@ -6760,6 +6782,7 @@
       // ===== 观点漂移：点赞回答 → 实时计算「我」的立场，星位沿光谱漂移并给一句话 =====
       const PRESET_VERSION = String(PRESET.version || "1");
       const PERSONA_MIN_LIKES = 3;
+      const VERDICT_VISIBLE_MS = 5000;
       const LEGACY_LIKE_VERSIONS = { "career-35": "1", "ai-math": "20260912" };
       const LIKE_KEY = getNebulaLikeStorageKey(PRESET);
       const LEGACY_LIKE_KEY = `jiupai:nebula:likes:v1:${PRESET.id}`;
@@ -6787,6 +6810,20 @@
       let verdictText = "";
       const verdictEl = document.getElementById("verdict");
       const verdictTextEl = document.getElementById("verdictText");
+      let verdictHideTimer = 0;
+
+      function hideVerdict() {
+        clearTimeout(verdictHideTimer);
+        verdictHideTimer = 0;
+        verdictEl.classList.remove("show");
+      }
+
+      function showVerdict(text) {
+        clearTimeout(verdictHideTimer);
+        verdictTextEl.textContent = text;
+        verdictEl.classList.add("show");
+        verdictHideTimer = setTimeout(hideVerdict, VERDICT_VISIBLE_MS);
+      }
 
       function personaUnlocked() {
         return liked.size >= PERSONA_MIN_LIKES;
@@ -6906,11 +6943,10 @@
         const tx = myStanceVal * XSPAN;
         meUser.baseX = tx;
         if (!animate) meUser.group.position.x = tx;
-        if (v) {
-          verdictTextEl.textContent = v.text;
-          verdictEl.classList.add("show");
+        if (v && animate && !document.body.classList.contains("is-cards-open")) {
+          showVerdict(v.text);
         } else {
-          verdictEl.classList.remove("show");
+          hideVerdict();
         }
         const profile = inferSelfProfile();
         const unlocked = personaUnlocked();
@@ -6982,22 +7018,6 @@
         }
         return liked.has(i);
       }
-      function resetLikes() {
-        liked.clear();
-        try {
-          localStorage.removeItem(LIKE_KEY);
-          localStorage.removeItem(LEGACY_LIKE_KEY);
-        } catch { /* ignore */ }
-        users.forEach((u) => { if (!u.isMe) setHeart(u, false); });
-        closePeerDiscovery();
-        resetPeerDiscoveryState();
-        hideChip();
-        if (focusSet) exitFocus();
-        applyStance(true);
-        publishSelfProfileUpdate();
-        renderCardsIfOpen();
-      }
-
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
       const interactionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
@@ -7075,6 +7095,10 @@
         }
         if (e.data && e.data.type === "nebula-open-peer-discovery") {
           openPeerDiscovery();
+        }
+        if (e.data && e.data.type === "nebula-open-guide") {
+          setExploreOpen(false);
+          openGuide();
         }
         if (e.data && e.data.type === "nebula-open-ack" && typeof e.data.requestId === "string") {
           openAcks.add(e.data.requestId);
@@ -7324,8 +7348,6 @@
       }
 
       function renderTip(u) {
-        tip.classList.toggle("is-person-link", u.kind !== "comment");
-        tip.classList.remove("is-pressing");
         const row = uiNode("div", "tip-row");
         const claim = uiNode(
           "div",
@@ -7356,16 +7378,18 @@
             uiNode("span", "tip-tag", "评论"),
           );
           if (u.funny) row.appendChild(uiNode("span", "tip-tag funny", "😄 幽默观点"));
-          const persona = uiNode("div", "tip-persona");
+          const persona = uiNode("div", "tip-persona is-comment");
           const dot = uiNode("span", "tip-dot");
+          const copy = uiNode("div", "tip-persona-copy");
+          const line = uiNode("div", "tip-persona-line");
           dot.style.border = `1.4px solid ${u.castColor}`;
           dot.style.background = "transparent";
-          persona.append(
-            dot,
-            document.createTextNode("评论观点 · "),
-            uiNode("b", "", u.castName),
-            document.createTextNode(` · ${u.castRole}`),
+          line.append(
+            uiNode("b", "tip-persona-name", u.castName),
+            uiNode("span", "tip-persona-role", `· ${u.castRole}`),
           );
+          copy.append(uiNode("span", "tip-persona-kicker", "评论观点"), line);
+          persona.append(dot, copy);
           tip.replaceChildren(row, claim, persona);
         } else {
           const likedOne = liked.has(u.index);
@@ -7375,14 +7399,19 @@
           if (u.offAxis) row.appendChild(uiNode("span", "tip-tag offaxis", "偏离这条轴"));
           const persona = uiNode("div", "tip-persona");
           const dot = uiNode("span", "tip-dot");
+          const copy = uiNode("div", "tip-persona-copy");
+          const line = uiNode("div", "tip-persona-line");
+          const cta = uiNode("button", "tip-cta", "→");
           dot.style.background = u.castColor;
-          persona.append(
-            dot,
-            document.createTextNode("人格 · "),
-            uiNode("b", "", u.castName),
-            document.createTextNode(` · ${u.castRole}`),
-            uiNode("span", "tip-cta", "进入 →"),
+          line.append(
+            uiNode("b", "tip-persona-name", u.castName),
+            uiNode("span", "tip-persona-role", `· ${u.castRole}`),
           );
+          copy.append(uiNode("span", "tip-persona-kicker", "观点人格"), line);
+          cta.type = "button";
+          cta.dataset.openPerson = "";
+          cta.setAttribute("aria-label", `查看 ${u.name} 的人格卡`);
+          persona.append(dot, copy, cta);
           const actions = uiNode("div", "tip-actions");
           const button = uiNode(
             "button",
@@ -7432,6 +7461,12 @@
       }
 
       tip.addEventListener("click", (e) => {
+        const openPersonBtn = e.target.closest("[data-open-person]");
+        if (openPersonBtn && hovered && hovered.kind !== "comment") {
+          e.stopPropagation();
+          activateHovered(hovered);
+          return;
+        }
         const retryBtn = e.target.closest("[data-retry-avatar]");
         if (retryBtn) {
           e.stopPropagation();
@@ -7452,28 +7487,9 @@
           }
           return;
         }
-        if (hovered && hovered.kind !== "comment" && !e.target.closest(".tip-tag")) {
-          activateHovered(hovered);
-        }
       });
-      function clearTipPress() {
-        tip.classList.remove("is-pressing");
-      }
-      tip.addEventListener("pointerdown", (e) => {
-        if (
-          e.pointerType === "mouse" &&
-          e.button === 0 &&
-          tip.classList.contains("is-person-link") &&
-          !e.target.closest("button, .tip-tag")
-        ) {
-          tip.classList.add("is-pressing");
-        }
-      });
-      tip.addEventListener("pointerup", clearTipPress);
-      tip.addEventListener("pointercancel", clearTipPress);
       tip.addEventListener("pointerenter", cancelHideTip);
       tip.addEventListener("pointerleave", () => {
-        clearTipPress();
         scheduleHideTip(140);
       });
 
@@ -7502,17 +7518,7 @@
         const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
         if (moved > 8) return;
         const u = pick(e.clientX, e.clientY);
-        if (u) {
-          if (u.kind === "comment") {
-            setHovered(u); // 评论者只看观点，不跳人格卡
-          } else if (e.pointerType === "touch" && hovered === u) {
-            // 触屏：第一次点按只弹卡片，再次点按才进入，避免误触
-            if (u._touchShown) { activateHovered(u); u._touchShown = false; }
-            else u._touchShown = true;
-          } else {
-            activateHovered(u);
-          }
-        }
+        if (u) setHovered(u);
       });
 
       const projected = new THREE.Vector3();
@@ -10269,10 +10275,7 @@
       });
       $("focusExit").addEventListener("click", exitFocus);
 
-      $("verdictClear").addEventListener("click", () => {
-        resetLikes();
-        showToast("已清除点赞记录，你的星位回到光谱中点");
-      });
+      $("verdictClear").addEventListener("click", hideVerdict);
 
       document.addEventListener("keydown", (e) => {
         if (trapPeerFocus(e)) return;

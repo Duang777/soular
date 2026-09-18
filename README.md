@@ -28,12 +28,12 @@
 
 | 入口 | 地址 | 可以看到什么 |
 | --- | --- | --- |
-| 正式站 | [soular.top](https://soular.top/) | 登录知乎后体验完整产品流程与兴趣星谱 |
+| 正式站 | [soular.top](https://soular.top/) | 浏览首页，登录知乎后进入完整产品流程与兴趣星谱 |
 | 真实热点星云 | [AI 是否正在毁掉数学？](https://soular.top/nebula?preset=ai-math) | 31 位真实回答者组成的观点光谱 |
-| 静态镜像 | [GitHub Pages](https://duang777.github.io/soular/) | 引导前往正式站登录 |
+| 静态镜像 | [GitHub Pages](https://duang777.github.io/soular/) | 浏览首页，进入内容时前往正式站登录 |
 | 开源仓库 | [Duang777/soular](https://github.com/Duang777/soular) | 源码、产品规格与开发文档 |
 
-首页目前列出 7 个问题入口，包含 6 个真实讨论和 1 个示例问题，共 281 个观点坐标。
+首页目前列出 7 个问题入口，包含 6 个真实讨论和 1 个示例问题，共 274 个观点坐标。
 
 ## 从一个问题出发
 

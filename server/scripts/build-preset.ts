@@ -2,7 +2,8 @@
  * 把 prepare-question-preset 产出的 staging 候选组装成可发布的星云快照。
  *
  * 拆成独立一步是因为两步的配额成本差一个量级：采集要烧 1 次直答（限流窗口内只够 2 次），
- * 组装只要 1 次站内搜索，而且补全结果会写回 staging，重跑组装不再消耗任何配额。
+ * 组装用站内搜索补一部分作者并写回 staging。正式生成前必须把剩余作者补全，
+ * 重跑组装会复用 staging，不再消耗配额。
  *
  * 用法：
  *   npm run build:preset -- --staging=.staging/xxx-20260914.json --question="标题" --serial=04
@@ -73,8 +74,9 @@ function answerId(url: string): string {
 }
 
 /**
- * 站内搜索是唯一能拿到作者名、头像和赞同数的入口，但上游每题恒定只返 10 条、
- * 实测仅 2-3 条能与分页结果对上，所以这里注定只补全少数几条，其余保持匿名。
+ * 站内搜索是开发者接口中唯一能拿到作者名、头像和赞同数的入口，但上游每题恒定只返 10 条、
+ * 实测仅 2-3 条能与分页结果对上，所以这里只做初始补全。其余作者必须在 staging 中补齐，
+ * 缺少真实姓名或头像时拒绝生成正式快照。
  * 只接受 https 的 zhimg 头像，与页面内 safeUserAvatarUrl 的白名单保持一致。
  */
 function safeAvatar(value: unknown): string {
@@ -124,28 +126,30 @@ async function enrichAuthors(): Promise<Record<string, EnrichedAuthor>> {
 
 const authors = await enrichAuthors();
 
-/**
- * 拿不到作者时不编造身份，也不留空名，用中性编号；头像回落到该条所属九派的自有素材。
- * 第 9 位是离轴度：立场居中和「在谈别的事」在星云上位置几乎一样，只有这个值能把两者分开，
- * 前端据此把偏题回答画暗。未被模型标注的条目为 0，不能与真折中混为一谈。
- */
 function personRow(answer: QuestionSpectrum["answers"][number], index: number) {
-  const author = authors[answerId(answer.url)];
+  const id = answerId(answer.url);
+  const author = authors[id];
+  const name = author?.name.trim();
+  const avatar = safeAvatar(author?.avatar);
+  if (!id || !name || !avatar) {
+    throw new Error(
+      `回答 ${id || index + 1} 缺少真实作者姓名或头像，拒绝生成带占位身份的正式快照`,
+    );
+  }
   return [
-    author?.name || `知乎答主 ${String(index + 1).padStart(2, "0")}`,
+    name,
     answer.stance,
     answer.cast,
     answer.claim,
     answer.url,
     questionTitle,
-    author?.votes ?? 0,
-    author?.avatar || `../personas/${answer.cast}.jpg`,
+    Number(author.votes) || 0,
+    avatar,
     answer.relevance,
   ];
 }
 
 const people = spectrum.answers.map(personRow);
-const named = people.filter((row) => !String(row[0]).startsWith("知乎答主")).length;
 
 const preset = {
   id: presetId,
@@ -176,6 +180,6 @@ const outputPath = resolve(SERVER_ROOT, `../public/nebula-scene/preset-${presetI
 writeFileSync(outputPath, `export const ${exportName} = ${body};\n`);
 
 console.log(`已生成 ${outputPath}`);
-console.log(`观点 ${people.length} 条，其中具名 ${named} 条，匿名 ${people.length - named} 条`);
+console.log(`观点 ${people.length} 条，作者姓名和头像均已补全`);
 console.log(`轴：${spectrum.axis.left} / ${spectrum.axis.center} / ${spectrum.axis.right}`);
 console.log("请在 public/nebula-scene/presets.js 中注册后再发布。");

@@ -9,12 +9,37 @@ import {
   type ZhihuPortrait,
 } from "./zhihuPortrait";
 import { clearSelfProfileContexts } from "./people";
+import {
+  FIRST_LOGIN_NEBULA_GUIDE_KEY,
+  FirstLoginGuide,
+} from "./FirstLoginGuide";
 
 const OFFICIAL_ORIGIN = "https://soular.top";
 const REQUEST_TIMEOUT_MS = 8_000;
 const DEFAULT_NEBULA_PRESET = "ai-math";
 const PROFILE_HINT_DURATION_MS = 2_800;
 const profileHintShownAccounts = new Set<string>();
+
+function firstLoginGuideKey(accountVersion: string): string {
+  return `jiupai:first-login-guide:v1:${accountVersion}`;
+}
+
+function hasSeenFirstLoginGuide(accountVersion: string): boolean {
+  try {
+    return window.localStorage.getItem(firstLoginGuideKey(accountVersion)) ===
+      "seen";
+  } catch {
+    return false;
+  }
+}
+
+function markFirstLoginGuideSeen(accountVersion: string): void {
+  try {
+    window.localStorage.setItem(firstLoginGuideKey(accountVersion), "seen");
+  } catch {
+    // Storage is optional; the current login flow still continues.
+  }
+}
 
 interface OAuthProfile {
   name: string | null;
@@ -267,6 +292,10 @@ export function OAuthAccount() {
   const [portraitState, setPortraitState] = useState<"idle" | "loading" | "unavailable">("idle");
   const [portraitRetry, setPortraitRetry] = useState(0);
   const [calibrationOpen, setCalibrationOpen] = useState(oauthResult === "success");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [afterCalibration, setAfterCalibration] = useState<
+    "stay" | "explore" | null
+  >(null);
   const [identityHintVisible, setIdentityHintVisible] = useState(false);
   const [callbackFailed, setCallbackFailed] = useState(
     () => oauthResult === "error",
@@ -276,6 +305,7 @@ export function OAuthAccount() {
   const activeAccountVersionRef = useRef(getActiveZhihuAccountVersion());
   const logoutInProgressRef = useRef(false);
   const profileHintShownRef = useRef<string | null>(null);
+  const firstLoginCallbackRef = useRef(oauthResult === "success");
 
   const loadStatus = useCallback(async () => {
     if (!isOfficialOrigin || logoutInProgressRef.current) return;
@@ -489,10 +519,44 @@ export function OAuthAccount() {
 
   useEffect(() => {
     if (
+      calibrationOpen ||
+      guideOpen ||
+      afterCalibration === null ||
+      status?.authorized !== true ||
+      !status.accountVersion
+    ) {
+      return;
+    }
+    if (
+      firstLoginCallbackRef.current &&
+      !hasSeenFirstLoginGuide(status.accountVersion)
+    ) {
+      setGuideOpen(true);
+      return;
+    }
+    const shouldExplore = afterCalibration === "explore";
+    setAfterCalibration(null);
+    if (shouldExplore) {
+      navigate(`/?preset=${DEFAULT_NEBULA_PRESET}&confirm=1`, {
+        state: { fromPersonaHome: true },
+      });
+    }
+  }, [
+    afterCalibration,
+    calibrationOpen,
+    guideOpen,
+    navigate,
+    status?.accountVersion,
+    status?.authorized,
+  ]);
+
+  useEffect(() => {
+    if (
       status?.authorized !== true ||
       !status.accountVersion ||
       !portrait ||
-      calibrationOpen
+      calibrationOpen ||
+      guideOpen
     ) {
       return undefined;
     }
@@ -530,6 +594,7 @@ export function OAuthAccount() {
     };
   }, [
     calibrationOpen,
+    guideOpen,
     portrait,
     status?.accountVersion,
     status?.authorized,
@@ -559,12 +624,15 @@ export function OAuthAccount() {
       setPortrait(null);
       setPortraitState("idle");
       setCalibrationOpen(false);
+      setGuideOpen(false);
+      setAfterCalibration(null);
       setIdentityHintVisible(false);
       activeAccountVersionRef.current = null;
       setActiveZhihuAccountVersion(null);
       clearSelfProfileContexts();
       setUnavailable(false);
       setCallbackFailed(false);
+      window.location.replace("/");
     } catch {
       setLogoutFailed(true);
     } finally {
@@ -575,6 +643,7 @@ export function OAuthAccount() {
 
   const closeCalibration = useCallback(() => {
     setCalibrationOpen(false);
+    setAfterCalibration("stay");
   }, []);
   const openCalibration = useCallback(() => {
     setIdentityHintVisible(false);
@@ -597,10 +666,36 @@ export function OAuthAccount() {
   }, []);
   const exploreWithPortrait = useCallback(() => {
     setCalibrationOpen(false);
-    navigate(`/?preset=${DEFAULT_NEBULA_PRESET}&confirm=1`, {
-      state: { fromPersonaHome: true },
-    });
-  }, [navigate]);
+    setAfterCalibration("explore");
+  }, []);
+  const finishGuide = useCallback((continueInNebula: boolean) => {
+    if (status?.accountVersion) markFirstLoginGuideSeen(status.accountVersion);
+    if (continueInNebula) {
+      try {
+        window.sessionStorage.setItem(
+          FIRST_LOGIN_NEBULA_GUIDE_KEY,
+          "pending",
+        );
+      } catch {
+        // Storage is optional; users can still open the guide from the nebula toolbar.
+      }
+    } else {
+      try {
+        window.sessionStorage.removeItem(FIRST_LOGIN_NEBULA_GUIDE_KEY);
+      } catch {
+        // Skipping the guide must not block the login flow.
+      }
+    }
+    firstLoginCallbackRef.current = false;
+    const shouldExplore = afterCalibration === "explore";
+    setGuideOpen(false);
+    setAfterCalibration(null);
+    if (shouldExplore) {
+      navigate(`/?preset=${DEFAULT_NEBULA_PRESET}&confirm=1`, {
+        state: { fromPersonaHome: true },
+      });
+    }
+  }, [afterCalibration, navigate, status?.accountVersion]);
 
   if (!isOfficialOrigin) {
     return (
@@ -719,6 +814,11 @@ export function OAuthAccount() {
         onClose={closeCalibration}
         onRetry={retryCalibration}
         onExplore={exploreWithPortrait}
+      />
+      <FirstLoginGuide
+        open={guideOpen}
+        onFinish={() => finishGuide(true)}
+        onSkip={() => finishGuide(false)}
       />
     </>
   );

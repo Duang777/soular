@@ -27,6 +27,8 @@ const cardSource = readFileSync(new URL("../src/CardDraw.tsx", import.meta.url),
 const shelfSource = readFileSync(new URL("../src/Shelf.tsx", import.meta.url), "utf8");
 const portraitSource = readFileSync(new URL("../src/zhihuPortrait.ts", import.meta.url), "utf8");
 const oauthAccountSource = readFileSync(new URL("../src/OAuthAccount.tsx", import.meta.url), "utf8");
+const firstLoginGuideSource = readFileSync(new URL("../src/FirstLoginGuide.tsx", import.meta.url), "utf8");
+const loginGateSource = readFileSync(new URL("../src/LoginGate.tsx", import.meta.url), "utf8");
 const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
@@ -238,7 +240,37 @@ assert.match(
   "热榜浏览器缓存必须在 10 分钟后失效",
 );
 assert.match(appSource, /path="\/" element=\{<Home \/>\}/, "首页必须保留人格卡与问题入口");
+assert.match(
+  appSource,
+  /<LoginGate>[\s\S]*<AppRoutes \/>/,
+  "所有产品路由必须经过登录门槛",
+);
+assert.match(
+  loginGateSource,
+  /protectedLocation = location\.pathname !== "\/"[\s\S]*searchParams\.get\("confirm"\) === "1"[\s\S]*searchParams\.get\("explore"\) === "1"/,
+  "登录门槛必须覆盖产品直链与首页探索态",
+);
+assert.match(
+  loginGateSource,
+  /state !== "authorized" && protectedLocation[\s\S]*<Navigate to="\/\?login=required" replace \/>/,
+  "未登录进入产品内容时必须回到首页登录提示",
+);
+assert.match(
+  oauthAccountSource,
+  /window\.location\.replace\("\/"\)/,
+  "退出登录后必须返回登录门槛",
+);
 assert.match(source, /PERSONA_MIN_LIKES\s*=\s*3/, "人格必须在三次有效表态后解锁");
+assert.match(
+  source,
+  /VERDICT_VISIBLE_MS\s*=\s*5000[\s\S]*setTimeout\(hideVerdict,\s*VERDICT_VISIBLE_MS\)/,
+  "点赞后的立场摘要必须在 5 秒后自动收起",
+);
+assert.match(
+  source,
+  /id="verdictClear"[^>]*aria-label="关闭立场摘要"[^>]*>×<\/button>[\s\S]*\$\("verdictClear"\)\.addEventListener\("click",\s*hideVerdict\)/,
+  "立场摘要关闭按钮只能收起摘要，不得清除点赞",
+);
 assert.match(
   source,
   /entryMode === "discover"\s*\|\|\s*entryMode === "confirm"\s*\|\|\s*entryMode === "explore"/,
@@ -624,11 +656,6 @@ assert.match(
 );
 assert.match(
   source,
-  /function resetLikes\(\)[\s\S]*closePeerDiscovery\(\);[\s\S]*hideChip\(\);\s*if \(focusSet\) exitFocus\(\);[\s\S]*applyStance\(true\)/,
-  "清空全部点赞时必须退出同频发现与小圈子聚焦态",
-);
-assert.match(
-  source,
   /function returnToPersonaHome\(\)[\s\S]*type:\s*"nebula-entry-back"/,
   "星云确认页必须把返回动作通知 React 外壳",
 );
@@ -644,13 +671,13 @@ assert.doesNotMatch(
 );
 assert.match(
   source,
-  /#tip\.is-person-link\s*\{\s*cursor:\s*pointer;[\s\S]*#tip\.is-person-link:hover[\s\S]*#tip\.show\.is-person-link\.is-pressing/,
-  "可进入的人物浮层必须提供指针、悬停和按压反馈",
+  /\.tip-cta\s*\{[\s\S]*cursor:\s*pointer;[\s\S]*\.tip-cta:hover[\s\S]*\.tip-cta:active/,
+  "人物浮层只能让箭头显示可点击及按压反馈",
 );
 assert.match(
   source,
-  /\.tip-cta\s*\{[\s\S]*border:\s*1px solid rgba\(143,\s*180,\s*255,\s*0\.3\)[\s\S]*background:\s*rgba\(143,\s*180,\s*255,\s*0\.07\)/,
-  "人物浮层的进入动作必须具有明确的按钮视觉",
+  /\.tip-persona\s*\{[\s\S]*grid-template-columns:\s*8px minmax\(0,\s*1fr\) 34px;[\s\S]*\.tip-cta\s*\{[\s\S]*width:\s*34px;[\s\S]*height:\s*34px;[\s\S]*border:\s*1px solid rgba\(143,\s*180,\s*255,\s*0\.3\);[\s\S]*border-radius:\s*50%;[\s\S]*background:\s*rgba\(143,\s*180,\s*255,\s*0\.07\)/,
+  "人物浮层必须为人格文案预留弹性空间，并提供稳定的圆形箭头入口",
 );
 assert.match(
   source,
@@ -659,8 +686,28 @@ assert.match(
 );
 assert.match(
   source,
-  /function renderTip\(u\) \{\s*tip\.classList\.toggle\("is-person-link", u\.kind !== "comment"\);[\s\S]*tip\.addEventListener\("pointerdown", \(e\) => \{[\s\S]*!e\.target\.closest\("button, \.tip-tag"\)[\s\S]*tip\.classList\.add\("is-pressing"\);/,
-  "只有可进入的非评论浮层才能触发整卡按压，按钮与标签必须保持独立",
+  /const cta = uiNode\("button", "tip-cta", "→"\);[\s\S]*cta\.type = "button";[\s\S]*cta\.dataset\.openPerson = "";/,
+  "人物浮层的箭头必须是独立按钮",
+);
+assert.match(
+  source,
+  /const openPersonBtn = e\.target\.closest\("\[data-open-person\]"\);[\s\S]*if \(openPersonBtn && hovered && hovered\.kind !== "comment"\) \{[\s\S]*activateHovered\(hovered\);[\s\S]*return;/,
+  "只有人物浮层的箭头按钮才能进入人格卡",
+);
+assert.doesNotMatch(
+  source,
+  /if \(hovered && hovered\.kind !== "comment" && !e\.target\.closest\("\.tip-tag"\)\) \{\s*activateHovered\(hovered\);/,
+  "点击浮层正文不得进入人格卡",
+);
+assert.match(
+  source,
+  /canvas\.addEventListener\("pointerup", \(e\) => \{[\s\S]*const u = pick\(e\.clientX, e\.clientY\);[\s\S]*if \(u\) setHovered\(u\);[\s\S]*\}\);/,
+  "点击回答者头像只能显示观点浮层",
+);
+assert.doesNotMatch(
+  source,
+  /canvas\.addEventListener\("pointerup", \(e\) => \{[\s\S]*?activateHovered\(u\);[\s\S]*?\}\);/,
+  "点击回答者头像不得进入人格卡",
 );
 assert.match(
   source,
@@ -1208,6 +1255,41 @@ assert.match(
   /useState\(oauthResult === "success"\)/,
   "OAuth 成功回跳后必须自动打开兴趣星谱",
 );
+assert.equal(
+  firstLoginGuideSource.match(/code: "0\d \/ /g)?.length,
+  4,
+  "首次登录导览必须覆盖四个核心模块",
+);
+assert.match(
+  firstLoginGuideSource,
+  /跳过[\s\S]*上一步[\s\S]*下一步/,
+  "首次登录导览必须支持跳过、返回和继续",
+);
+assert.match(
+  oauthAccountSource,
+  /jiupai:first-login-guide:v1:[\s\S]*localStorage\.getItem[\s\S]*localStorage\.setItem/,
+  "首次登录导览必须按账号在当前浏览器中只自动展示一次",
+);
+assert.match(
+  oauthAccountSource,
+  /continueInNebula[\s\S]*setItem\(\s*FIRST_LOGIN_NEBULA_GUIDE_KEY,[\s\S]*"pending"[\s\S]*removeItem\(FIRST_LOGIN_NEBULA_GUIDE_KEY\)[\s\S]*onFinish=\{\(\) => finishGuide\(true\)\}[\s\S]*onSkip=\{\(\) => finishGuide\(false\)\}/,
+  "只有完成首页导览才接续星云向导",
+);
+assert.match(
+  nebulaHostSource,
+  /FIRST_LOGIN_NEBULA_GUIDE_KEY[\s\S]*type: "nebula-open-guide"[\s\S]*removeItem\(FIRST_LOGIN_NEBULA_GUIDE_KEY\)/,
+  "星云宿主必须消费一次性导览接力信号",
+);
+assert.match(
+  nebulaHostSource,
+  /!entryMode \|\| entryState === "explore"[\s\S]*openFirstLoginGuide/,
+  "首次导览不得在选题确认页提前打开",
+);
+assert.match(
+  source,
+  /type === "nebula-open-guide"[\s\S]*setExploreOpen\(false\)[\s\S]*openGuide\(\)/,
+  "星云必须复用现有星图向导接续首次登录导览",
+);
 assert.match(
   oauthAccountSource,
   /接口返回前不显示推测结果/,
@@ -1439,14 +1521,18 @@ assert.equal(
   "当前注册表必须为保留的第三个快照提供连续序号",
 );
 for (
-  const preset of [
-    SOCIAL_CONNECTIONS,
-    AI_PROGRAMMER_JOBS,
-    CITY_OR_HOMETOWN,
+  const [preset, expectedAnswerCount] of [
+    [SOCIAL_CONNECTIONS, 42],
+    [AI_PROGRAMMER_JOBS, 42],
+    [CITY_OR_HOMETOWN, 44],
   ]
 ) {
   assert.equal(preset.kind, "real", `${preset.id} 必须标记为真实讨论`);
-  assert.equal(preset.people.length, 45, `${preset.id} 必须包含 45 条有效回答`);
+  assert.equal(
+    preset.people.length,
+    expectedAnswerCount,
+    `${preset.id} 必须只包含作者身份可验证的回答`,
+  );
   assert.match(
     preset.sourceQuestion,
     /^https:\/\/www\.zhihu\.com\/question\/\d+$/,
@@ -1458,10 +1544,9 @@ for (
     `${preset.id} 不得包含重复回答链接`,
   );
   for (const [index, person] of preset.people.entries()) {
-    assert.equal(
-      person[0],
-      `知乎回答 ${String(index + 1).padStart(2, "0")}`,
-      `${preset.id} 不得伪造回答者身份`,
+    assert.ok(
+      typeof person[0] === "string" && person[0].trim().length > 0,
+      `${preset.id}#${index + 1} 必须保留回答者公开姓名`,
     );
     assert.ok(
       typeof person[1] === "number" && person[1] >= -1 && person[1] <= 1,
@@ -1473,7 +1558,10 @@ for (
       new RegExp(`^${preset.sourceQuestion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\/answer\\/\\d+$`),
       `${preset.id} 回答链接必须属于来源问题`,
     );
-    assert.equal(person[6], null, `${preset.id} 不得伪造回答赞同数`);
+    assert.ok(
+      Number.isInteger(person[6]) && person[6] >= 0,
+      `${preset.id}#${index + 1} 必须保留回答赞同数`,
+    );
   }
   assert.ok(
     preset.people.filter((person) => person[1] < -0.2).length >= 3 &&
@@ -1505,6 +1593,9 @@ for (const preset of staticPresets) {
   const detail = getNebulaPreset(preset.id);
   if (detail.avatarBase) {
     for (let index = 0; index < preset.answerCount; index += 1) {
+      if (typeof detail.people[index]?.[7] === "string" && detail.people[index][7]) {
+        continue;
+      }
       const avatar = new URL(
         `../public/nebula-scene/${detail.avatarBase}/u${String(index + 1).padStart(2, "0")}.jpg`,
         import.meta.url,
@@ -1512,8 +1603,7 @@ for (const preset of staticPresets) {
       assert.ok(existsSync(avatar), `${preset.id} 缺少第 ${index + 1} 位回答者头像`);
     }
   }
-  // 自动组装的快照逐条声明头像：具名作者用知乎 CDN 远程图，其余回落到本地九派素材。
-  // avatarBase 分支覆盖不到这种格式，写错九派名只会在运行时变成裂图，必须在这里拦住。
+  // 显式头像会覆盖 avatarBase，且本地文件可能保留 jpg、png 或 webp 原始格式。
   (Array.isArray(detail.people) ? detail.people : []).forEach((row, index) => {
     const declared = row?.[7];
     if (typeof declared !== "string" || !declared) return;

@@ -25,6 +25,7 @@ import {
   toNebulaPortraitSignal,
   type NebulaPortraitSignal,
 } from "./zhihuPortrait";
+import { FIRST_LOGIN_NEBULA_GUIDE_KEY } from "./FirstLoginGuide";
 import { rememberThoughtMapPosition } from "./thoughtMapStore";
 
 const NAVIGATION_CONTEXT_PREFIX = "jiupai:nebula:";
@@ -178,6 +179,21 @@ export function Nebula({
         ? "explore"
         : "discover"
     : null;
+
+  const openFirstLoginGuide = useCallback((target: Window, origin: string) => {
+    try {
+      if (
+        window.sessionStorage.getItem(FIRST_LOGIN_NEBULA_GUIDE_KEY) !==
+          "pending"
+      ) {
+        return;
+      }
+      target.postMessage({ type: "nebula-open-guide" }, origin);
+      window.sessionStorage.removeItem(FIRST_LOGIN_NEBULA_GUIDE_KEY);
+    } catch {
+      // Storage is optional; the permanent guide button remains available.
+    }
+  }, []);
 
   const requestOpenPeerDiscovery = useCallback(() => {
     if (!openPeerDiscovery) return;
@@ -415,6 +431,9 @@ export function Nebula({
             event.origin,
           );
         }
+        if (source && (!entryMode || entryState === "explore")) {
+          openFirstLoginGuide(source, event.origin);
+        }
         return;
       }
       if (data?.type === "nebula-entry-back" && entryMode) {
@@ -471,6 +490,8 @@ export function Nebula({
           "",
           `${next.pathname}${next.search}${next.hash}`,
         );
+        const source = event.source as Window | null;
+        if (source) openFirstLoginGuide(source, event.origin);
         return;
       }
       if (
@@ -590,6 +611,7 @@ export function Nebula({
     location,
     navigate,
     openPeerDiscovery,
+    openFirstLoginGuide,
     presetId,
   ]);
 

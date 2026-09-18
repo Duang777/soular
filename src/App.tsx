@@ -7,6 +7,7 @@ import {
   type Location,
 } from "react-router-dom";
 import { Home } from "./Home";
+import { LoginGate } from "./LoginGate";
 import { MatchRevealPage } from "./MatchReveal";
 import { Nebula } from "./Nebula";
 import { ShelfPage } from "./Shelf";
@@ -59,7 +60,9 @@ function AppRoutes() {
 export function App() {
   return (
     <BrowserRouter basename={basename === "/" ? undefined : basename}>
-      <AppRoutes />
+      <LoginGate>
+        <AppRoutes />
+      </LoginGate>
     </BrowserRouter>
   );
 }
