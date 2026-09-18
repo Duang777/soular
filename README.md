@@ -298,6 +298,8 @@ Worker；正式部署记录 `git:<完整 SHA>` message 和 12 位短 SHA tag，�
 - 真实观点快照来自公开可访问的知乎内容，仓库只保留体验所需的摘要、来源和展示信息。
 - 主题人物只作为当前问题的思想原型，不代表真实人格或人物背书；选择规则与素材清单见 [`docs/persona-library.md`](./docs/persona-library.md)。
 - 第三方代码许可见 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。
+- 开场音乐使用 FiftySounds 的 “Vienna” 片段并按其许可署名，来源和处理说明见
+  [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md)。
 - 刘看山等赛事素材遵循主办方授权范围，仅限赛事期间使用，未经授权不得商用。
 
 项目原创代码采用 [MIT License](./LICENSE) 开源。第三方代码、知乎内容、用户头像、刘看山及其他赛事素材不因此获得 MIT 授权，使用时须分别遵循其来源方条款。

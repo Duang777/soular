@@ -5377,6 +5377,29 @@ textarea.field:focus-visible,
   padding: 0 16px;
 }
 
+.soular-opening__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.soular-opening__header .soular-opening__sound {
+  gap: 7px;
+  padding: 0 12px;
+  border-color: rgba(105, 165, 255, 0.34);
+  color: rgba(243, 240, 233, 0.68);
+}
+
+.soular-opening__sound[aria-pressed="true"] {
+  color: #f3f0e9;
+  background: rgba(23, 114, 246, 0.12);
+}
+
+.soular-opening__sound b {
+  font: inherit;
+  font-weight: 500;
+}
+
 .soular-opening__header button span,
 .soular-opening__reveal button span {
   display: inline-block;
@@ -5668,6 +5691,24 @@ textarea.field:focus-visible,
     min-height: 44px;
     padding: 0 12px;
     font-size: 11px;
+  }
+
+  .soular-opening__header-actions {
+    gap: 6px;
+  }
+
+  .soular-opening__header .soular-opening__sound {
+    width: 44px;
+    padding: 0;
+  }
+
+  .soular-opening__sound b {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .soular-opening__story {

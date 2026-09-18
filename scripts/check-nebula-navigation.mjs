@@ -294,6 +294,20 @@ assert.match(
 );
 assert.match(
   openingSource,
+  /audio\/opening-vienna\.mp3/,
+  "开场音乐必须使用本地素材",
+);
+assert.match(
+  openingSource,
+  /OPENING_SOUND_VOLUME[\s\S]*audio\.currentTime = Math\.min\(elapsed/,
+  "用户手动开启音乐时必须追齐动画时间轴",
+);
+assert.ok(
+  existsSync(new URL("../public/audio/opening-vienna.mp3", import.meta.url)),
+  "开场音乐文件必须随静态站点发布",
+);
+assert.match(
+  openingSource,
   /event\.key === "Escape"[\s\S]*跳过开场[\s\S]*进入思想银河/,
   "开场动画必须提供键盘退出、跳过与明确进入动作",
 );
