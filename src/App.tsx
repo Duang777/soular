@@ -11,6 +11,7 @@ import { Home } from "./Home";
 import { LoginGate } from "./LoginGate";
 import { MatchRevealPage } from "./MatchReveal";
 import { Nebula } from "./Nebula";
+import { OpeningExperience } from "./OpeningExperience";
 import { ShelfPage } from "./Shelf";
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
@@ -72,9 +73,11 @@ function AppRoutes() {
 export function App() {
   return (
     <BrowserRouter basename={basename === "/" ? undefined : basename}>
-      <LoginGate>
-        <AppRoutes />
-      </LoginGate>
+      <OpeningExperience>
+        <LoginGate>
+          <AppRoutes />
+        </LoginGate>
+      </OpeningExperience>
     </BrowserRouter>
   );
 }
