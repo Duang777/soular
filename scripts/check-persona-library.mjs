@@ -258,7 +258,7 @@ assert.match(
 );
 assert.match(
   shelfPageSource,
-  /if \(usesSnapshotPersona\) \{\s*shelfParams\.set\("preset", presetId\)/,
+  /usesSnapshotPersona\s*&&\s*personaState\.status\s*!==\s*"fallback"[\s\S]*const shelfUsesPersona = expectedShelfPersonaKey !== null && !shelfPersonaFailed;[\s\S]*if \(shelfUsesPersona\) \{\s*shelfParams\.set\("preset", presetId\)/,
   "the 3D shelf must start resolving the theme alongside React",
 );
 assert.doesNotMatch(

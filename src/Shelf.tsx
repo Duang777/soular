@@ -82,13 +82,15 @@ export function ShelfPage() {
   const resolvedUnknownPreset = presetId !== requestedPresetId;
   const usesSnapshotPersona = requestedSelf || (uRaw !== null && /^\d+$/.test(uRaw));
   const personaState = usePersonaCasts(usesSnapshotPersona ? presetId : null);
-  const expectedShelfPersonaKey = usesSnapshotPersona
+  const expectedShelfPersonaKey = usesSnapshotPersona &&
+      personaState.status !== "fallback"
     ? `${presetId}:${personaState.loadAttempt}`
     : null;
   const shelfPersonaResultMatches =
     shelfPersonaResult?.key === expectedShelfPersonaKey;
   const shelfPersonaFailed =
     shelfPersonaResultMatches && shelfPersonaResult.status === "fallback";
+  const shelfUsesPersona = expectedShelfPersonaKey !== null && !shelfPersonaFailed;
   const casts = shelfPersonaFailed ? CASTS : personaState.casts;
   const reactPersonaLoading = personaState.status === "loading";
   const personaLoading = reactPersonaLoading;
@@ -246,7 +248,7 @@ export function ShelfPage() {
     return <Navigate to="/" replace />;
   }
   const shelfParams = new URLSearchParams({ cast: cast.key });
-  if (usesSnapshotPersona) {
+  if (shelfUsesPersona) {
     shelfParams.set("preset", presetId);
     if (personaState.loadAttempt > 0) {
       shelfParams.set("personaRetry", String(personaState.loadAttempt));
