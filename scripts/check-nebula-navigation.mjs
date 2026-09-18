@@ -284,6 +284,16 @@ assert.match(
 );
 assert.match(
   openingSource,
+  /Math\.min\(width \/ 1_280, height \/ 720, 2\.8\)/,
+  "开场主体必须同时按视口宽高自适应，并限制超宽屏放大倍率",
+);
+assert.match(
+  openingSource,
+  /kanshan\/wave\.gif[\s\S]*soular-opening__reveal-copy/,
+  "最终品牌幕必须由刘看山推动标题入场",
+);
+assert.match(
+  openingSource,
   /event\.key === "Escape"[\s\S]*跳过开场[\s\S]*进入思想银河/,
   "开场动画必须提供键盘退出、跳过与明确进入动作",
 );

@@ -56,6 +56,10 @@ function seeded(index: number, salt: number) {
   return value - Math.floor(value);
 }
 
+function openingStageScale(width: number, height: number) {
+  return Math.max(1, Math.min(width / 1_280, height / 720, 2.8));
+}
+
 function sampleWordmark({
   text,
   width,
@@ -116,26 +120,27 @@ function createParticles({
 }): Particle[] {
   const compact = width < 600;
   const tablet = width >= 600 && width < 1000;
+  const stageScale = openingStageScale(width, height);
   const sampleStep = compact ? 3 : 4;
   const zhihuPoints = sampleWordmark({
     text: "知乎",
     width,
     height,
-    fontSize: compact ? 128 : tablet ? 170 : 220,
+    fontSize: Math.round((compact ? 128 : tablet ? 170 : 220) * stageScale),
     step: sampleStep,
   });
   const soularPoints = sampleWordmark({
     text: "思想银河",
     width,
     height,
-    fontSize: compact ? 68 : tablet ? 104 : 146,
+    fontSize: Math.round((compact ? 68 : tablet ? 104 : 146) * stageScale),
     step: sampleStep,
   });
   const partnershipPoints = sampleWordmark({
     text: "知乎 × 思想银河",
     width,
     height,
-    fontSize: compact ? 42 : tablet ? 70 : 100,
+    fontSize: Math.round((compact ? 42 : tablet ? 70 : 100) * stageScale),
     step: sampleStep,
   });
   const fallback = { x: width * 0.5, y: height * 0.48 };
@@ -176,6 +181,7 @@ function drawFrame(
   const centerX = width * 0.5;
   const centerY = height * 0.48;
   const shortEdge = Math.min(width, height);
+  const stageScale = openingStageScale(width, height);
   const zhihuBlend = easeInOut((progress - 0.02) / 0.18);
   const soularBlend = easeInOut((progress - 0.28) / 0.14);
   const partnershipBlend = easeInOut((progress - 0.56) / 0.12);
@@ -215,10 +221,10 @@ function drawFrame(
     );
     const galaxyX = centerX +
       Math.cos(galaxyAngle) * galaxyRadius +
-      (particle.driftSeed - 0.5) * 18;
+      (particle.driftSeed - 0.5) * 18 * stageScale;
     const galaxyY = centerY +
       Math.sin(galaxyAngle) * galaxyRadius * 0.43 +
-      (particle.angleSeed - 0.5) * 12;
+      (particle.angleSeed - 0.5) * 12 * stageScale;
 
     const zhihuX = mix(startX, particle.zhihuX, zhihuBlend);
     const zhihuY = mix(startY, particle.zhihuY, zhihuBlend);
@@ -247,7 +253,7 @@ function drawFrame(
       context.save();
       context.globalAlpha = galaxyAlpha * 0.11;
       context.strokeStyle = particle.colorIndex === 0 ? "#c4a574" : "#69a5ff";
-      context.lineWidth = 0.65;
+      context.lineWidth = 0.65 * Math.min(stageScale, 1.8);
       context.beginPath();
       context.moveTo(centerX, centerY);
       context.lineTo(x, y);
@@ -275,7 +281,7 @@ function drawFrame(
     context.arc(
       x,
       y,
-      mix(particle.size, particle.size * 1.4, galaxyBlend),
+      mix(particle.size, particle.size * 1.4, galaxyBlend) * Math.min(stageScale, 2),
       0,
       Math.PI * 2,
     );
@@ -288,12 +294,20 @@ function drawFrame(
     context.globalAlpha = galaxyAlpha;
     context.fillStyle = "#f3f0e9";
     context.beginPath();
-    context.arc(centerX, centerY, 2.8, 0, Math.PI * 2);
+    context.arc(centerX, centerY, 2.8 * stageScale, 0, Math.PI * 2);
     context.fill();
     context.strokeStyle = "rgba(105,165,255,0.46)";
-    context.lineWidth = 1;
+    context.lineWidth = Math.min(stageScale, 2);
     context.beginPath();
-    context.ellipse(centerX, centerY, 56, 20, -0.16, 0, Math.PI * 2);
+    context.ellipse(
+      centerX,
+      centerY,
+      56 * stageScale,
+      20 * stageScale,
+      -0.16,
+      0,
+      Math.PI * 2,
+    );
     context.stroke();
     context.restore();
   }
@@ -462,7 +476,9 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
-      const particleCount = width < 600 ? 1_000 : 1_600;
+      const particleCount = width < 600
+        ? 1_000
+        : Math.round(1_600 * Math.min(openingStageScale(width, height), 2.4));
       particles = createParticles({ count: particleCount, width, height });
     };
 
@@ -549,10 +565,20 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
             </div>
 
             <div className="soular-opening__reveal" aria-hidden={phase !== "reveal"}>
-              <img src={asset("brand/soular-mark.svg")} alt="" />
-              <p>知乎讨论 · 观点星云</p>
-              <h2>思想银河</h2>
-              <span>让每一种观点，都有自己的坐标。</span>
+              <div className="soular-opening__reveal-stage">
+                <img
+                  className="soular-opening__kanshan"
+                  src={asset("kanshan/wave.gif")}
+                  alt=""
+                  aria-hidden="true"
+                />
+                <div className="soular-opening__reveal-copy">
+                  <img src={asset("brand/soular-mark.svg")} alt="" />
+                  <p>知乎讨论 · 观点星云</p>
+                  <h2>思想银河</h2>
+                  <span>让每一种观点，都有自己的坐标。</span>
+                </div>
+              </div>
               <button type="button" onClick={finish}>
                 进入思想银河 <span aria-hidden="true">→</span>
               </button>
