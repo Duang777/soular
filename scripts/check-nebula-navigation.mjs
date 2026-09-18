@@ -30,6 +30,7 @@ const oauthAccountSource = readFileSync(new URL("../src/OAuthAccount.tsx", impor
 const firstLoginGuideSource = readFileSync(new URL("../src/FirstLoginGuide.tsx", import.meta.url), "utf8");
 const loginGateSource = readFileSync(new URL("../src/LoginGate.tsx", import.meta.url), "utf8");
 const landingSource = readFileSync(new URL("../src/Landing.tsx", import.meta.url), "utf8");
+const openingSource = readFileSync(new URL("../src/OpeningExperience.tsx", import.meta.url), "utf8");
 const nebulaStageSource = readFileSync(new URL("../src/NebulaStage.tsx", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const homeSource = readFileSync(new URL("../src/Home.tsx", import.meta.url), "utf8");
@@ -255,6 +256,41 @@ assert.match(
   appSource,
   /<LoginGate>[\s\S]*<AppRoutes \/>/,
   "所有产品路由必须经过登录门槛",
+);
+assert.match(
+  appSource,
+  /<OpeningExperience>[\s\S]*<LoginGate>[\s\S]*<AppRoutes \/>/,
+  "开场动画必须包裹现有登录门槛与产品路由",
+);
+assert.match(
+  openingSource,
+  /pathname !== "\/"[\s\S]*params\.get\("confirm"\) === "1"[\s\S]*params\.get\("explore"\) === "1"[\s\S]*params\.has\("login"\)[\s\S]*params\.has\("oauth"\)/,
+  "开场动画只能出现在公开首页且不得拦截登录与探索回跳",
+);
+assert.match(
+  openingSource,
+  /prefers-reduced-motion: reduce[\s\S]*sessionStorage\.getItem\(OPENING_STORAGE_KEY\)[\s\S]*sessionStorage\.setItem\(OPENING_STORAGE_KEY, "seen"\)/,
+  "开场动画必须尊重减少动态效果并按会话记录完成状态",
+);
+assert.match(
+  openingSource,
+  /previousPathname !== "\/landing"[\s\S]*explicitReplay[\s\S]*setVisibility\("active"\)/,
+  "落地页进入首页与显式重播必须重新启动开场",
+);
+assert.match(
+  openingSource,
+  /motionPreference\.addEventListener\("change", onMotionPreferenceChange\)[\s\S]*motionPreference\.removeEventListener\("change", onMotionPreferenceChange\)/,
+  "开场运行期间必须响应减少动态效果偏好变化",
+);
+assert.match(
+  openingSource,
+  /event\.key === "Escape"[\s\S]*跳过开场[\s\S]*进入思想银河/,
+  "开场动画必须提供键盘退出、跳过与明确进入动作",
+);
+assert.match(
+  openingSource,
+  /function sampleWordmark[\s\S]*text: "知乎"[\s\S]*text: "思想银河"[\s\S]*text: "知乎 × 思想银河"[\s\S]*createParticles\(\{ count: particleCount, width, height \}\)/,
+  "开场动画必须由画布粒子依次渲染知乎、思想银河与联名字形",
 );
 assert.match(
   loginGateSource,
