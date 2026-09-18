@@ -12,12 +12,21 @@ const OPENING_STORAGE_KEY = "soular:opening:zhihu-nebula:v1";
 const OPENING_DURATION_MS = 8_400;
 const EXIT_DURATION_MS = 620;
 
-type OpeningPhase = "zhihu" | "spectrum" | "galaxy" | "reveal";
+type OpeningPhase = "zhihu" | "soular" | "galaxy" | "reveal";
 type OpeningVisibility = "active" | "exiting" | "done";
+
+type Point = Readonly<{
+  x: number;
+  y: number;
+}>;
 
 type Particle = {
   startX: number;
   startY: number;
+  zhihuX: number;
+  zhihuY: number;
+  soularX: number;
+  soularY: number;
   radiusSeed: number;
   angleSeed: number;
   driftSeed: number;
@@ -43,16 +52,93 @@ function seeded(index: number, salt: number) {
   return value - Math.floor(value);
 }
 
-function createParticles(count: number): Particle[] {
-  return Array.from({ length: count }, (_, index) => ({
-    startX: seeded(index, 1),
-    startY: seeded(index, 2),
-    radiusSeed: seeded(index, 3),
-    angleSeed: seeded(index, 4),
-    driftSeed: seeded(index, 5),
-    colorIndex: index % 7,
-    size: 0.7 + seeded(index, 6) * 1.7,
-  }));
+function sampleWordmark({
+  text,
+  width,
+  height,
+  fontSize,
+  step,
+}: {
+  text: string;
+  width: number;
+  height: number;
+  fontSize: number;
+  step: number;
+}): Point[] {
+  const mask = document.createElement("canvas");
+  mask.width = width;
+  mask.height = height;
+  const context = mask.getContext("2d", { willReadFrequently: true });
+  if (!context) return [];
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, width * 0.5, height * 0.48);
+
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const points: Point[] = [];
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const alphaIndex = (y * width + x) * 4 + 3;
+      if (pixels[alphaIndex] > 96) points.push({ x, y });
+    }
+  }
+  return points;
+}
+
+function targetAt(points: Point[], index: number, offset: number, fallback: Point) {
+  if (points.length === 0) return fallback;
+  return points[(index * 47 + offset) % points.length];
+}
+
+function createParticles({
+  count,
+  width,
+  height,
+}: {
+  count: number;
+  width: number;
+  height: number;
+}): Particle[] {
+  const compact = width < 600;
+  const tablet = width >= 600 && width < 1000;
+  const sampleStep = compact ? 3 : 4;
+  const zhihuPoints = sampleWordmark({
+    text: "知乎",
+    width,
+    height,
+    fontSize: compact ? 128 : tablet ? 170 : 220,
+    step: sampleStep,
+  });
+  const soularPoints = sampleWordmark({
+    text: "思想银河",
+    width,
+    height,
+    fontSize: compact ? 68 : tablet ? 104 : 146,
+    step: sampleStep,
+  });
+  const fallback = { x: width * 0.5, y: height * 0.48 };
+
+  return Array.from({ length: count }, (_, index) => {
+    const zhihu = targetAt(zhihuPoints, index, 3, fallback);
+    const soular = targetAt(soularPoints, index, 17, fallback);
+    return {
+      startX: seeded(index, 1),
+      startY: seeded(index, 2),
+      zhihuX: zhihu.x,
+      zhihuY: zhihu.y,
+      soularX: soular.x,
+      soularY: soular.y,
+      radiusSeed: seeded(index, 3),
+      angleSeed: seeded(index, 4),
+      driftSeed: seeded(index, 5),
+      colorIndex: index % 7,
+      size: 0.9 + seeded(index, 6) * 1.65,
+    };
+  });
 }
 
 function drawFrame(
@@ -69,25 +155,10 @@ function drawFrame(
   const centerX = width * 0.5;
   const centerY = height * 0.48;
   const shortEdge = Math.min(width, height);
-  const markBlend = easeInOut(progress / 0.18);
-  const spectrumBlend = easeInOut((progress - 0.24) / 0.24);
-  const galaxyBlend = easeInOut((progress - 0.5) / 0.3);
-  const spectrumAlpha = clamp(1 - Math.abs(progress - 0.43) / 0.19);
-  const galaxyAlpha = clamp((progress - 0.48) / 0.24);
-
-  if (spectrumAlpha > 0) {
-    context.save();
-    context.globalAlpha = spectrumAlpha * 0.64;
-    context.strokeStyle = "#4173a7";
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(width * 0.12, centerY);
-    context.lineTo(width * 0.88, centerY);
-    context.stroke();
-    context.fillStyle = "#c4a574";
-    context.fillRect(centerX - 2, centerY - 2, 4, 4);
-    context.restore();
-  }
+  const zhihuBlend = easeInOut((progress - 0.02) / 0.18);
+  const soularBlend = easeInOut((progress - 0.28) / 0.14);
+  const galaxyBlend = easeInOut((progress - 0.56) / 0.21);
+  const galaxyAlpha = clamp((progress - 0.56) / 0.2);
 
   if (galaxyAlpha > 0) {
     const glow = context.createRadialGradient(
@@ -112,16 +183,6 @@ function drawFrame(
     const startX = particle.startX * width;
     const startY = particle.startY * height;
 
-    const markAngle = particle.angleSeed * Math.PI * 2;
-    const markRadius = 28 + particle.radiusSeed * shortEdge * 0.16;
-    const markX = centerX + Math.cos(markAngle) * markRadius;
-    const markY = centerY + Math.sin(markAngle) * markRadius * 0.72;
-
-    const spectrumX = width * (0.12 + particle.radiusSeed * 0.76);
-    const spectrumY = centerY +
-      (particle.driftSeed - 0.5) * height * 0.16 +
-      Math.sin(markAngle * 2) * 8;
-
     const arm = index % 2;
     const galaxyRadius = Math.pow(particle.radiusSeed, 0.62) * maxRadius;
     const galaxyAngle = (
@@ -137,14 +198,18 @@ function drawFrame(
       Math.sin(galaxyAngle) * galaxyRadius * 0.43 +
       (particle.angleSeed - 0.5) * 12;
 
-    const enteringX = mix(startX, markX, markBlend);
-    const enteringY = mix(startY, markY, markBlend);
-    const spectrumStageX = mix(enteringX, spectrumX, spectrumBlend);
-    const spectrumStageY = mix(enteringY, spectrumY, spectrumBlend);
-    const x = mix(spectrumStageX, galaxyX, galaxyBlend);
-    const y = mix(spectrumStageY, galaxyY, galaxyBlend);
-    const alpha = clamp(progress / 0.08) *
-      (0.28 + particle.driftSeed * 0.68);
+    const zhihuX = mix(startX, particle.zhihuX, zhihuBlend);
+    const zhihuY = mix(startY, particle.zhihuY, zhihuBlend);
+    const soularX = mix(zhihuX, particle.soularX, soularBlend);
+    const soularY = mix(zhihuY, particle.soularY, soularBlend);
+    const shimmer = Math.sin(
+      progress * Math.PI * 18 + particle.angleSeed * Math.PI * 2,
+    ) * (1 - galaxyBlend) * 0.8;
+    const x = mix(soularX + shimmer, galaxyX, galaxyBlend);
+    const y = mix(soularY - shimmer, galaxyY, galaxyBlend);
+    const textAlpha = 0.68 + particle.driftSeed * 0.32;
+    const alpha = clamp(progress / 0.06) *
+      mix(textAlpha, 0.3 + particle.driftSeed * 0.66, galaxyBlend);
 
     if (galaxyAlpha > 0.35 && index % 17 === 0) {
       context.save();
@@ -158,7 +223,8 @@ function drawFrame(
       context.restore();
     }
 
-    const colors = [
+    const textColors = ["#ffffff", "#1772f6", "#ffffff", "#8ebfff"];
+    const galaxyColors = [
       "#c4a574",
       "#1772f6",
       "#69a5ff",
@@ -167,9 +233,12 @@ function drawFrame(
       "#8ebfff",
       "#d8e8ff",
     ];
+    const color = galaxyBlend < 0.45
+      ? textColors[particle.colorIndex % textColors.length]
+      : galaxyColors[particle.colorIndex];
     context.save();
     context.globalAlpha = alpha;
-    context.fillStyle = colors[particle.colorIndex];
+    context.fillStyle = color;
     context.beginPath();
     context.arc(x, y, particle.size, 0, Math.PI * 2);
     context.fill();
@@ -253,9 +322,9 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (visibility !== "active") return undefined;
     const phaseTimers = [
-      window.setTimeout(() => setPhase("spectrum"), 2_200),
-      window.setTimeout(() => setPhase("galaxy"), 4_300),
-      window.setTimeout(() => setPhase("reveal"), 6_400),
+      window.setTimeout(() => setPhase("soular"), 2_300),
+      window.setTimeout(() => setPhase("galaxy"), 4_700),
+      window.setTimeout(() => setPhase("reveal"), 6_500),
       window.setTimeout(finish, OPENING_DURATION_MS),
     ];
     return () => phaseTimers.forEach(window.clearTimeout);
@@ -285,8 +354,8 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
-      const particleCount = width < 600 ? 190 : 340;
-      particles = createParticles(particleCount);
+      const particleCount = width < 600 ? 680 : 1_200;
+      particles = createParticles({ count: particleCount, width, height });
     };
 
     const render = (now: number) => {
@@ -341,28 +410,32 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
           </header>
 
           <div className="soular-opening__story">
-            <div className="soular-opening__zhihu-lockup" aria-hidden={phase !== "zhihu"}>
-              <span>知</span>
-              <b>知乎</b>
+            <h1 id="soular-opening-title" className="soular-opening__sr-title">
+              知乎与思想银河粒子开场
+            </h1>
+
+            <div
+              className="soular-opening__particle-caption soular-opening__particle-caption--zhihu"
+              aria-hidden={phase !== "zhihu"}
+            >
+              <p>01 · ZHIHU</p>
+              <span>每一个真实回答，正在汇聚</span>
             </div>
 
-            <div className="soular-opening__question" aria-hidden={phase !== "spectrum"}>
-              <p>ZHIHU DISCUSSION</p>
-              <h1 id="soular-opening-title">
-                一个问题，
-                <br />
-                容得下多少种答案？
-              </h1>
-              <div className="soular-opening__axis" aria-hidden="true">
-                <span>不同立场</span>
-                <i />
-                <span>真实回答</span>
-              </div>
+            <div
+              className="soular-opening__particle-caption soular-opening__particle-caption--soular"
+              aria-hidden={phase !== "soular"}
+            >
+              <p>02 · SOULAR</p>
+              <span>每一种观点，开始拥有坐标</span>
             </div>
 
-            <div className="soular-opening__galaxy-copy" aria-hidden={phase !== "galaxy"}>
-              <p>观点不是一条队伍</p>
-              <strong>它们会形成一片星系</strong>
+            <div
+              className="soular-opening__particle-caption soular-opening__particle-caption--galaxy"
+              aria-hidden={phase !== "galaxy"}
+            >
+              <p>03 · IDEAS IN ORBIT</p>
+              <span>文字散开，星云成形</span>
             </div>
 
             <div className="soular-opening__reveal" aria-hidden={phase !== "reveal"}>
@@ -378,8 +451,8 @@ export function OpeningExperience({ children }: { children: ReactNode }) {
 
           <footer className="soular-opening__footer">
             <ol aria-label="开场进度">
-              <li data-active={phase === "zhihu"}><span>01</span> 问题</li>
-              <li data-active={phase === "spectrum"}><span>02</span> 立场</li>
+              <li data-active={phase === "zhihu"}><span>01</span> 知乎</li>
+              <li data-active={phase === "soular"}><span>02</span> Soular</li>
               <li data-active={phase === "galaxy"}><span>03</span> 星云</li>
               <li data-active={phase === "reveal"}><span>04</span> 相遇</li>
             </ol>

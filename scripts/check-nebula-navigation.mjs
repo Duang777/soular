@@ -278,6 +278,11 @@ assert.match(
   "开场动画必须提供键盘退出、跳过与明确进入动作",
 );
 assert.match(
+  openingSource,
+  /function sampleWordmark[\s\S]*text: "知乎"[\s\S]*text: "思想银河"[\s\S]*createParticles\(\{ count: particleCount, width, height \}\)/,
+  "开场动画必须由画布粒子依次渲染知乎与思想银河字形",
+);
+assert.match(
   loginGateSource,
   /PUBLIC_PATHS = new Set\(\["\/", "\/landing"\]\)/,
   "首页和品牌落地页必须保持公开",
