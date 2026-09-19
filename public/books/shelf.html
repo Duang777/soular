@@ -10,12 +10,6 @@
   >
   <title>思想银河 — 九本人格书</title>
   <link rel="icon" type="image/svg+xml" href="../brand/soular-favicon.svg?v=3">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap"
-    rel="stylesheet"
-  >
   <style>
     :root {
       color-scheme: dark;
@@ -1597,8 +1591,11 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        "three": "../nebula-scene/vendor/three.module.js",
+        "three/addons/controls/OrbitControls.js": "../nebula-scene/vendor/controls/OrbitControls.js",
+        "three/addons/environments/RoomEnvironment.js": "./vendor/three/environments/RoomEnvironment.js",
+        "three/addons/geometries/RoundedBoxGeometry.js": "./vendor/three/geometries/RoundedBoxGeometry.js",
+        "three/addons/lights/RectAreaLightUniformsLib.js": "./vendor/three/lights/RectAreaLightUniformsLib.js"
       }
     }
   </script>

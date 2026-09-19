@@ -5,15 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 4325",
-    "build": "tsc -b && npm run check:navigation && npm run check:share-match && npm run check:peer-discovery && npm run check:identity-revision && npm run check:lod && npm run check:personas && npm run check:preset-authors && vite build",
+    "build": "tsc -b && npm run check:navigation && npm run check:share-match && npm run check:peer-discovery && npm run check:identity-revision && npm run check:lod && npm run check:personas && npm run check:books-vendor && npm run check:preset-authors && vite build",
     "check:navigation": "node scripts/check-nebula-navigation.mjs",
     "check:share-match": "node scripts/check-share-match.mjs",
     "check:peer-discovery": "node scripts/check-peer-discovery.mjs",
     "check:identity-revision": "node --experimental-strip-types scripts/check-identity-revision.mjs",
     "check:lod": "node scripts/check-nebula-lod.mjs",
     "check:personas": "node scripts/check-persona-library.mjs",
+    "check:books-vendor": "node scripts/vendor-books-three.mjs --check",
     "check:preset-authors": "node scripts/check-preset-authors.mjs",
     "apply:preset-authors": "node scripts/apply-preset-authors.mjs",
+    "vendor:books": "node scripts/vendor-books-three.mjs",
     "preview": "vite preview --port 4325",
     "server:dev": "npm --prefix server run dev",
     "server:check": "npm --prefix server run check",
@@ -34,6 +36,7 @@
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
+    "three-r165": "npm:three@^0.165.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.3"
   }

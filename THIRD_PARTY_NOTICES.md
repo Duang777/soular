@@ -1,5 +1,17 @@
 # Third-Party Notices
 
+## Three.js
+
+The 3D nebula and bookshelf use Three.js. Runtime modules needed by the
+bookshelf are vendored under `public/nebula-scene/vendor/` and
+`public/books/vendor/three/` so the public experience does not depend on a
+third-party CDN.
+
+- Source: https://github.com/mrdoob/three.js
+- Version: 0.165.0
+- License: MIT
+- Copyright: 2010-2024 Three.js Authors
+
 ## ThreeUI Structure Flow
 
 The Structure Flow component and shared styles in `src/shaders/` come from
