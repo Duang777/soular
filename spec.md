@@ -689,6 +689,8 @@
 - `fox/bear/cat/owl/rabbit/penguin/redpanda/goat/frog` 继续作为稳定槽位，
   分享 URL、人格计算和本地存储格式保持向后兼容。
 - React 人格卡、朋友对照和 Three.js 人格卡群消费同一主题人格数据源。
+- 3D 人格书的 Three.js 核心与 addons 必须随站点同源发布，不得依赖第三方 CDN；
+  境外资源不可达时书架仍须完成 WebGL 初始化。
 - 每位人物记录名称、角色描述、适用信号、选择理由、素材来源与使用边界。
 - 不选择中国近代及以后人物；人物原型只解释当前问题表达，不描述用户的长期人格。
 - 两个主题复用的九张抽象插画均通过格式、尺寸、文件大小和本地路径检查。
@@ -709,6 +711,12 @@
   `scholars-ai-math/fox` 的 3D 人格书为图灵，`ai-math/owl` 为哥德尔，WebGL 画面非空。
 - 2026-09-19：人格卡长引文的内边距与多行截断分层处理，桌面端保留两行、移动端保留
   三行，省略后的后续文字不得从引文框底部露出。
+- 2026-09-19：3D 人格书移除 jsDelivr 运行时依赖，Three.js 核心复用仓库内 r165，
+  `RoomEnvironment`、`RoundedBoxGeometry` 和 `RectAreaLightUniformsLib` 固化为同源
+  静态资源，同时移除 Google Fonts 样式表，使用已有系统字体回退。
+  `check:books-vendor` 校验本地副本与锁定的 `three-r165` 包完全一致，
+  人格契约禁止重新引入 jsDelivr 或 Google Fonts。`npm run build` 全量通过；生产预览实测图灵主题
+  九本书正常渲染，书架与 5 个关键模块均返回 HTTP 200，页面不再请求 jsDelivr。
 
 ### F-012 品牌落地页
 

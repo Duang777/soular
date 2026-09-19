@@ -305,6 +305,31 @@ assert.ok(
     personaBootstrapPosition < threeImportPosition,
   "the shelf must start loading its persona theme before the Three.js graph",
 );
+assert.doesNotMatch(
+  shelfSceneSource,
+  /https:\/\/cdn\.jsdelivr\.net\/npm\/three/,
+  "the 3D shelf must not depend on the jsDelivr Three.js CDN",
+);
+assert.doesNotMatch(
+  shelfSceneSource,
+  /https:\/\/fonts\.(?:googleapis|gstatic)\.com/,
+  "the 3D shelf must not wait for Google Fonts",
+);
+assert.match(
+  shelfSceneSource,
+  /"three": "\.\.\/nebula-scene\/vendor\/three\.module\.js"/,
+  "the 3D shelf must load Three.js from the repository",
+);
+for (const localAddon of [
+  "./vendor/three/environments/RoomEnvironment.js",
+  "./vendor/three/geometries/RoundedBoxGeometry.js",
+  "./vendor/three/lights/RectAreaLightUniformsLib.js",
+]) {
+  assert.ok(
+    shelfSceneSource.includes(localAddon),
+    `the 3D shelf must load ${localAddon} locally`,
+  );
+}
 const nebulaPersonaBootstrapPosition = nebulaSceneSource.indexOf(
   "window.__nebulaPersonaLibraryPromise",
 );
